@@ -38,6 +38,22 @@ RSpec.describe "Goals", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
+    context "goal tags" do
+      it "renders tag chips when tags are applied" do
+        long_range = GoalTag.create!(name: "Long Range")
+        create(:goal_tagging, goal: goal, goal_tag: long_range)
+
+        get goal_path(goal)
+        expect(response.body).to include("Long Range")
+        expect(response.body).to include("rounded-full")
+      end
+
+      it "renders no tag chip block when there are no tags" do
+        get goal_path(goal)
+        expect(response.body).not_to include("Long Range")
+      end
+    end
+
     context "video links" do
       it "renders Watch buttons when active video links exist" do
         goal.video_links.create!(

@@ -96,6 +96,9 @@
                 <%= goal.goal_type.humanize %>
                 <% if goal.body_part %> · <%= goal.body_part.humanize %><% end %>
               </div>
+              <% if goal.goal_tags.any? %>
+                <div class="mt-1"><%= render "goals/tag_chips", goal: goal %></div>
+              <% end %>
             </div>
             <div class="font-mono text-sm tabular-nums text-stone-500 shrink-0">
               <%= goal.score_after_goal_home %>&ndash;<%= goal.score_after_goal_away %>

@@ -1,6 +1,6 @@
 class GoalsController < ApplicationController
   def show
-    @goal = Goal.kept.friendly.find(params[:slug])
+    @goal = Goal.kept.includes(:goal_tags).friendly.find(params[:slug])
     @match = @goal.match
     @tournament = @match.tournament
     @scorer = @goal.player

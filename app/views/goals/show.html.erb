@@ -32,6 +32,12 @@
     Score after goal:
     <strong class="tabular-nums"><%= @goal.score_after_goal_home %>&ndash;<%= @goal.score_after_goal_away %></strong>
   </div>
+
+  <% if @goal.goal_tags.any? %>
+    <div class="mt-4">
+      <%= render "goals/tag_chips", goal: @goal %>
+    </div>
+  <% end %>
 </section>
 
 <%# === Match summary card === %>

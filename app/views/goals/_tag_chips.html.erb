@@ -1,0 +1,11 @@
+<%# Renders inline chips for a goal's tags.
+    Locals: goal (Goal) %>
+<% if goal.goal_tags.any? %>
+  <span class="inline-flex flex-wrap gap-1">
+    <% goal.goal_tags.each do |tag| %>
+      <span class="inline-block px-2 py-0.5 text-xs bg-stone-100 text-stone-700 rounded-full">
+        <%= tag.name %>
+      </span>
+    <% end %>
+  </span>
+<% end %>
