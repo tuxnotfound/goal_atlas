@@ -10,9 +10,29 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_155418) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_155604) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "goal_taggings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "goal_id", null: false
+    t.bigint "goal_tag_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["goal_id", "goal_tag_id"], name: "index_goal_taggings_uniq", unique: true
+    t.index ["goal_id"], name: "index_goal_taggings_on_goal_id"
+    t.index ["goal_tag_id"], name: "index_goal_taggings_on_goal_tag_id"
+  end
+
+  create_table "goal_tags", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_goal_tags_on_name", unique: true
+    t.index ["slug"], name: "index_goal_tags_on_slug", unique: true
+  end
 
   create_table "goals", force: :cascade do |t|
     t.bigint "assist_player_id"
@@ -192,6 +212,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_155418) do
     t.index ["year"], name: "index_tournaments_on_year", unique: true
   end
 
+  add_foreign_key "goal_taggings", "goal_tags"
+  add_foreign_key "goal_taggings", "goals"
   add_foreign_key "goals", "matches"
   add_foreign_key "goals", "players"
   add_foreign_key "goals", "players", column: "assist_player_id"

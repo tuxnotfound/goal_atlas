@@ -39,6 +39,9 @@ class Goal < ApplicationRecord
   belongs_to :scoring_team, class_name: "Team"
   belongs_to :assist_player, class_name: "Player", optional: true
 
+  has_many :goal_taggings, dependent: :destroy
+  has_many :goal_tags, through: :goal_taggings
+
   validates :minute, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :stoppage_time, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
   validates :goal_order, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
