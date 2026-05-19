@@ -15,5 +15,7 @@ class GoalsController < ApplicationController
     @related_by_team       = base.by_team(@scoring_team).limit(RELATED_LIMIT)
     @related_by_tournament = base.in_tournament(@tournament).limit(RELATED_LIMIT)
     @related_vs_opponent   = base.against_team(@opponent_team).limit(RELATED_LIMIT)
+
+    @video_links = @goal.video_links.kept.active
   end
 end

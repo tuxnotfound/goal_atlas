@@ -61,6 +61,8 @@
   </div>
 <% end %>
 
+<%= render "video_links/video_links", links: @video_links %>
+
 <%# === Related lanes === %>
 <% lanes = [
   ["Other #{@scorer.name} goals", @related_by_player],

@@ -38,6 +38,51 @@ RSpec.describe "Goals", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
+    context "video links" do
+      it "renders Watch buttons when active video links exist" do
+        goal.video_links.create!(
+          source: :youtube_official, url: "https://www.youtube.com/watch?v=abc123",
+          confidence: :verified, embed_allowed: false, is_active: true
+        )
+
+        get goal_path(goal)
+        expect(response.body).to include("Watch")
+        expect(response.body).to include("YouTube")
+        expect(response.body).to include("https://www.youtube.com/watch?v=abc123")
+      end
+
+      it "skips inactive and discarded video links" do
+        goal.video_links.create!(source: :youtube_official, url: "https://www.youtube.com/watch?v=inactive", is_active: false)
+        discarded = goal.video_links.create!(source: :youtube_official, url: "https://www.youtube.com/watch?v=gone")
+        discarded.discard
+
+        get goal_path(goal)
+        expect(response.body).not_to include("v=inactive")
+        expect(response.body).not_to include("v=gone")
+      end
+
+      it "appends ?t= to YouTube URLs when starts_at_seconds is set" do
+        goal.video_links.create!(
+          source: :youtube_official, url: "https://www.youtube.com/watch?v=abc123",
+          starts_at_seconds: 132, is_active: true
+        )
+
+        get goal_path(goal)
+        expect(response.body).to include("https://www.youtube.com/watch?v=abc123&amp;t=132")
+      end
+
+      it "does not append ?t= to non-YouTube URLs" do
+        goal.video_links.create!(
+          source: :fifa_plus, url: "https://www.fifa.com/fifaplus/clip/123",
+          starts_at_seconds: 132, is_active: true
+        )
+
+        get goal_path(goal)
+        expect(response.body).to include("https://www.fifa.com/fifaplus/clip/123")
+        expect(response.body).not_to include("clip/123?t=")
+      end
+    end
+
     context "related lanes" do
       it "renders other goals by the same player" do
         create(:goal,

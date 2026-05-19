@@ -42,6 +42,18 @@ RSpec.describe "Matches", type: :request do
       expect(response.body).to include("23") # "23'" rendered with apostrophe escaped
     end
 
+    it "renders video links when present" do
+      match.video_links.create!(
+        source: :fifa_plus, url: "https://www.fifa.com/fifaplus/match-highlight",
+        confidence: :verified, is_active: true
+      )
+
+      get match_path(match)
+      expect(response.body).to include("Watch")
+      expect(response.body).to include("FIFA+")
+      expect(response.body).to include("https://www.fifa.com/fifaplus/match-highlight")
+    end
+
     it "renders the shootout when one exists" do
       create(:shootout_kick,
              match: match, team: match.home_team, kick_order: 1, was_scored: true)

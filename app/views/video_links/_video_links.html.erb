@@ -1,0 +1,18 @@
+<%# Renders a "Watch" section for any object with video_links (Match or Goal).
+    Locals: links (ActiveRecord::Relation of VideoLink) %>
+<% if links.any? %>
+  <section class="mb-6">
+    <h2 class="text-lg font-semibold mb-3">Watch</h2>
+    <div class="flex flex-wrap gap-2">
+      <% links.each do |link| %>
+        <%= link_to video_link_url(link), target: "_blank", rel: "noopener noreferrer",
+                    class: "inline-flex items-center gap-2 px-3 py-2 bg-white border border-stone-200 rounded hover:bg-stone-50 hover:border-emerald-300 transition text-sm" do %>
+          <span class="font-medium"><%= video_source_label(link) %></span>
+          <% if link.confidence == "unverified" %>
+            <span class="text-xs text-stone-400">(unverified)</span>
+          <% end %>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+<% end %>

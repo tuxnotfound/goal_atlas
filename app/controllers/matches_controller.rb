@@ -7,5 +7,6 @@ class MatchesController < ApplicationController
     @match = Match.kept.friendly.find(params[:slug])
     @goals = @match.goals.kept.includes(:player, :scoring_team).ordered_within_match
     @shootout_kicks = @match.shootout_kicks.kept.includes(:player, :team).ordered
+    @video_links = @match.video_links.kept.active
   end
 end
