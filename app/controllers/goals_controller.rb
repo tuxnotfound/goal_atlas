@@ -40,5 +40,6 @@ class GoalsController < ApplicationController
     @opponent_team = @goal.opponent_team
 
     @video_links = @goal.video_links.kept.active
+    @match_video_links = @match.video_links.kept.active
   end
 end

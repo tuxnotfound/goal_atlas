@@ -67,4 +67,6 @@
   </div>
 <% end %>
 
-<%= render "video_links/video_links", links: @video_links %>
+<%= render "video_links/video_links", links: @video_links, title: "Watch this goal" %>
+
+<%= render "video_links/video_links", links: @match_video_links, title: "Watch the full match" %>

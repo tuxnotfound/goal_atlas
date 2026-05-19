@@ -1,8 +1,11 @@
 <%# Renders a "Watch" section for any object with video_links (Match or Goal).
-    Locals: links (ActiveRecord::Relation of VideoLink) %>
+    Locals:
+      links  — ActiveRecord::Relation of VideoLink
+      title  — Optional section heading (defaults to "Watch") %>
+<% local_title = local_assigns[:title] || "Watch" %>
 <% if links.any? %>
   <section class="mb-6">
-    <h2 class="text-lg font-semibold mb-3">Watch</h2>
+    <h2 class="text-lg font-semibold mb-3"><%= local_title %></h2>
     <div class="flex flex-wrap gap-2">
       <% links.each do |link| %>
         <%= link_to video_link_url(link), target: "_blank", rel: "noopener noreferrer",
