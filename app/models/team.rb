@@ -27,3 +27,34 @@ class Team < ApplicationRecord
     where("(active_from IS NULL OR active_from <= ?) AND (active_until IS NULL OR active_until >= ?)", year, year)
   }
 end
+
+# == Schema Information
+#
+# Table name: teams
+#
+#  id                :bigint           not null, primary key
+#  active_from       :integer
+#  active_until      :integer
+#  confederation     :integer          not null
+#  country_code      :string           not null
+#  discarded_at      :datetime
+#  fifa_code         :string
+#  flag_emoji        :string
+#  name              :string           not null
+#  slug              :string           not null
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  successor_team_id :bigint
+#
+# Indexes
+#
+#  index_teams_on_country_code       (country_code)
+#  index_teams_on_discarded_at       (discarded_at)
+#  index_teams_on_name               (name)
+#  index_teams_on_slug               (slug) UNIQUE
+#  index_teams_on_successor_team_id  (successor_team_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (successor_team_id => teams.id)
+#
