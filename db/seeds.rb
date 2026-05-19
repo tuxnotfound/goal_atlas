@@ -1,9 +1,23 @@
-# This file should ensure the existence of records required to run the application in every environment (production,
-# development, test). The code here should be idempotent so that it can be executed at any point in every environment.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
+# Idempotent seeds for the Goal Atlas project.
 #
-# Example:
+# Run with: bin/rails db:seed
 #
-#   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
-#     MovieGenre.find_or_create_by!(name: genre_name)
-#   end
+# Order matters: each file uses find_or_create_by! keyed on a unique attribute,
+# but later seeds (e.g. matches) depend on earlier ones (teams, stadiums) existing.
+
+require_relative "seeds/teams"
+require_relative "seeds/stadiums"
+require_relative "seeds/tournaments"
+require_relative "seeds/players"
+require_relative "seeds/matches"
+require_relative "seeds/goals"
+require_relative "seeds/shootout_kicks"
+
+puts "Seed run complete."
+puts "  Tournaments:    #{Tournament.count}"
+puts "  Teams:          #{Team.count}"
+puts "  Stadiums:       #{Stadium.count}"
+puts "  Players:        #{Player.count}"
+puts "  Matches:        #{Match.count}"
+puts "  Goals:          #{Goal.count}"
+puts "  ShootoutKicks:  #{ShootoutKick.count}"
