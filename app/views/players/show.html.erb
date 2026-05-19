@@ -1,0 +1,41 @@
+<% content_for :title, "#{@player.name} — Goal Atlas" %>
+
+<%# === Player header === %>
+<section class="bg-white border border-stone-200 rounded-lg p-6 mb-6">
+  <h1 class="text-3xl font-bold tracking-tight mb-2"><%= @player.name %></h1>
+
+  <div class="text-stone-500 text-sm space-y-1">
+    <% if @player.nationality_team %>
+      <div>
+        <%= @player.nationality_team.flag_emoji %>
+        <%= link_to @player.nationality_team.name, team_path(@player.nationality_team),
+                    class: "hover:text-emerald-700 transition" %>
+      </div>
+    <% end %>
+    <% if @player.position %>
+      <div><%= @player.position.humanize %></div>
+    <% end %>
+    <% if @player.birth_date %>
+      <div>Born <%= @player.birth_date.strftime("%B %-d, %Y") %></div>
+    <% end %>
+  </div>
+
+  <div class="mt-4">
+    <div class="text-stone-500 text-xs uppercase tracking-wide">Goals scored</div>
+    <div class="font-semibold text-lg tabular-nums"><%= @goals.size %></div>
+  </div>
+</section>
+
+<%# === Goals lane === %>
+<section class="mb-8">
+  <h2 class="text-lg font-semibold mb-3">Goals scored by <%= @player.name %></h2>
+  <% if @goals.any? %>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <% @goals.each do |g| %>
+        <%= render "goals/goal_row", goal: g %>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-sm text-stone-500">No goals in our dataset yet.</p>
+  <% end %>
+</section>

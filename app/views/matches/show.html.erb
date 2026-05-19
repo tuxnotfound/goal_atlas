@@ -18,7 +18,8 @@
   <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-6">
     <div class="text-right">
       <div class="text-5xl mb-2"><%= @match.home_team.flag_emoji %></div>
-      <div class="text-lg font-semibold"><%= @match.home_team.name %></div>
+      <%= link_to @match.home_team.name, team_path(@match.home_team),
+                  class: "text-lg font-semibold hover:text-emerald-700 transition" %>
       <% if @match.winner_team_id == @match.home_team_id %>
         <div class="text-xs uppercase tracking-wide text-emerald-700 font-bold mt-1">Winner</div>
       <% end %>
@@ -42,7 +43,8 @@
 
     <div class="text-left">
       <div class="text-5xl mb-2"><%= @match.away_team.flag_emoji %></div>
-      <div class="text-lg font-semibold"><%= @match.away_team.name %></div>
+      <%= link_to @match.away_team.name, team_path(@match.away_team),
+                  class: "text-lg font-semibold hover:text-emerald-700 transition" %>
       <% if @match.winner_team_id == @match.away_team_id %>
         <div class="text-xs uppercase tracking-wide text-emerald-700 font-bold mt-1">Winner</div>
       <% end %>

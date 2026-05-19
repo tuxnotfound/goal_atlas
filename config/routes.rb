@@ -11,6 +11,8 @@ Rails.application.routes.draw do
 
   resources :matches, only: [:index, :show], param: :slug
   resources :goals,   only: [:show],          param: :slug
+  resources :teams,   only: [:show],          param: :slug
+  resources :players, only: [:show],          param: :slug
 
   root "matches#index"
 end

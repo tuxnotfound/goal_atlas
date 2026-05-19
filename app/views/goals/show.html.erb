@@ -13,11 +13,16 @@
 
   <h1 class="text-3xl font-bold tracking-tight flex items-center gap-3 mb-2">
     <span class="text-4xl"><%= @scoring_team.flag_emoji %></span>
-    <span><%= @scorer.name %></span>
+    <%= link_to @scorer.name, player_path(@scorer),
+                class: "hover:text-emerald-700 transition" %>
   </h1>
 
   <div class="text-stone-600">
-    <%= @scoring_team.name %> vs <%= @opponent_team.name %>
+    <%= link_to @scoring_team.name, team_path(@scoring_team),
+                class: "hover:text-emerald-700 transition" %>
+    vs
+    <%= link_to @opponent_team.name, team_path(@opponent_team),
+                class: "hover:text-emerald-700 transition" %>
     · <%= stage_label(@match) %> · <%= @tournament.name %>
   </div>
 
