@@ -10,9 +10,37 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_155025) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_155146) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "goals", force: :cascade do |t|
+    t.bigint "assist_player_id"
+    t.integer "body_part"
+    t.datetime "created_at", null: false
+    t.integer "data_confidence", default: 1, null: false
+    t.text "description"
+    t.datetime "discarded_at"
+    t.integer "goal_order", default: 0, null: false
+    t.integer "goal_type", default: 0, null: false
+    t.bigint "match_id", null: false
+    t.integer "minute", null: false
+    t.integer "period", null: false
+    t.bigint "player_id", null: false
+    t.integer "score_after_goal_away", null: false
+    t.integer "score_after_goal_home", null: false
+    t.bigint "scoring_team_id", null: false
+    t.text "source_notes"
+    t.integer "stoppage_time"
+    t.datetime "updated_at", null: false
+    t.index ["assist_player_id"], name: "index_goals_on_assist_player_id"
+    t.index ["discarded_at"], name: "index_goals_on_discarded_at"
+    t.index ["goal_type"], name: "index_goals_on_goal_type"
+    t.index ["match_id", "period", "minute", "stoppage_time", "goal_order"], name: "index_goals_on_match_and_sort_keys"
+    t.index ["match_id"], name: "index_goals_on_match_id"
+    t.index ["player_id"], name: "index_goals_on_player_id"
+    t.index ["scoring_team_id"], name: "index_goals_on_scoring_team_id"
+  end
 
   create_table "matches", force: :cascade do |t|
     t.integer "attendance"
@@ -147,6 +175,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_155025) do
     t.index ["year"], name: "index_tournaments_on_year", unique: true
   end
 
+  add_foreign_key "goals", "matches"
+  add_foreign_key "goals", "players"
+  add_foreign_key "goals", "players", column: "assist_player_id"
+  add_foreign_key "goals", "teams", column: "scoring_team_id"
   add_foreign_key "matches", "stadiums"
   add_foreign_key "matches", "teams", column: "away_team_id"
   add_foreign_key "matches", "teams", column: "home_team_id"
