@@ -10,9 +10,25 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_154109) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_154231) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "players", force: :cascade do |t|
+    t.date "birth_date"
+    t.datetime "created_at", null: false
+    t.datetime "discarded_at"
+    t.string "name", null: false
+    t.string "name_local"
+    t.bigint "nationality_team_id"
+    t.integer "position"
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["discarded_at"], name: "index_players_on_discarded_at"
+    t.index ["name"], name: "index_players_on_name"
+    t.index ["nationality_team_id"], name: "index_players_on_nationality_team_id"
+    t.index ["slug"], name: "index_players_on_slug", unique: true
+  end
 
   create_table "stadiums", force: :cascade do |t|
     t.string "city", null: false
@@ -80,6 +96,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_154109) do
     t.index ["year"], name: "index_tournaments_on_year", unique: true
   end
 
+  add_foreign_key "players", "teams", column: "nationality_team_id"
   add_foreign_key "teams", "teams", column: "successor_team_id"
   add_foreign_key "tournaments", "teams", column: "fourth_place_team_id"
   add_foreign_key "tournaments", "teams", column: "runner_up_team_id"
