@@ -10,9 +10,29 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_153001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_153408) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "stadiums", force: :cascade do |t|
+    t.string "city", null: false
+    t.string "country", null: false
+    t.string "country_code"
+    t.datetime "created_at", null: false
+    t.integer "current_capacity"
+    t.datetime "discarded_at"
+    t.decimal "latitude", precision: 9, scale: 6
+    t.decimal "longitude", precision: 9, scale: 6
+    t.string "name", null: false
+    t.text "notes"
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["city"], name: "index_stadiums_on_city"
+    t.index ["country_code"], name: "index_stadiums_on_country_code"
+    t.index ["discarded_at"], name: "index_stadiums_on_discarded_at"
+    t.index ["name"], name: "index_stadiums_on_name"
+    t.index ["slug"], name: "index_stadiums_on_slug", unique: true
+  end
 
   create_table "teams", force: :cascade do |t|
     t.integer "active_from"
