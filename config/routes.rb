@@ -25,7 +25,7 @@ Rails.application.routes.draw do
 
   resources :tournaments, only: [:index, :show], path: "world-cups", param: :year
   resources :matches,     only: [:index, :show], param: :slug
-  resources :goals,       only: [:show],         param: :slug
+  resources :goals,       only: [:index, :show], param: :slug
   resources :teams,       only: [:show],         param: :slug
   resources :players,     only: [:show],         param: :slug
 

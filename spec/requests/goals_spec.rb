@@ -1,6 +1,97 @@
 require 'rails_helper'
 
 RSpec.describe "Goals", type: :request do
+  describe "GET /goals" do
+    let(:match) { create(:match, :final_2022) }
+    let(:messi) { create(:player, :messi, nationality_team: match.home_team) }
+
+    def make_goal(attrs)
+      defaults = {
+        match: match, player: messi, scoring_team: match.home_team,
+        period: :first_half, score_after_goal_home: 1, score_after_goal_away: 0
+      }
+      create(:goal, defaults.merge(attrs))
+    end
+
+    it "renders the index successfully" do
+      get goals_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Goals")
+    end
+
+    it "filters by goal_type" do
+      penalty = make_goal(minute: 23, goal_type: :penalty)
+      open    = make_goal(minute: 36, goal_type: :open_play, score_after_goal_home: 2)
+
+      get goals_path(type: "penalty")
+      expect(response.body).to include(goal_path(penalty))
+      expect(response.body).not_to include(goal_path(open))
+    end
+
+    it "filters by stage" do
+      group_match = create(:match,
+                           tournament: match.tournament,
+                           stage: :group_stage, date: Date.new(2022, 11, 20),
+                           home_team: match.home_team, away_team: match.away_team,
+                           home_score: 1, away_score: 0, match_number: 2)
+      final_goal = make_goal(minute: 23)
+      group_goal = make_goal(match: group_match, minute: 10)
+
+      get goals_path(stage: "final")
+      expect(response.body).to include(goal_path(final_goal))
+      expect(response.body).not_to include(goal_path(group_goal))
+    end
+
+    it "filters by tag (slug)" do
+      tagged = make_goal(minute: 23)
+      untagged = make_goal(minute: 36, score_after_goal_home: 2)
+      tag = GoalTag.create!(name: "Long Range")
+      create(:goal_tagging, goal: tagged, goal_tag: tag)
+
+      get goals_path(tag: "long-range")
+      expect(response.body).to include(goal_path(tagged))
+      expect(response.body).not_to include(goal_path(untagged))
+    end
+
+    it "filters by tournament year" do
+      other_tournament = create(:tournament, year: 2018, name: "FIFA World Cup 2018", host_countries: ["Russia"])
+      other_match = create(:match,
+                           tournament: other_tournament,
+                           stage: :final, date: Date.new(2018, 7, 15),
+                           home_team: match.home_team, away_team: match.away_team,
+                           home_score: 4, away_score: 2, match_number: 64)
+      g_2022 = make_goal(minute: 23)
+      g_2018 = make_goal(match: other_match, minute: 10)
+
+      get goals_path(tournament: "2022")
+      expect(response.body).to include(goal_path(g_2022))
+      expect(response.body).not_to include(goal_path(g_2018))
+    end
+
+    it "combines filters (type + stage)" do
+      penalty_final = make_goal(minute: 23, goal_type: :penalty)
+      open_final    = make_goal(minute: 36, goal_type: :open_play, score_after_goal_home: 2)
+
+      get goals_path(type: "penalty", stage: "final")
+      expect(response.body).to include(goal_path(penalty_final))
+      expect(response.body).not_to include(goal_path(open_final))
+    end
+
+    it "ignores unknown filter values" do
+      make_goal(minute: 23)
+      get goals_path(type: "not-a-real-type")
+      expect(response).to have_http_status(:ok)
+      # No filter applied, so the goal is still shown.
+      expect(response.body).to include("Lionel Messi")
+    end
+
+    it "shows an empty-state message when no goals match" do
+      make_goal(minute: 23, goal_type: :penalty)
+      get goals_path(type: "free_kick") # exists in enum but no matching goal
+      expect(response.body).to include("No goals match these filters")
+    end
+  end
+
   describe "GET /goals/:slug" do
     let(:match) { create(:match, :final_2022) }
     let(:messi) { create(:player, :messi, nationality_team: match.home_team) }

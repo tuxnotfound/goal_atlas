@@ -1,0 +1,66 @@
+<% content_for :title, "Goals — Goal Atlas" %>
+
+<div class="mb-6">
+  <div class="flex items-baseline justify-between gap-4">
+    <h1 class="text-3xl font-bold tracking-tight">Goals</h1>
+    <span class="text-sm text-stone-500 tabular-nums"><%= pluralize(@goal_count, "goal") %></span>
+  </div>
+  <% if any_goal_filter_active? %>
+    <%= link_to "Clear filters", goals_path,
+                class: "inline-block mt-2 text-xs text-stone-500 hover:text-emerald-700 transition" %>
+  <% end %>
+</div>
+
+<%# === Filter groups === %>
+<section class="space-y-4 mb-8">
+  <div>
+    <div class="text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">Goal type</div>
+    <div class="flex flex-wrap gap-2">
+      <% @goal_types.each do |t| %>
+        <%= link_to t.humanize, goal_filter_url(:type, t), class: goal_filter_chip_class(goal_filter_active?(:type, t)) %>
+      <% end %>
+    </div>
+  </div>
+
+  <div>
+    <div class="text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">Stage</div>
+    <div class="flex flex-wrap gap-2">
+      <% @stages.each do |s| %>
+        <%= link_to s.humanize, goal_filter_url(:stage, s), class: goal_filter_chip_class(goal_filter_active?(:stage, s)) %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @tags.any? %>
+    <div>
+      <div class="text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">Tag</div>
+      <div class="flex flex-wrap gap-2">
+        <% @tags.each do |tag| %>
+          <%= link_to tag.name, goal_filter_url(:tag, tag.slug), class: goal_filter_chip_class(goal_filter_active?(:tag, tag.slug)) %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @tournaments.size > 1 %>
+    <div>
+      <div class="text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">Tournament</div>
+      <div class="flex flex-wrap gap-2">
+        <% @tournaments.each do |t| %>
+          <%= link_to t.year, goal_filter_url(:tournament, t.year), class: goal_filter_chip_class(goal_filter_active?(:tournament, t.year)) %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</section>
+
+<%# === Goals list === %>
+<% if @goals.any? %>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <% @goals.each do |g| %>
+      <%= render "goals/goal_row", goal: g %>
+    <% end %>
+  </div>
+<% else %>
+  <p class="text-sm text-stone-500 py-8 text-center">No goals match these filters.</p>
+<% end %>
