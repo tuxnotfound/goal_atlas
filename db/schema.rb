@@ -10,9 +10,48 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_154327) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_155025) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "matches", force: :cascade do |t|
+    t.integer "attendance"
+    t.integer "away_penalties"
+    t.integer "away_score", default: 0, null: false
+    t.integer "away_score_after_extra_time"
+    t.bigint "away_team_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "data_confidence", default: 1, null: false
+    t.date "date", null: false
+    t.datetime "discarded_at"
+    t.string "group_letter"
+    t.integer "home_penalties"
+    t.integer "home_score", default: 0, null: false
+    t.integer "home_score_after_extra_time"
+    t.bigint "home_team_id", null: false
+    t.integer "match_number"
+    t.string "referee"
+    t.integer "result_type", default: 0, null: false
+    t.string "round_label"
+    t.string "slug", null: false
+    t.text "source_notes"
+    t.bigint "stadium_id"
+    t.integer "stage", null: false
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "winner_team_id"
+    t.index ["away_team_id"], name: "index_matches_on_away_team_id"
+    t.index ["date"], name: "index_matches_on_date"
+    t.index ["discarded_at"], name: "index_matches_on_discarded_at"
+    t.index ["home_team_id"], name: "index_matches_on_home_team_id"
+    t.index ["slug"], name: "index_matches_on_slug", unique: true
+    t.index ["stadium_id"], name: "index_matches_on_stadium_id"
+    t.index ["stage"], name: "index_matches_on_stage"
+    t.index ["tournament_id", "match_number"], name: "index_matches_on_tournament_id_and_match_number"
+    t.index ["tournament_id"], name: "index_matches_on_tournament_id"
+    t.index ["winner_team_id"], name: "index_matches_on_winner_team_id"
+    t.check_constraint "home_team_id <> away_team_id", name: "matches_distinct_teams"
+  end
 
   create_table "players", force: :cascade do |t|
     t.date "birth_date"
@@ -108,6 +147,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_154327) do
     t.index ["year"], name: "index_tournaments_on_year", unique: true
   end
 
+  add_foreign_key "matches", "stadiums"
+  add_foreign_key "matches", "teams", column: "away_team_id"
+  add_foreign_key "matches", "teams", column: "home_team_id"
+  add_foreign_key "matches", "teams", column: "winner_team_id"
+  add_foreign_key "matches", "tournaments"
   add_foreign_key "players", "teams", column: "nationality_team_id"
   add_foreign_key "teams", "teams", column: "successor_team_id"
   add_foreign_key "tournaments", "teams", column: "fourth_place_team_id"
