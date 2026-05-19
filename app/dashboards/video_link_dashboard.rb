@@ -3,7 +3,7 @@ require "administrate/base_dashboard"
 class VideoLinkDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     id: Field::Number,
-    linkable: Field::Polymorphic,
+    linkable: Field::Polymorphic.with_options(classes: [Match, Goal]),
     source: Field::Select.with_options(searchable: false, collection: ->(field) { field.resource.class.send(field.attribute.to_s.pluralize).keys }),
     url: Field::String,
     starts_at_seconds: Field::Number,

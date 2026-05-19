@@ -1,6 +1,12 @@
 class TournamentsController < ApplicationController
   TOP_SCORERS_LIMIT = 10
 
+  def index
+    @tournaments = Tournament.kept
+                              .includes(:winner_team)
+                              .order(year: :desc)
+  end
+
   def show
     @tournament = Tournament.kept.find_by!(year: params[:year])
 

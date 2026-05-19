@@ -23,11 +23,11 @@ Rails.application.routes.draw do
     root to: "tournaments#index"
   end
 
-  resources :tournaments, only: [:show], path: "world-cups", param: :year
+  resources :tournaments, only: [:index, :show], path: "world-cups", param: :year
   resources :matches,     only: [:index, :show], param: :slug
   resources :goals,       only: [:show],         param: :slug
   resources :teams,       only: [:show],         param: :slug
   resources :players,     only: [:show],         param: :slug
 
-  root "matches#index"
+  root "tournaments#index"
 end

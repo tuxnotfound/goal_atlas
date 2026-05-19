@@ -1,6 +1,41 @@
 require 'rails_helper'
 
 RSpec.describe "Tournaments", type: :request do
+  describe "GET /world-cups" do
+    it "renders the tournaments index" do
+      create(:tournament, :wc_2022)
+      create(:tournament, year: 2018, name: "FIFA World Cup 2018", host_countries: ["Russia"])
+
+      get tournaments_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("World Cups")
+      expect(response.body).to include("Qatar")
+      expect(response.body).to include("Russia")
+    end
+
+    it "orders tournaments by year descending" do
+      create(:tournament, year: 2018, name: "FIFA World Cup 2018", host_countries: ["Russia"])
+      create(:tournament, :wc_2022)
+
+      get tournaments_path
+      idx_2022 = response.body.index("2022")
+      idx_2018 = response.body.index("2018")
+      expect(idx_2022).to be < idx_2018
+    end
+
+    it "renders an empty-state message when there are no tournaments" do
+      get tournaments_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("No tournaments in the archive yet")
+    end
+
+    it "is the application root" do
+      get "/"
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("World Cups")
+    end
+  end
+
   describe "GET /world-cups/:year" do
     let!(:argentina) { create(:team, name: "Argentina") }
     let!(:france)    { create(:team, name: "France") }

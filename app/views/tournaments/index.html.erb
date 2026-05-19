@@ -1,0 +1,44 @@
+<% content_for :title, "World Cups — Goal Atlas" %>
+
+<div class="mb-8">
+  <h1 class="text-3xl font-bold tracking-tight">World Cups</h1>
+  <p class="text-stone-500 mt-1">
+    <% if @tournaments.any? %>
+      <%= pluralize(@tournaments.size, "edition") %> in the archive.
+    <% else %>
+      No tournaments in the archive yet.
+    <% end %>
+  </p>
+</div>
+
+<% if @tournaments.any? %>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <% @tournaments.each do |tournament| %>
+      <%= link_to tournament_path(tournament),
+                  class: "block bg-white border border-stone-200 rounded-lg p-5 hover:shadow-sm hover:border-emerald-300 transition" do %>
+        <div class="text-xs uppercase tracking-wider text-emerald-700 font-semibold mb-2">
+          <%= tournament.host_countries.join(", ") %>
+        </div>
+        <h2 class="text-2xl font-bold tracking-tight mb-3"><%= tournament.year %></h2>
+
+        <% if tournament.winner_team %>
+          <div class="flex items-center gap-2 text-sm">
+            <span class="text-2xl"><%= tournament.winner_team.flag_emoji %></span>
+            <span class="text-stone-600">
+              <strong class="text-stone-900"><%= tournament.winner_team.name %></strong> won
+            </span>
+          </div>
+        <% end %>
+
+        <% if tournament.total_matches || tournament.total_goals %>
+          <div class="text-xs text-stone-400 mt-3 tabular-nums">
+            <%= [
+              tournament.total_matches && "#{tournament.total_matches} matches",
+              tournament.total_goals && "#{tournament.total_goals} goals"
+            ].compact.join(" · ") %>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>
