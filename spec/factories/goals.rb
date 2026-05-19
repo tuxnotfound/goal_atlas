@@ -56,6 +56,7 @@ end
 #  period                :integer          not null
 #  score_after_goal_away :integer          not null
 #  score_after_goal_home :integer          not null
+#  slug                  :string           not null
 #  source_notes          :text
 #  stoppage_time         :integer
 #  created_at            :datetime         not null
@@ -74,6 +75,7 @@ end
 #  index_goals_on_match_id             (match_id)
 #  index_goals_on_player_id            (player_id)
 #  index_goals_on_scoring_team_id      (scoring_team_id)
+#  index_goals_on_slug                 (slug) UNIQUE
 #
 # Foreign Keys
 #

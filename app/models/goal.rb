@@ -1,6 +1,9 @@
 class Goal < ApplicationRecord
   include Discard::Model
 
+  extend FriendlyId
+  friendly_id :slug_candidates, use: :slugged
+
   PERIODS = {
     first_half: 0,
     second_half: 1,
@@ -56,8 +59,31 @@ class Goal < ApplicationRecord
     order(:period, :minute, :stoppage_time, :goal_order)
   }
 
+  scope :by_team,        ->(team)       { where(scoring_team_id: team.id) }
+  scope :by_player,      ->(player)     { where(player_id: player.id) }
+  scope :in_tournament,  ->(tournament) { joins(:match).where(matches: { tournament_id: tournament.id }) }
+  scope :against_team, ->(team) {
+    joins(:match)
+      .where("matches.home_team_id = :id OR matches.away_team_id = :id", id: team.id)
+      .where.not(scoring_team_id: team.id)
+  }
+
   def own_goal?
     goal_type == "own_goal"
+  end
+
+  # The team that did NOT score this goal (the other team in the match).
+  # For own goals: this is the scorer's own nationality team.
+  def opponent_team
+    return nil if match.blank?
+    scoring_team_id == match.home_team_id ? match.away_team : match.home_team
+  end
+
+  def slug_candidates
+    return [SecureRandom.hex(4)] if player.blank? || match.blank? || opponent_team.blank?
+    year = match.tournament&.year
+    base = "#{player.slug}-vs-#{opponent_team.slug}-#{year}-#{minute}"
+    [base, "#{base}-#{goal_order}"]
   end
 
   private
@@ -99,6 +125,7 @@ end
 #  period                :integer          not null
 #  score_after_goal_away :integer          not null
 #  score_after_goal_home :integer          not null
+#  slug                  :string           not null
 #  source_notes          :text
 #  stoppage_time         :integer
 #  created_at            :datetime         not null
@@ -117,6 +144,7 @@ end
 #  index_goals_on_match_id             (match_id)
 #  index_goals_on_player_id            (player_id)
 #  index_goals_on_scoring_team_id      (scoring_team_id)
+#  index_goals_on_slug                 (slug) UNIQUE
 #
 # Foreign Keys
 #

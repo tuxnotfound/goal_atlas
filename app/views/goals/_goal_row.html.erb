@@ -1,0 +1,13 @@
+<%# Compact goal card used inside related-goal lanes.
+    Locals: goal (Goal) %>
+<%= link_to goal_path(goal), class: "block border border-stone-200 rounded p-3 hover:bg-stone-50 transition" do %>
+  <div class="flex items-baseline gap-3 mb-1">
+    <span class="font-mono text-xs text-stone-500 tabular-nums"><%= goal_minute_label(goal) %></span>
+    <span class="text-lg shrink-0"><%= goal.scoring_team.flag_emoji %></span>
+    <span class="font-medium truncate"><%= goal.player.name %></span>
+  </div>
+  <div class="text-xs text-stone-500">
+    <%= goal.scoring_team.name %> vs <%= goal.opponent_team.name %>
+    · <%= stage_label(goal.match) %> · <%= goal.match.tournament.year %>
+  </div>
+<% end %>

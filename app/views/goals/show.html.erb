@@ -1,0 +1,75 @@
+<% content_for :title, "#{@scorer.name} #{goal_minute_label(@goal)} — Goal Atlas" %>
+
+<nav class="text-sm mb-6">
+  <%= link_to "← Back to match", match_path(@match), class: "text-stone-500 hover:text-emerald-700 transition" %>
+</nav>
+
+<%# === Goal header === %>
+<section class="bg-white border border-stone-200 rounded-lg p-6 mb-6">
+  <div class="text-xs uppercase tracking-wider text-emerald-700 font-semibold mb-2">
+    <%= goal_minute_label(@goal) %> · <%= @goal.goal_type.humanize %>
+    <% if @goal.body_part %> · <%= @goal.body_part.humanize %><% end %>
+  </div>
+
+  <h1 class="text-3xl font-bold tracking-tight flex items-center gap-3 mb-2">
+    <span class="text-4xl"><%= @scoring_team.flag_emoji %></span>
+    <span><%= @scorer.name %></span>
+  </h1>
+
+  <div class="text-stone-600">
+    <%= @scoring_team.name %> vs <%= @opponent_team.name %>
+    · <%= stage_label(@match) %> · <%= @tournament.name %>
+  </div>
+
+  <div class="mt-4 inline-block px-3 py-1 bg-stone-100 rounded font-mono text-sm">
+    Score after goal:
+    <strong class="tabular-nums"><%= @goal.score_after_goal_home %>&ndash;<%= @goal.score_after_goal_away %></strong>
+  </div>
+</section>
+
+<%# === Match summary card === %>
+<%= link_to match_path(@match), class: "block bg-white border border-stone-200 rounded-lg p-4 mb-8 hover:bg-stone-50 transition" do %>
+  <div class="flex items-center justify-between gap-4">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl"><%= @match.home_team.flag_emoji %></span>
+      <span class="font-medium"><%= @match.home_team.name %></span>
+    </div>
+    <div class="font-mono font-semibold tabular-nums">
+      <% if @match.home_score_after_extra_time %>
+        <%= @match.home_score_after_extra_time %>&ndash;<%= @match.away_score_after_extra_time %>
+      <% else %>
+        <%= @match.home_score %>&ndash;<%= @match.away_score %>
+      <% end %>
+      <% if (label = result_type_short(@match)) %>
+        <span class="text-xs text-stone-500 ml-1 font-sans"><%= label %></span>
+      <% end %>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="font-medium"><%= @match.away_team.name %></span>
+      <span class="text-2xl"><%= @match.away_team.flag_emoji %></span>
+    </div>
+  </div>
+  <div class="text-xs text-stone-400 mt-1 text-center">
+    <%= @match.date.strftime("%b %-d, %Y") %> · <%= @match.stadium.name %>
+  </div>
+<% end %>
+
+<%# === Related lanes === %>
+<% lanes = [
+  ["Other #{@scorer.name} goals", @related_by_player],
+  ["Other #{@scoring_team.name} goals", @related_by_team],
+  ["Other goals against #{@opponent_team.name}", @related_vs_opponent],
+  ["Other #{@tournament.name} goals", @related_by_tournament]
+] %>
+
+<% lanes.each do |title, goals| %>
+  <% next if goals.empty? %>
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3"><%= title %></h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <% goals.each do |g| %>
+        <%= render "goal_row", goal: g %>
+      <% end %>
+    </div>
+  </section>
+<% end %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_160030) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_185604) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -50,6 +50,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_160030) do
     t.integer "score_after_goal_away", null: false
     t.integer "score_after_goal_home", null: false
     t.bigint "scoring_team_id", null: false
+    t.string "slug", null: false
     t.text "source_notes"
     t.integer "stoppage_time"
     t.datetime "updated_at", null: false
@@ -60,6 +61,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_160030) do
     t.index ["match_id"], name: "index_goals_on_match_id"
     t.index ["player_id"], name: "index_goals_on_player_id"
     t.index ["scoring_team_id"], name: "index_goals_on_scoring_team_id"
+    t.index ["slug"], name: "index_goals_on_slug", unique: true
   end
 
   create_table "matches", force: :cascade do |t|
