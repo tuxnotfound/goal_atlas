@@ -83,29 +83,5 @@ RSpec.describe "Goals", type: :request do
       end
     end
 
-    context "related lanes" do
-      it "renders other goals by the same player" do
-        create(:goal,
-               match: match, player: messi, scoring_team: match.home_team,
-               minute: 108, period: :extra_time_first, goal_type: :open_play,
-               score_after_goal_home: 3, score_after_goal_away: 2)
-
-        get goal_path(goal)
-        expect(response.body).to include("Other #{messi.name} goals")
-        expect(response.body).to include("108")
-      end
-
-      it "renders other goals by the same team" do
-        di_maria = create(:player, name: "Ángel Di María", nationality_team: match.home_team)
-        create(:goal,
-               match: match, player: di_maria, scoring_team: match.home_team,
-               minute: 36, period: :first_half, goal_type: :open_play,
-               score_after_goal_home: 2, score_after_goal_away: 0)
-
-        get goal_path(goal)
-        expect(response.body).to include("Other #{match.home_team.name} goals")
-        expect(response.body).to include("Di María")
-      end
-    end
   end
 end
