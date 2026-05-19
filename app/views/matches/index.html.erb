@@ -1,0 +1,50 @@
+<% content_for :title, "Matches — Goal Atlas" %>
+
+<div class="mb-8">
+  <h1 class="text-3xl font-bold tracking-tight">Matches</h1>
+  <p class="text-stone-500 mt-1">Knockout stage of the 2022 World Cup. More tournaments coming soon.</p>
+</div>
+
+<ul class="divide-y divide-stone-200 border border-stone-200 rounded-md bg-white">
+  <% @matches.each do |match| %>
+    <li>
+      <%= link_to match_path(match), class: "block p-4 hover:bg-stone-50 transition" do %>
+        <div class="flex items-baseline justify-between mb-2">
+          <span class="text-xs uppercase tracking-wide text-emerald-700 font-semibold">
+            <%= stage_label(match) %>
+          </span>
+          <span class="text-xs text-stone-400">
+            <%= match.date.strftime("%b %-d, %Y") %>
+          </span>
+        </div>
+
+        <div class="flex items-center justify-between gap-4">
+          <div class="flex items-center gap-2 flex-1 min-w-0">
+            <span class="text-2xl shrink-0"><%= match.home_team.flag_emoji %></span>
+            <span class="font-medium truncate"><%= match.home_team.name %></span>
+          </div>
+
+          <div class="font-mono text-lg font-semibold tabular-nums">
+            <% if match.home_score_after_extra_time %>
+              <%= match.home_score_after_extra_time %>&ndash;<%= match.away_score_after_extra_time %>
+            <% else %>
+              <%= match.home_score %>&ndash;<%= match.away_score %>
+            <% end %>
+            <% if (label = result_type_short(match)) %>
+              <span class="text-xs text-stone-500 ml-1 font-sans"><%= label %></span>
+            <% end %>
+          </div>
+
+          <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
+            <span class="font-medium truncate text-right"><%= match.away_team.name %></span>
+            <span class="text-2xl shrink-0"><%= match.away_team.flag_emoji %></span>
+          </div>
+        </div>
+
+        <div class="text-xs text-stone-400 mt-2">
+          <%= match.stadium.name %>, <%= match.stadium.city %>
+        </div>
+      <% end %>
+    </li>
+  <% end %>
+</ul>
