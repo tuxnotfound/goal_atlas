@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_153408) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_154109) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -54,5 +54,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_153408) do
     t.index ["successor_team_id"], name: "index_teams_on_successor_team_id"
   end
 
+  create_table "tournaments", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "discarded_at"
+    t.date "end_date"
+    t.bigint "fourth_place_team_id"
+    t.string "host_countries", default: [], null: false, array: true
+    t.string "name", null: false
+    t.string "poster_url"
+    t.bigint "runner_up_team_id"
+    t.string "slug", null: false
+    t.date "start_date"
+    t.bigint "third_place_team_id"
+    t.integer "total_goals"
+    t.integer "total_matches"
+    t.datetime "updated_at", null: false
+    t.bigint "winner_team_id"
+    t.integer "year", null: false
+    t.index ["discarded_at"], name: "index_tournaments_on_discarded_at"
+    t.index ["fourth_place_team_id"], name: "index_tournaments_on_fourth_place_team_id"
+    t.index ["runner_up_team_id"], name: "index_tournaments_on_runner_up_team_id"
+    t.index ["slug"], name: "index_tournaments_on_slug", unique: true
+    t.index ["third_place_team_id"], name: "index_tournaments_on_third_place_team_id"
+    t.index ["winner_team_id"], name: "index_tournaments_on_winner_team_id"
+    t.index ["year"], name: "index_tournaments_on_year", unique: true
+  end
+
   add_foreign_key "teams", "teams", column: "successor_team_id"
+  add_foreign_key "tournaments", "teams", column: "fourth_place_team_id"
+  add_foreign_key "tournaments", "teams", column: "runner_up_team_id"
+  add_foreign_key "tournaments", "teams", column: "third_place_team_id"
+  add_foreign_key "tournaments", "teams", column: "winner_team_id"
 end
