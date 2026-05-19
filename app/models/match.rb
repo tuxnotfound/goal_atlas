@@ -43,6 +43,7 @@ class Match < ApplicationRecord
 
   has_many :goals, dependent: :destroy
   has_many :shootout_kicks, dependent: :destroy
+  has_many :video_links, as: :linkable, dependent: :destroy
 
   validates :home_score, :away_score, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :date, presence: true

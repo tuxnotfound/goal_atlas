@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_155604) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_160030) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -210,6 +210,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_155604) do
     t.index ["third_place_team_id"], name: "index_tournaments_on_third_place_team_id"
     t.index ["winner_team_id"], name: "index_tournaments_on_winner_team_id"
     t.index ["year"], name: "index_tournaments_on_year", unique: true
+  end
+
+  create_table "video_links", force: :cascade do |t|
+    t.integer "confidence", default: 1, null: false
+    t.datetime "created_at", null: false
+    t.datetime "discarded_at"
+    t.boolean "embed_allowed", default: false, null: false
+    t.integer "ends_at_seconds"
+    t.boolean "is_active", default: true, null: false
+    t.string "language"
+    t.datetime "last_checked_at"
+    t.bigint "linkable_id", null: false
+    t.string "linkable_type", null: false
+    t.integer "source", null: false
+    t.integer "starts_at_seconds"
+    t.datetime "updated_at", null: false
+    t.string "url", null: false
+    t.index ["discarded_at"], name: "index_video_links_on_discarded_at"
+    t.index ["is_active"], name: "index_video_links_on_is_active"
+    t.index ["linkable_type", "linkable_id"], name: "index_video_links_on_linkable"
+    t.index ["source"], name: "index_video_links_on_source"
   end
 
   add_foreign_key "goal_taggings", "goal_tags"
