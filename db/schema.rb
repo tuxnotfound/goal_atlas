@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_155146) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_155418) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -95,6 +95,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_155146) do
     t.index ["name"], name: "index_players_on_name"
     t.index ["nationality_team_id"], name: "index_players_on_nationality_team_id"
     t.index ["slug"], name: "index_players_on_slug", unique: true
+  end
+
+  create_table "shootout_kicks", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "discarded_at"
+    t.integer "kick_order", null: false
+    t.bigint "match_id", null: false
+    t.string "notes"
+    t.bigint "player_id", null: false
+    t.bigint "team_id", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "was_scored", null: false
+    t.index ["discarded_at"], name: "index_shootout_kicks_on_discarded_at"
+    t.index ["match_id", "kick_order"], name: "index_shootout_kicks_unique_order_per_match", unique: true
+    t.index ["match_id"], name: "index_shootout_kicks_on_match_id"
+    t.index ["player_id"], name: "index_shootout_kicks_on_player_id"
+    t.index ["team_id"], name: "index_shootout_kicks_on_team_id"
   end
 
   create_table "sources", force: :cascade do |t|
@@ -185,6 +202,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_155146) do
   add_foreign_key "matches", "teams", column: "winner_team_id"
   add_foreign_key "matches", "tournaments"
   add_foreign_key "players", "teams", column: "nationality_team_id"
+  add_foreign_key "shootout_kicks", "matches"
+  add_foreign_key "shootout_kicks", "players"
+  add_foreign_key "shootout_kicks", "teams"
   add_foreign_key "teams", "teams", column: "successor_team_id"
   add_foreign_key "tournaments", "teams", column: "fourth_place_team_id"
   add_foreign_key "tournaments", "teams", column: "runner_up_team_id"

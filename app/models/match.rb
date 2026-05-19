@@ -42,6 +42,7 @@ class Match < ApplicationRecord
   belongs_to :winner_team, class_name: "Team", optional: true
 
   has_many :goals, dependent: :destroy
+  has_many :shootout_kicks, dependent: :destroy
 
   validates :home_score, :away_score, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :date, presence: true
