@@ -25,6 +25,11 @@ class Tournament < ApplicationRecord
     year_changed? || super
   end
 
+  # URL helpers like tournament_path(t) produce /world-cups/2022.
+  def to_param
+    year.to_s
+  end
+
   private
 
   def end_after_start

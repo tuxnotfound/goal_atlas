@@ -1,0 +1,131 @@
+<% content_for :title, "#{@tournament.name} — Goal Atlas" %>
+
+<%# === Tournament header === %>
+<section class="bg-white border border-stone-200 rounded-lg p-6 mb-6">
+  <h1 class="text-3xl font-bold tracking-tight"><%= @tournament.name %></h1>
+  <div class="text-stone-500 text-sm mt-1">
+    <% if @tournament.host_countries.any? %>
+      Host: <%= @tournament.host_countries.join(", ") %>
+    <% end %>
+    <% if @tournament.start_date && @tournament.end_date %>
+      ·
+      <%= @tournament.start_date.strftime("%b %-d") %>
+      – <%= @tournament.end_date.strftime("%b %-d, %Y") %>
+    <% end %>
+  </div>
+
+  <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+    <% if @tournament.total_matches %>
+      <div>
+        <div class="text-stone-500 text-xs uppercase tracking-wide">Total matches</div>
+        <div class="font-semibold text-lg tabular-nums"><%= @tournament.total_matches %></div>
+      </div>
+    <% end %>
+    <% if @tournament.total_goals %>
+      <div>
+        <div class="text-stone-500 text-xs uppercase tracking-wide">Total goals</div>
+        <div class="font-semibold text-lg tabular-nums"><%= @tournament.total_goals %></div>
+      </div>
+    <% end %>
+    <div>
+      <div class="text-stone-500 text-xs uppercase tracking-wide">In our archive</div>
+      <div class="font-semibold text-lg tabular-nums">
+        <%= @matches_by_stage.values.flatten.size %> matches
+      </div>
+    </div>
+  </div>
+</section>
+
+<%# === Podium === %>
+<% podium = [
+  ["Winner",       @tournament.winner_team,       "bg-amber-50 border-amber-200"],
+  ["Runner-up",    @tournament.runner_up_team,    "bg-stone-50 border-stone-300"],
+  ["Third place",  @tournament.third_place_team,  "bg-orange-50 border-orange-200"],
+  ["Fourth place", @tournament.fourth_place_team, "bg-stone-50 border-stone-200"]
+] %>
+<% if podium.any? { |_, team, _| team } %>
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">Final standings</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <% podium.each do |label, team, classes| %>
+        <% next unless team %>
+        <%= link_to team_path(team), class: "block border rounded p-4 text-center hover:shadow-sm transition #{classes}" do %>
+          <div class="text-xs uppercase tracking-wide text-stone-600 font-semibold mb-2">
+            <%= label %>
+          </div>
+          <div class="text-4xl mb-1"><%= team.flag_emoji %></div>
+          <div class="font-medium"><%= team.name %></div>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<%# === Top scorers === %>
+<% if @top_scorers.any? %>
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">Top scorers</h2>
+    <ol class="border border-stone-200 rounded-md bg-white divide-y divide-stone-100">
+      <% @top_scorers.each_with_index do |scorer, idx| %>
+        <li>
+          <%= link_to player_path(scorer), class: "p-3 flex items-center gap-3 hover:bg-stone-50 transition" do %>
+            <span class="font-mono text-sm text-stone-400 tabular-nums w-6"><%= idx + 1 %></span>
+            <span class="text-xl"><%= scorer.nationality_team&.flag_emoji %></span>
+            <span class="flex-1 font-medium truncate"><%= scorer.name %></span>
+            <span class="font-mono text-sm tabular-nums text-stone-600">
+              <%= scorer.goals_count %>
+              <span class="text-stone-400 ml-1"><%= scorer.goals_count == 1 ? "goal" : "goals" %></span>
+            </span>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  </section>
+<% end %>
+
+<%# === Matches grouped by stage (final → quarter-final → ...) === %>
+<% if @matches_by_stage.any? %>
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">Matches</h2>
+    <% Match.stages.keys.reverse.each do |stage| %>
+      <% matches = @matches_by_stage[stage] %>
+      <% next unless matches&.any? %>
+      <div class="mb-5">
+        <h3 class="text-xs uppercase tracking-wider text-emerald-700 font-semibold mb-2">
+          <%= stage.humanize %>
+        </h3>
+        <ul class="divide-y divide-stone-200 border border-stone-200 rounded-md bg-white">
+          <% matches.each do |match| %>
+            <li>
+              <%= link_to match_path(match), class: "block p-3 hover:bg-stone-50 transition" do %>
+                <div class="flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-2 flex-1 min-w-0">
+                    <span class="text-xl shrink-0"><%= match.home_team.flag_emoji %></span>
+                    <span class="font-medium truncate"><%= match.home_team.name %></span>
+                  </div>
+                  <div class="font-mono text-sm tabular-nums">
+                    <% if match.home_score_after_extra_time %>
+                      <%= match.home_score_after_extra_time %>&ndash;<%= match.away_score_after_extra_time %>
+                    <% else %>
+                      <%= match.home_score %>&ndash;<%= match.away_score %>
+                    <% end %>
+                    <% if (label = result_type_short(match)) %>
+                      <span class="text-xs text-stone-500 ml-1 font-sans"><%= label %></span>
+                    <% end %>
+                  </div>
+                  <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                    <span class="font-medium truncate text-right"><%= match.away_team.name %></span>
+                    <span class="text-xl shrink-0"><%= match.away_team.flag_emoji %></span>
+                  </div>
+                </div>
+                <div class="text-xs text-stone-400 mt-1">
+                  <%= match.date.strftime("%b %-d") %> · <%= match.stadium&.name %>
+                </div>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  </section>
+<% end %>

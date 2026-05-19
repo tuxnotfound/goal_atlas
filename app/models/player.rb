@@ -15,6 +15,9 @@ class Player < ApplicationRecord
 
   belongs_to :nationality_team, class_name: "Team", optional: true
 
+  has_many :goals, dependent: :restrict_with_error
+  has_many :assisted_goals, class_name: "Goal", foreign_key: :assist_player_id, dependent: :nullify, inverse_of: :assist_player
+
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true
 end

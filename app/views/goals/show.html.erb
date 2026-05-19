@@ -23,7 +23,9 @@
     vs
     <%= link_to @opponent_team.name, team_path(@opponent_team),
                 class: "hover:text-emerald-700 transition" %>
-    · <%= stage_label(@match) %> · <%= @tournament.name %>
+    · <%= stage_label(@match) %> ·
+    <%= link_to @tournament.name, tournament_path(@tournament),
+                class: "hover:text-emerald-700 transition" %>
   </div>
 
   <div class="mt-4 inline-block px-3 py-1 bg-stone-100 rounded font-mono text-sm">

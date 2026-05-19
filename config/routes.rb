@@ -9,10 +9,11 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  resources :matches, only: [:index, :show], param: :slug
-  resources :goals,   only: [:show],          param: :slug
-  resources :teams,   only: [:show],          param: :slug
-  resources :players, only: [:show],          param: :slug
+  resources :tournaments, only: [:show], path: "world-cups", param: :year
+  resources :matches,     only: [:index, :show], param: :slug
+  resources :goals,       only: [:show],         param: :slug
+  resources :teams,       only: [:show],         param: :slug
+  resources :players,     only: [:show],         param: :slug
 
   root "matches#index"
 end
