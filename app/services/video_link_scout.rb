@@ -20,9 +20,14 @@ class VideoLinkScout
   API_BASE = "https://www.googleapis.com/youtube/v3/search"
 
   # Known channel IDs for legal/authoritative sources.
-  # Add more here as needed (ESPN FC, Sky Sports, beIN, FOX Soccer, etc.).
+  # Keep this in sync with the Source records in db/seeds/sources.rb —
+  # those are the human-readable registry; this hash is the lookup the
+  # YouTube Data API needs (it filters by channelId, not channel handle).
   CHANNELS = {
-    fifa: "UCpcTrCXblq78GZrTUTLWeBw" # @FIFA — verify on first use
+    fifa: "UCpcTrCXblq78GZrTUTLWeBw" # @FIFA (verified 2026-05-20)
+    # When adding a new tournament source:
+    #   1. Add a Source record in db/seeds/sources.rb (with channel ID in notes)
+    #   2. Mirror the channel ID here so the scout can filter searches to it
   }.freeze
 
   class ApiKeyMissing < StandardError; end

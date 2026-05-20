@@ -152,7 +152,14 @@ EXTRA_GOAL_VIDEO_LINKS = [
     notes: "FIFA YouTube — Harry Kane scores and misses a penalty! England vs France" },
   { goal: "mislav-orsic-vs-morocco-2022-42",
     url:  "https://www.youtube.com/watch?v=B_mSVMx19u8",
-    notes: "FIFA YouTube — Beauty of a goal from Mislav Orsic" }
+    notes: "FIFA YouTube — Beauty of a goal from Mislav Orsic" },
+  # Same brace clip covers both Mbappé 80' and 81' (97 seconds apart in the match)
+  { goal: "kylian-mbappe-vs-argentina-2022-80",
+    url:  "https://www.youtube.com/watch?v=UO2S8hdJ4kA",
+    notes: "FIFA YouTube — TWO GOALS IN 95 SECONDS! Kylian Mbappé's 2022 FIFA World Cup Final Brace" },
+  { goal: "kylian-mbappe-vs-argentina-2022-81",
+    url:  "https://www.youtube.com/watch?v=UO2S8hdJ4kA",
+    notes: "FIFA YouTube — TWO GOALS IN 95 SECONDS! Kylian Mbappé's 2022 FIFA World Cup Final Brace" }
 ].freeze
 
 EXTRA_GOAL_VIDEO_LINKS.each do |attrs|
@@ -165,9 +172,9 @@ EXTRA_GOAL_VIDEO_LINKS.each do |attrs|
   end
 end
 
-# Goals still missing dedicated clips (only match-level highlights cover them):
+# Goals still missing dedicated clips:
 #   - achraf-dari-vs-croatia-2022-9
-#   - kylian-mbappe-vs-argentina-2022-80  (first final penalty)
-# The match-level "Watch the full match" links cover these.
+#     FIFA channel didn't post a dedicated clip — match highlight (Match 63)
+#     covers the goal at the 9-minute mark.
 
 puts "VideoLinks: #{VideoLink.count} (target: ≥ #{MATCH_VIDEO_LINKS.size + GOAL_VIDEO_LINKS.size})"
