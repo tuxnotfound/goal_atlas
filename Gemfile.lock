@@ -86,8 +86,6 @@ GEM
     ast (2.4.3)
     base64 (0.3.0)
     bcrypt_pbkdf (1.1.2)
-    bcrypt_pbkdf (1.1.2-arm64-darwin)
-    bcrypt_pbkdf (1.1.2-x86_64-darwin)
     bigdecimal (4.1.2)
     bindex (0.8.1)
     bootsnap (1.24.4)
@@ -109,6 +107,9 @@ GEM
     discard (1.4.0)
       activerecord (>= 4.2, < 9.0)
     dotenv (3.2.0)
+    dotenv-rails (3.2.0)
+      dotenv (= 3.2.0)
+      railties (>= 6.1)
     drb (2.2.3)
     ed25519 (1.4.0)
     erb (6.0.4)
@@ -435,6 +436,7 @@ DEPENDENCIES
   bundler-audit
   debug
   discard
+  dotenv-rails
   factory_bot_rails
   faker
   friendly_id (~> 5.5)
