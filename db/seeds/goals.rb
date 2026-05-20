@@ -343,26 +343,83 @@ GOALS_2022 = [
   { match: 64, player: "Kylian Mbappé",  team: "FRA", minute: 118, period: :extra_time_second, type: :penalty,   body: :right_foot, score: [3, 3] }
 ].freeze
 
-GOALS_2022.each do |attrs|
-  m = match!(tournament, attrs[:match])
-  goal = Goal.where(
-    match: m,
-    player: player!(attrs[:player]),
-    minute: attrs[:minute],
-    stoppage_time: attrs[:stoppage]
-  ).first_or_initialize
+# ============================================================
+# 1986 — iconic goals only (finals + Hand of God + Goal of the Century)
+# ============================================================
+GOALS_1986 = [
+  # Match 47: Argentina 2-1 England (QF, Hand of God + Goal of the Century)
+  { match: 47, player: "Diego Maradona", team: "ARG", minute: 51, period: :second_half, type: :open_play,
+    body: :other,
+    score: [1, 0], notes: "Hand of God" },
+  { match: 47, player: "Diego Maradona", team: "ARG", minute: 55, period: :second_half, type: :open_play,
+    body: :left_foot,
+    score: [2, 0], notes: "Goal of the Century — solo run from his own half" },
+  { match: 47, player: "Gary Lineker",   team: "ENG", minute: 80, period: :second_half, type: :open_play,
+    body: :head,
+    score: [2, 1] },
 
-  goal.assign_attributes(
-    scoring_team: t!(attrs[:team]),
-    period: attrs[:period],
-    goal_type: attrs[:type],
-    body_part: attrs[:body],
-    score_after_goal_home: attrs[:score][0],
-    score_after_goal_away: attrs[:score][1],
-    data_confidence: :likely,
-    goal_order: 0
-  )
-  goal.save!
+  # Match 52: Argentina 3-2 West Germany (FINAL)
+  { match: 52, player: "José Luis Brown",       team: "ARG", minute: 23, period: :first_half,  type: :open_play, body: :head,       score: [1, 0] },
+  { match: 52, player: "Jorge Valdano",         team: "ARG", minute: 56, period: :second_half, type: :open_play, body: :left_foot,  score: [2, 0] },
+  { match: 52, player: "Karl-Heinz Rummenigge", team: "FRG", minute: 74, period: :second_half, type: :open_play,                    score: [2, 1] },
+  { match: 52, player: "Rudi Völler",           team: "FRG", minute: 80, period: :second_half, type: :open_play, body: :head,       score: [2, 2] },
+  { match: 52, player: "Jorge Burruchaga",      team: "ARG", minute: 84, period: :second_half, type: :open_play,                    score: [3, 2] }
+].freeze
+
+# ============================================================
+# 2018 — iconic goals only (final + Pavard's vs Argentina)
+# ============================================================
+GOALS_2018 = [
+  # Match 49: France 4-3 Argentina (R16, Pavard wonder goal)
+  { match: 49, player: "Antoine Griezmann", team: "FRA", minute: 13, period: :first_half,  type: :penalty,   score: [1, 0] },
+  { match: 49, player: "Ángel Di María",    team: "ARG", minute: 41, period: :first_half,  type: :open_play, score: [1, 1] },
+  { match: 49, player: "Gabriel Mercado",   team: "ARG", minute: 48, period: :second_half, type: :open_play, score: [1, 2] }, # Mercado not in seed
+  { match: 49, player: "Benjamin Pavard",   team: "FRA", minute: 57, period: :second_half, type: :open_play, body: :right_foot, score: [2, 2], notes: "Wonder goal — curling volley" },
+  { match: 49, player: "Kylian Mbappé",     team: "FRA", minute: 64, period: :second_half, type: :open_play, score: [3, 2] },
+  { match: 49, player: "Kylian Mbappé",     team: "FRA", minute: 68, period: :second_half, type: :open_play, score: [4, 2] },
+  { match: 49, player: "Sergio Agüero",     team: "ARG", minute: 90, stoppage: 3, period: :second_half, type: :open_play, score: [4, 3] }, # Agüero not in seed
+
+  # Match 64: France 4-2 Croatia (FINAL)
+  { match: 64, player: "Mario Mandžukić",   team: "FRA", minute: 18, period: :first_half,  type: :own_goal, score: [1, 0] },
+  { match: 64, player: "Ivan Perišić",      team: "CRO", minute: 28, period: :first_half,  type: :open_play, score: [1, 1] },
+  { match: 64, player: "Antoine Griezmann", team: "FRA", minute: 38, period: :first_half,  type: :penalty,   score: [2, 1] },
+  { match: 64, player: "Paul Pogba",        team: "FRA", minute: 59, period: :second_half, type: :open_play, score: [3, 1] },
+  { match: 64, player: "Kylian Mbappé",     team: "FRA", minute: 65, period: :second_half, type: :open_play, score: [4, 1] },
+  { match: 64, player: "Mario Mandžukić",   team: "CRO", minute: 69, period: :second_half, type: :open_play, score: [4, 2] }
+].freeze
+
+TOURNAMENT_GOALS = {
+  1986 => GOALS_1986,
+  2018 => GOALS_2018,
+  2022 => GOALS_2022
+}.freeze
+
+TOURNAMENT_GOALS.each do |year, goals_data|
+  t_obj = Tournament.find_by!(year: year)
+  goals_data.each do |attrs|
+    next unless Player.exists?(name: attrs[:player]) # skip if player not seeded
+
+    m = Match.find_by!(tournament: t_obj, match_number: attrs[:match])
+    goal = Goal.where(
+      match: m,
+      player: player!(attrs[:player]),
+      minute: attrs[:minute],
+      stoppage_time: attrs[:stoppage]
+    ).first_or_initialize
+
+    goal.assign_attributes(
+      scoring_team: t!(attrs[:team]),
+      period: attrs[:period],
+      goal_type: attrs[:type],
+      body_part: attrs[:body],
+      score_after_goal_home: attrs[:score][0],
+      score_after_goal_away: attrs[:score][1],
+      data_confidence: :likely,
+      goal_order: 0,
+      description: attrs[:notes]
+    )
+    goal.save!
+  end
 end
 
-puts "Goals: #{Goal.joins(:match).where(matches: { tournament_id: tournament.id }).count} (target: #{GOALS_2022.size})"
+puts "Goals: #{Goal.count}"

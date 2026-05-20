@@ -1,17 +1,27 @@
 # FIFA's individual awards per tournament.
 #
-# Award types:
-#   - golden/silver/bronze_ball: Adidas Golden/Silver/Bronze Ball (best player)
-#   - golden/silver/bronze_boot: Adidas Golden/Silver/Bronze Boot (top scorer)
-#   - golden_glove: Lev Yashin Trophy (best goalkeeper)
-#   - best_young_player: Hyundai Young Player Award (best U21 player)
-#
 # Depends on: tournaments.rb, players.rb
 
 def tournament_for(year) = Tournament.find_by!(year: year)
 def player_for(name)     = Player.find_by!(name: name)
 
 AWARDS = {
+  1986 => [
+    { type: :golden_ball,        player: "Diego Maradona" },
+    { type: :bronze_ball,        player: "Preben Elkjær" },
+    { type: :golden_boot,        player: "Gary Lineker",       notes: "6 goals" },
+    { type: :silver_boot,        player: "Diego Maradona",     notes: "5 goals" },
+    { type: :bronze_boot,        player: "Emilio Butragueño",  notes: "5 goals" }
+  ],
+  2018 => [
+    { type: :golden_ball,        player: "Luka Modrić" },
+    { type: :silver_ball,        player: "Eden Hazard" },
+    { type: :bronze_ball,        player: "Antoine Griezmann" },
+    { type: :golden_boot,        player: "Harry Kane",         notes: "6 goals" },
+    { type: :silver_boot,        player: "Antoine Griezmann",  notes: "4 goals" },
+    { type: :bronze_boot,        player: "Romelu Lukaku",      notes: "4 goals" },
+    { type: :best_young_player,  player: "Kylian Mbappé" }
+  ],
   2022 => [
     { type: :golden_ball,        player: "Lionel Messi" },
     { type: :silver_ball,        player: "Kylian Mbappé" },

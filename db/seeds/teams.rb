@@ -46,10 +46,47 @@ TEAMS_2022 = [
   { name: "Ghana",        country_code: "GHA", fifa_code: "GHA", flag_emoji: "🇬🇭", confederation: :caf }
 ].freeze
 
-TEAMS_2022.each do |attrs|
+# Historical and additional teams needed to seed older tournaments (1986, 2018, etc.).
+HISTORICAL_TEAMS = [
+  # === 1986 squad participants not in TEAMS_2022 ===
+  { name: "West Germany",    country_code: "FRG", fifa_code: "FRG", flag_emoji: "🇩🇪", confederation: :uefa,
+    active_from: 1908, active_until: 1990, successor_fifa_code: "GER" },
+  { name: "Soviet Union",    country_code: "URS", fifa_code: "URS", flag_emoji: "🇷🇺", confederation: :uefa,
+    active_from: 1924, active_until: 1991 },
+  { name: "Italy",           country_code: "ITA", fifa_code: "ITA", flag_emoji: "🇮🇹", confederation: :uefa },
+  { name: "Hungary",         country_code: "HUN", fifa_code: "HUN", flag_emoji: "🇭🇺", confederation: :uefa },
+  { name: "Bulgaria",        country_code: "BUL", fifa_code: "BUL", flag_emoji: "🇧🇬", confederation: :uefa },
+  { name: "Scotland",        country_code: "SCO", fifa_code: "SCO", flag_emoji: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", confederation: :uefa },
+  { name: "Northern Ireland", country_code: "NIR", fifa_code: "NIR", flag_emoji: "🇬🇧", confederation: :uefa },
+  { name: "Paraguay",        country_code: "PAR", fifa_code: "PAR", flag_emoji: "🇵🇾", confederation: :conmebol },
+  { name: "Iraq",            country_code: "IRQ", fifa_code: "IRQ", flag_emoji: "🇮🇶", confederation: :afc },
+  { name: "Algeria",         country_code: "ALG", fifa_code: "ALG", flag_emoji: "🇩🇿", confederation: :caf },
+
+  # === 2018 squad participants not in TEAMS_2022 ===
+  { name: "Russia",          country_code: "RUS", fifa_code: "RUS", flag_emoji: "🇷🇺", confederation: :uefa },
+  { name: "Egypt",            country_code: "EGY", fifa_code: "EGY", flag_emoji: "🇪🇬", confederation: :caf },
+  { name: "Peru",             country_code: "PER", fifa_code: "PER", flag_emoji: "🇵🇪", confederation: :conmebol },
+  { name: "Iceland",          country_code: "ISL", fifa_code: "ISL", flag_emoji: "🇮🇸", confederation: :uefa },
+  { name: "Nigeria",          country_code: "NGA", fifa_code: "NGA", flag_emoji: "🇳🇬", confederation: :caf },
+  { name: "Sweden",           country_code: "SWE", fifa_code: "SWE", flag_emoji: "🇸🇪", confederation: :uefa },
+  { name: "Panama",           country_code: "PAN", fifa_code: "PAN", flag_emoji: "🇵🇦", confederation: :concacaf },
+  { name: "Colombia",         country_code: "COL", fifa_code: "COL", flag_emoji: "🇨🇴", confederation: :conmebol }
+].freeze
+
+(TEAMS_2022 + HISTORICAL_TEAMS).each do |attrs|
   Team.find_or_create_by!(fifa_code: attrs[:fifa_code]) do |team|
-    team.assign_attributes(attrs)
+    team.assign_attributes(attrs.except(:successor_fifa_code, :active_from, :active_until))
+    team.active_from  = attrs[:active_from]
+    team.active_until = attrs[:active_until]
   end
 end
 
-puts "Teams: #{Team.count} (target: 32)"
+# Link historical successors (e.g., West Germany → Germany).
+HISTORICAL_TEAMS.each do |attrs|
+  next unless attrs[:successor_fifa_code]
+  team      = Team.find_by!(fifa_code: attrs[:fifa_code])
+  successor = Team.find_by!(fifa_code: attrs[:successor_fifa_code])
+  team.update!(successor_team: successor) if team.successor_team_id.nil?
+end
+
+puts "Teams: #{Team.count} (target: #{TEAMS_2022.size + HISTORICAL_TEAMS.size})"

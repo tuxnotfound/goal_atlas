@@ -225,7 +225,129 @@ PLAYERS_2022 = [
   { name: "Jean-Charles Castelletto", team: "CMR", position: :defender },
 
   # === Ghana (extra) ===
-  { name: "Osman Bukari",       team: "GHA", position: :forward }
+  { name: "Osman Bukari",       team: "GHA", position: :forward },
+
+  # === 1986 squad — Argentina (the Maradona team) ===
+  { name: "Diego Maradona",   team: "ARG", position: :forward,    birth_date: Date.new(1960, 10, 30) },
+  { name: "Jorge Valdano",    team: "ARG", position: :forward,    birth_date: Date.new(1955, 10, 4) },
+  { name: "Jorge Burruchaga", team: "ARG", position: :midfielder, birth_date: Date.new(1962, 10, 9) },
+  { name: "José Luis Brown",  team: "ARG", position: :defender,   birth_date: Date.new(1956, 11, 10) },
+  { name: "Sergio Batista",   team: "ARG", position: :midfielder },
+  { name: "Héctor Enrique",   team: "ARG", position: :midfielder },
+
+  # === 1986 squad — West Germany ===
+  { name: "Karl-Heinz Rummenigge", team: "FRG", position: :forward,    birth_date: Date.new(1955, 9, 25) },
+  { name: "Rudi Völler",          team: "FRG", position: :forward,    birth_date: Date.new(1960, 4, 13) },
+  { name: "Lothar Matthäus",       team: "FRG", position: :midfielder, birth_date: Date.new(1961, 3, 21) },
+  { name: "Andreas Brehme",        team: "FRG", position: :defender,   birth_date: Date.new(1960, 11, 9) },
+
+  # === 1986 squad — England ===
+  { name: "Gary Lineker", team: "ENG", position: :forward, birth_date: Date.new(1960, 11, 30) },
+  { name: "Peter Beardsley", team: "ENG", position: :forward },
+  { name: "Steve Hodge", team: "ENG", position: :midfielder },
+
+  # === 1986 squad — Soviet Union ===
+  { name: "Igor Belanov",     team: "URS", position: :forward,    birth_date: Date.new(1960, 9, 25) },
+  { name: "Oleg Blokhin",     team: "URS", position: :forward,    birth_date: Date.new(1952, 11, 5) },
+  { name: "Vasily Rats",      team: "URS", position: :midfielder },
+
+  # === 1986 squad — France ===
+  { name: "Michel Platini",  team: "FRA", position: :midfielder, birth_date: Date.new(1955, 6, 21) },
+  { name: "Jean-Pierre Papin", team: "FRA", position: :forward },
+  { name: "Manuel Amoros",   team: "FRA", position: :defender },
+
+  # === 1986 squad — Brazil ===
+  { name: "Careca",          team: "BRA", position: :forward,    birth_date: Date.new(1960, 10, 5) },
+  { name: "Sócrates",        team: "BRA", position: :midfielder, birth_date: Date.new(1954, 2, 19) },
+  { name: "Zico",            team: "BRA", position: :forward,    birth_date: Date.new(1953, 3, 3) },
+
+  # === 1986 squad — Belgium ===
+  { name: "Enzo Scifo",      team: "BEL", position: :midfielder, birth_date: Date.new(1966, 2, 19) },
+  { name: "Jan Ceulemans",   team: "BEL", position: :forward,    birth_date: Date.new(1957, 2, 28) },
+
+  # === 1986 squad — Spain ===
+  { name: "Emilio Butragueño", team: "ESP", position: :forward, birth_date: Date.new(1963, 7, 22) },
+
+  # === 1986 squad — Italy ===
+  { name: "Alessandro Altobelli", team: "ITA", position: :forward },
+  { name: "Bruno Conti",          team: "ITA", position: :midfielder },
+
+  # === 1986 squad — Denmark ===
+  { name: "Preben Elkjær",   team: "DEN", position: :forward },
+  { name: "Michael Laudrup", team: "DEN", position: :midfielder },
+
+  # === 2018 squad — France (champions) ===
+  { name: "Antoine Griezmann", team: "FRA", position: :forward,    birth_date: Date.new(1991, 3, 21) },
+  { name: "Paul Pogba",        team: "FRA", position: :midfielder, birth_date: Date.new(1993, 3, 15) },
+  { name: "Benjamin Pavard",   team: "FRA", position: :defender,   birth_date: Date.new(1996, 3, 28) },
+  { name: "Samuel Umtiti",     team: "FRA", position: :defender },
+  { name: "N'Golo Kanté",      team: "FRA", position: :midfielder },
+
+  # === 2018 squad — Croatia ===
+  { name: "Mario Mandžukić",   team: "CRO", position: :forward,    birth_date: Date.new(1986, 5, 21) },
+  { name: "Ivan Rakitić",      team: "CRO", position: :midfielder },
+  { name: "Domagoj Vida",      team: "CRO", position: :defender },
+
+  # === 2018 squad — England ===
+  { name: "Dele Alli",          team: "ENG", position: :midfielder },
+  { name: "Kieran Trippier",    team: "ENG", position: :defender },
+  { name: "Harry Maguire",      team: "ENG", position: :defender },
+  { name: "John Stones",        team: "ENG", position: :defender },
+  { name: "Eric Dier",          team: "ENG", position: :midfielder },
+
+  # === 2018 squad — Belgium ===
+  { name: "Eden Hazard",       team: "BEL", position: :forward,    birth_date: Date.new(1991, 1, 7) },
+  { name: "Nacer Chadli",      team: "BEL", position: :midfielder },
+  { name: "Thomas Meunier",    team: "BEL", position: :defender },
+  { name: "Jan Vertonghen",    team: "BEL", position: :defender },
+
+  # === 2018 squad — Russia ===
+  { name: "Denis Cheryshev",   team: "RUS", position: :midfielder },
+  { name: "Artem Dzyuba",      team: "RUS", position: :forward },
+  { name: "Yuri Zhirkov",      team: "RUS", position: :defender },
+
+  # === 2018 squad — additional players (Romelu Lukaku already in 2022 seed) ===
+  { name: "Edinson Cavani",     team: "URU", position: :forward },
+  { name: "Luis Suárez",        team: "URU", position: :forward },
+  { name: "Diego Godín",        team: "URU", position: :defender },
+  { name: "James Rodríguez",    team: "COL", position: :midfielder },
+  { name: "Yerry Mina",         team: "COL", position: :defender },
+  { name: "Mohamed Salah",      team: "EGY", position: :forward,    birth_date: Date.new(1992, 6, 15) },
+  { name: "Ahmed Fathi",        team: "EGY", position: :defender },
+  { name: "Diego Costa",        team: "ESP", position: :forward },
+  { name: "Isco",               team: "ESP", position: :midfielder },
+  { name: "Nacho",              team: "ESP", position: :defender },
+  { name: "Iago Aspas",         team: "ESP", position: :forward },
+  { name: "Andrés Iniesta",     team: "ESP", position: :midfielder },
+  { name: "Toni Kroos",         team: "GER", position: :midfielder,  birth_date: Date.new(1990, 1, 4) },
+  { name: "Marco Reus",         team: "GER", position: :forward },
+  { name: "Andreas Granqvist",  team: "SWE", position: :defender },
+  { name: "Emil Forsberg",      team: "SWE", position: :midfielder },
+  { name: "Ola Toivonen",       team: "SWE", position: :forward },
+  { name: "Gylfi Sigurðsson",   team: "ISL", position: :midfielder },
+  { name: "Felipe Baloy",       team: "PAN", position: :defender },
+  { name: "Andre Carrillo",     team: "PER", position: :midfielder },
+  { name: "Paolo Guerrero",     team: "PER", position: :forward },
+  { name: "Christian Cueva",    team: "PER", position: :midfielder },
+  { name: "Ahmed Musa",         team: "NGA", position: :forward },
+  { name: "Victor Moses",       team: "NGA", position: :forward },
+  { name: "Genki Haraguchi",    team: "JPN", position: :midfielder },
+  { name: "Takashi Inui",       team: "JPN", position: :midfielder },
+  { name: "Yuya Osako",         team: "JPN", position: :forward },
+  { name: "Shinji Kagawa",      team: "JPN", position: :midfielder },
+  { name: "Keisuke Honda",      team: "JPN", position: :midfielder },
+  { name: "Aleksandar Kolarov", team: "SRB", position: :defender },
+  { name: "Granit Xhaka",       team: "SUI", position: :midfielder },
+  { name: "Steven Zuber",       team: "SUI", position: :midfielder },
+  { name: "Josip Drmić",        team: "SUI", position: :forward },
+  { name: "Blerim Džemaili",    team: "SUI", position: :midfielder },
+  { name: "Yussuf Poulsen",     team: "DEN", position: :forward },
+  { name: "Christian Eriksen",  team: "DEN", position: :midfielder,  birth_date: Date.new(1992, 2, 14) },
+  { name: "Mile Jedinak",       team: "AUS", position: :midfielder },
+  { name: "Karim Ansarifard",   team: "IRN", position: :forward },
+  { name: "Aziz Bouhaddouz",    team: "MAR", position: :forward },
+  { name: "Khalid Boutaïb",     team: "MAR", position: :forward },
+  { name: "Reza Ghoochannejhad", team: "IRN", position: :forward }
 ].freeze
 
 PLAYERS_2022.each do |attrs|
