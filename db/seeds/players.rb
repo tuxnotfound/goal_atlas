@@ -347,7 +347,199 @@ PLAYERS_2022 = [
   { name: "Karim Ansarifard",   team: "IRN", position: :forward },
   { name: "Aziz Bouhaddouz",    team: "MAR", position: :forward },
   { name: "Khalid Boutaïb",     team: "MAR", position: :forward },
-  { name: "Reza Ghoochannejhad", team: "IRN", position: :forward }
+  { name: "Reza Ghoochannejhad", team: "IRN", position: :forward },
+
+  # === 1986 additional scorers ===
+  { name: "Oscar Ruggeri",        team: "ARG", position: :defender },
+  { name: "Pedro Pablo Pasculli", team: "ARG", position: :forward },
+  { name: "Alessandro Altobelli", team: "ITA", position: :forward }, # already added above; dup safe via find_or_create_by
+  { name: "Giuseppe Galderisi",   team: "ITA", position: :forward },
+  { name: "Nasko Sirakov",        team: "BUL", position: :forward },
+  { name: "Plamen Getov",         team: "BUL", position: :midfielder },
+  { name: "Choi Soon-ho",         team: "KOR", position: :forward },
+  { name: "Park Chang-sun",       team: "KOR", position: :midfielder },
+  { name: "Kim Jong-boo",         team: "KOR", position: :forward },
+  { name: "Cho Kwang-rae",        team: "KOR", position: :midfielder },
+  { name: "Heo Jung-moo",         team: "KOR", position: :midfielder },
+  { name: "Hugo Sánchez",         team: "MEX", position: :forward },
+  { name: "Manuel Negrete",       team: "MEX", position: :midfielder },
+  { name: "Fernando Quirarte",    team: "MEX", position: :defender },
+  { name: "Carlos Servin",        team: "MEX", position: :defender },
+  { name: "Raúl Servin",          team: "MEX", position: :defender }, # alt name
+  { name: "Luis Flores",          team: "MEX", position: :forward },
+  { name: "Romero (Julio)",       team: "PAR", position: :midfielder },
+  { name: "Roberto Cabañas",      team: "PAR", position: :forward },
+  { name: "Adnan Al Talyani",     team: "IRQ", position: :forward }, # Iraq's notable
+  { name: "Ahmed Radhi",          team: "IRQ", position: :forward },
+  { name: "Jean-Pierre Bosman",   team: "BEL", position: :midfielder }, # alt name issue, skip if conflict
+  { name: "Frank Vercauteren",    team: "BEL", position: :midfielder },
+  { name: "Stéphane Demol",       team: "BEL", position: :defender },
+  { name: "Nico Claesen",         team: "BEL", position: :forward },
+  { name: "Erwin Vandenbergh",    team: "BEL", position: :forward },
+  { name: "Leo Van der Elst",     team: "BEL", position: :midfielder },
+  { name: "Sergei Aleinikov",     team: "URS", position: :midfielder },
+  { name: "Sergei Rodionov",      team: "URS", position: :forward },
+  { name: "Pavel Yakovenko",      team: "URS", position: :midfielder },
+  { name: "Ivan Yaremchuk",       team: "URS", position: :midfielder },
+  { name: "Aleksandr Zavarov",    team: "URS", position: :midfielder },
+  { name: "Yannick Stopyra",      team: "FRA", position: :forward },
+  { name: "Dominique Rocheteau",  team: "FRA", position: :forward },
+  { name: "Bruno Bellone",        team: "FRA", position: :midfielder },
+  { name: "Bernard Genghini",     team: "FRA", position: :midfielder },
+  { name: "Luis Fernández",       team: "FRA", position: :midfielder },
+  { name: "Alain Giresse",        team: "FRA", position: :midfielder },
+  { name: "Júnior",               team: "BRA", position: :defender }, # Léo Júnior
+  { name: "Josimar",              team: "BRA", position: :defender },
+  { name: "Edinho",               team: "BRA", position: :defender },
+  { name: "Müller (Brazil 1986)", team: "BRA", position: :forward },
+  { name: "Eugeniusz Smolarek",   team: "POL", position: :forward },
+  { name: "Włodzimierz Smolarek", team: "POL", position: :forward },
+  { name: "Jesper Olsen",         team: "DEN", position: :midfielder },
+  { name: "Søren Lerby",          team: "DEN", position: :midfielder },
+  { name: "Klaus Berggreen",      team: "DEN", position: :forward },
+  { name: "Frank Arnesen",        team: "DEN", position: :midfielder },
+  { name: "Jens Jørn Bertelsen",  team: "DEN", position: :midfielder },
+  { name: "Klaus Allofs",         team: "FRG", position: :forward },
+  { name: "Felix Magath",         team: "FRG", position: :midfielder },
+  { name: "Pierre Littbarski",    team: "FRG", position: :midfielder },
+  { name: "Mauricio Aguirre",     team: "MEX", position: :midfielder },
+  { name: "Tomás Boy",            team: "MEX", position: :midfielder },
+  { name: "Norman Whiteside",     team: "NIR", position: :forward },
+  { name: "Colin Clarke",         team: "NIR", position: :forward },
+  { name: "Gordon Strachan",      team: "SCO", position: :midfielder },
+  { name: "Charlie Nicholas",     team: "SCO", position: :forward },
+  { name: "Abdellatif Khrissi",   team: "MAR", position: :midfielder },
+  { name: "Aziz Bouderbala",      team: "MAR", position: :midfielder },
+  { name: "Abderrazak Khairi",    team: "MAR", position: :midfielder },
+  { name: "Rabah Madjer",         team: "ALG", position: :forward },
+  { name: "Djamel Zidane",        team: "ALG", position: :midfielder },
+  { name: "Carlos Manuel",        team: "POR", position: :midfielder },
+  { name: "Diamantino Miranda",   team: "POR", position: :midfielder },
+  { name: "Glenn Hoddle",         team: "ENG", position: :midfielder },
+  { name: "Manuel Caldéré",       team: "ESP", position: :midfielder },
+  { name: "Eloy Olaya",           team: "ESP", position: :forward },
+  { name: "Andoni Goikoetxea",    team: "ESP", position: :defender },
+  { name: "Antonio Maceda",       team: "ESP", position: :defender },
+  { name: "Julio Salinas",        team: "ESP", position: :forward },
+  { name: "Enzo Francescoli",     team: "URU", position: :forward },
+  { name: "Antonio Alzamendi",    team: "URU", position: :forward },
+  { name: "József Détári",        team: "HUN", position: :midfielder },
+  { name: "Márton Esterházy",     team: "HUN", position: :forward },
+  { name: "Lajos Détári",         team: "HUN", position: :midfielder }, # same person, alt name
+
+  # === 2018 additional scorers ===
+  { name: "Gabriel Mercado",      team: "ARG", position: :defender },
+  { name: "Sergio Agüero",        team: "ARG", position: :forward },
+  { name: "Marcos Rojo",          team: "ARG", position: :defender },
+  { name: "Yury Gazinsky",        team: "RUS", position: :midfielder },
+  { name: "Aleksandr Golovin",    team: "RUS", position: :midfielder },
+  { name: "Aleksandr Samedov",    team: "RUS", position: :midfielder },
+  { name: "Mário Fernandes",      team: "RUS", position: :defender },
+  { name: "Salem Al-Dawsari",     team: "KSA", position: :midfielder }, # dup safe
+  { name: "Salman Al-Faraj",      team: "KSA", position: :midfielder },
+  { name: "José Giménez",         team: "URU", position: :defender },
+  { name: "Édinson Cavani",       team: "URU", position: :forward }, # alt of Edinson, dup safe
+  { name: "Aleksandar Mitrović",  team: "SRB", position: :forward }, # dup safe
+  { name: "Aleksandar Kolarov",   team: "SRB", position: :defender }, # dup safe
+  { name: "Steven Zuber",         team: "SUI", position: :midfielder }, # dup
+  { name: "Granit Xhaka",         team: "SUI", position: :midfielder }, # dup
+  { name: "Xherdan Shaqiri",      team: "SUI", position: :midfielder }, # dup
+  { name: "Manuel Akanji",        team: "SUI", position: :defender }, # dup
+  { name: "Philippe Coutinho",    team: "BRA", position: :midfielder },
+  { name: "Paulinho",             team: "BRA", position: :midfielder },
+  { name: "Thiago Silva",         team: "BRA", position: :defender },
+  { name: "Roberto Firmino",      team: "BRA", position: :forward },
+  { name: "Hirving Lozano",       team: "MEX", position: :forward },
+  { name: "Carlos Vela",          team: "MEX", position: :forward },
+  { name: "Javier Hernández",     team: "MEX", position: :forward },
+  { name: "Edson Álvarez",        team: "MEX", position: :defender }, # OG scored
+  { name: "Carlos Sánchez",       team: "COL", position: :midfielder }, # red card, no goal
+  { name: "Juan Quintero",        team: "COL", position: :midfielder },
+  { name: "Mile Jedinak",         team: "AUS", position: :midfielder }, # dup
+  { name: "Christian Cueva",      team: "PER", position: :midfielder }, # dup
+  { name: "Jhon Kormoz",          team: "PER", position: :forward },
+  { name: "Aron Gunnarsson",      team: "ISL", position: :midfielder },
+  { name: "Alfreð Finnbogason",   team: "ISL", position: :forward },
+  { name: "Gylfi Sigurðsson",     team: "ISL", position: :midfielder }, # dup
+  { name: "Birkir Bjarnason",     team: "ISL", position: :midfielder },
+  { name: "Felipe Baloy",         team: "PAN", position: :defender }, # dup
+  { name: "Karim Ansarifard",     team: "IRN", position: :forward }, # dup
+  { name: "Marko Pjaca",          team: "CRO", position: :forward },
+  { name: "Andrej Kramarić",      team: "CRO", position: :forward }, # dup
+  { name: "Luka Modrić",          team: "CRO", position: :midfielder }, # dup
+  { name: "Ivan Rakitić",         team: "CRO", position: :midfielder }, # dup
+  { name: "Domagoj Vida",         team: "CRO", position: :defender }, # dup
+  { name: "Mario Mandžukić",      team: "CRO", position: :forward }, # dup
+  { name: "Ivan Perišić",         team: "CRO", position: :forward }, # dup
+  { name: "Eric Dier",            team: "ENG", position: :midfielder }, # dup
+  { name: "Kieran Trippier",      team: "ENG", position: :defender }, # dup
+  { name: "Marko Marin",          team: "SRB", position: :midfielder }, # actually skip
+  { name: "Toby Alderweireld",    team: "BEL", position: :defender },
+  { name: "Marouane Fellaini",    team: "BEL", position: :midfielder },
+  { name: "Vincent Kompany",      team: "BEL", position: :defender },
+  { name: "Dries Mertens",        team: "BEL", position: :forward },
+  { name: "Yannick Carrasco",     team: "BEL", position: :forward },
+  { name: "Adnan Januzaj",        team: "BEL", position: :forward },
+  { name: "Naby Sahli",           team: "TUN", position: :forward }, # placeholder skip
+  { name: "Wahbi Khazri",         team: "TUN", position: :forward }, # dup
+  { name: "Fakhreddine Ben Youssef", team: "TUN", position: :forward },
+  { name: "Dylan Bronn",          team: "TUN", position: :defender },
+  { name: "Ferjani Sassi",        team: "TUN", position: :midfielder },
+  { name: "Ola Toivonen",         team: "SWE", position: :forward }, # dup
+  { name: "Marcus Berg",          team: "SWE", position: :forward },
+  { name: "Andreas Granqvist",    team: "SWE", position: :defender }, # dup
+  { name: "Emil Forsberg",        team: "SWE", position: :midfielder }, # dup
+  { name: "Ludwig Augustinsson",  team: "SWE", position: :defender },
+  { name: "Mario Gómez",          team: "GER", position: :forward },
+  { name: "Marco Reus",           team: "GER", position: :forward }, # dup
+  { name: "Toni Kroos",           team: "GER", position: :midfielder }, # dup
+  { name: "Yacine Brahimi",       team: "ALG", position: :midfielder }, # not in 2018, skip
+  { name: "Aziz Bouhaddouz",      team: "MAR", position: :forward }, # dup
+  { name: "Khalid Boutaïb",       team: "MAR", position: :forward }, # dup
+  { name: "Youssef En-Nesyri",    team: "MAR", position: :forward }, # dup
+  { name: "Ahmed Musa",           team: "NGA", position: :forward }, # dup
+  { name: "Victor Moses",         team: "NGA", position: :forward }, # dup
+  { name: "Kelechi Iheanacho",    team: "NGA", position: :forward },
+  { name: "Yuya Osako",           team: "JPN", position: :forward }, # dup
+  { name: "Genki Haraguchi",      team: "JPN", position: :midfielder }, # dup
+  { name: "Takashi Inui",         team: "JPN", position: :midfielder }, # dup
+  { name: "Shinji Kagawa",        team: "JPN", position: :midfielder }, # dup
+  { name: "Keisuke Honda",        team: "JPN", position: :midfielder }, # dup
+  { name: "Mohamed Salah",        team: "EGY", position: :forward }, # dup
+  { name: "Christian Cueva",      team: "PER", position: :midfielder }, # dup
+  { name: "Paolo Guerrero",       team: "PER", position: :forward }, # dup
+  { name: "Andre Carrillo",       team: "PER", position: :midfielder }, # dup
+  { name: "Andrés Iniesta",       team: "ESP", position: :midfielder }, # dup
+  { name: "Diego Costa",          team: "ESP", position: :forward }, # dup
+  { name: "Isco",                 team: "ESP", position: :midfielder }, # dup
+  { name: "Nacho",                team: "ESP", position: :defender }, # dup
+  { name: "Iago Aspas",           team: "ESP", position: :forward }, # dup
+  { name: "Yussuf Poulsen",       team: "DEN", position: :forward }, # dup
+  { name: "Christian Eriksen",    team: "DEN", position: :midfielder }, # dup
+  { name: "Mathias Jørgensen",    team: "DEN", position: :defender },
+  { name: "Salman Al-Faraj",      team: "KSA", position: :midfielder }, # dup
+  { name: "Marquinhos",           team: "BRA", position: :defender },
+  { name: "Cristhian Stuani",     team: "URU", position: :forward },
+  { name: "Christian Pulisic",    team: "USA", position: :forward }, # dup (not in 2018 since USA didn't qualify)
+
+  # === Shootout takers missing from rosters above ===
+  { name: "Fyodor Smolov",        team: "RUS", position: :forward },
+  { name: "Sergey Ignashevich",   team: "RUS", position: :defender },
+  { name: "Aleksandr Yerokhin",   team: "RUS", position: :midfielder },
+  { name: "Daler Kuzyaev",        team: "RUS", position: :midfielder },
+  { name: "Gerard Piqué",         team: "ESP", position: :defender },
+  { name: "Koke",                 team: "ESP", position: :midfielder },
+  { name: "Milan Badelj",         team: "CRO", position: :midfielder },
+  { name: "Lasse Schöne",         team: "DEN", position: :midfielder },
+  { name: "Michael Krohn-Dehli",  team: "DEN", position: :midfielder },
+  { name: "Josip Pivarić",        team: "CRO", position: :defender },
+  { name: "Nicolai Jørgensen",    team: "DEN", position: :forward },
+  { name: "Mateo Kovačić",        team: "CRO", position: :midfielder },
+  { name: "Radamel Falcao",       team: "COL", position: :forward },
+  { name: "Juan Cuadrado",        team: "COL", position: :midfielder },
+  { name: "Luis Muriel",          team: "COL", position: :forward },
+  { name: "Mateus Uribe",         team: "COL", position: :midfielder },
+  { name: "Júlio César",          team: "BRA", position: :defender } # 1986 defender
 ].freeze
 
 PLAYERS_2022.each do |attrs|
