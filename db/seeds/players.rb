@@ -1,7 +1,7 @@
-# Marquee players from the 2022 World Cup knockout stage.
-# Mainly scorers from the QF, SF, 3rd-place, and final matches, plus a few notable
-# non-scoring captains/figures for browsing. Birth dates are included only where
-# they are well-documented; nil for the rest (better empty than wrong).
+# Players from the 2022 World Cup.
+# Mostly scorers and shootout participants from the knockout + group stage,
+# plus a few notable non-scoring figures.
+# Birth dates and positions filled in where well-documented; nil otherwise.
 #
 # Depends on: teams.rb
 
@@ -10,7 +10,7 @@ def find_team!(fifa_code)
 end
 
 PLAYERS_2022 = [
-  # Argentina — squad core
+  # === Argentina ===
   { name: "Lionel Messi",       team: "ARG", position: :forward,    birth_date: Date.new(1987, 6, 24) },
   { name: "Julián Álvarez",     team: "ARG", position: :forward,    birth_date: Date.new(2000, 1, 31) },
   { name: "Ángel Di María",     team: "ARG", position: :forward,    birth_date: Date.new(1988, 2, 14) },
@@ -19,8 +19,9 @@ PLAYERS_2022 = [
   { name: "Leandro Paredes",    team: "ARG", position: :midfielder },
   { name: "Paulo Dybala",       team: "ARG", position: :forward },
   { name: "Emiliano Martínez",  team: "ARG", position: :goalkeeper },
+  { name: "Enzo Fernández",     team: "ARG", position: :midfielder },
 
-  # France — squad core
+  # === France ===
   { name: "Kylian Mbappé",        team: "FRA", position: :forward,    birth_date: Date.new(1998, 12, 20) },
   { name: "Olivier Giroud",       team: "FRA", position: :forward },
   { name: "Aurélien Tchouaméni",  team: "FRA", position: :midfielder },
@@ -28,29 +29,203 @@ PLAYERS_2022 = [
   { name: "Randal Kolo Muani",    team: "FRA", position: :forward },
   { name: "Kingsley Coman",       team: "FRA", position: :forward },
   { name: "Hugo Lloris",          team: "FRA", position: :goalkeeper },
+  { name: "Adrien Rabiot",        team: "FRA", position: :midfielder },
 
-  # Croatia
+  # === Croatia ===
   { name: "Luka Modrić",      team: "CRO", position: :midfielder, birth_date: Date.new(1985, 9, 9) },
   { name: "Bruno Petković",   team: "CRO", position: :forward },
   { name: "Joško Gvardiol",   team: "CRO", position: :defender },
   { name: "Mislav Oršić",     team: "CRO", position: :forward },
+  { name: "Ivan Perišić",     team: "CRO", position: :forward },
+  { name: "Nikola Vlašić",    team: "CRO", position: :midfielder },
+  { name: "Marcelo Brozović", team: "CRO", position: :midfielder },
+  { name: "Marko Livaja",     team: "CRO", position: :forward },
+  { name: "Mario Pašalić",    team: "CRO", position: :midfielder },
+  { name: "Andrej Kramarić",  team: "CRO", position: :forward },
+  { name: "Lovro Majer",      team: "CRO", position: :midfielder },
 
-  # Morocco
+  # === Morocco ===
   { name: "Youssef En-Nesyri", team: "MAR", position: :forward },
   { name: "Achraf Dari",       team: "MAR", position: :defender },
   { name: "Hakim Ziyech",      team: "MAR", position: :midfielder },
+  { name: "Abdelhamid Sabiri", team: "MAR", position: :midfielder },
+  { name: "Achraf Hakimi",     team: "MAR", position: :defender },
+  { name: "Zakaria Aboukhlal", team: "MAR", position: :forward },
 
-  # Netherlands
-  { name: "Wout Weghorst", team: "NED", position: :forward },
+  # === Netherlands ===
+  { name: "Wout Weghorst",   team: "NED", position: :forward },
+  { name: "Memphis Depay",   team: "NED", position: :forward },
+  { name: "Daley Blind",     team: "NED", position: :defender },
+  { name: "Denzel Dumfries", team: "NED", position: :defender },
+  { name: "Cody Gakpo",      team: "NED", position: :forward },
+  { name: "Frenkie de Jong", team: "NED", position: :midfielder },
+  { name: "Davy Klaassen",   team: "NED", position: :midfielder },
 
-  # Brazil
-  { name: "Neymar", team: "BRA", position: :forward, birth_date: Date.new(1992, 2, 5) },
+  # === Brazil ===
+  { name: "Neymar",          team: "BRA", position: :forward, birth_date: Date.new(1992, 2, 5) },
+  { name: "Vinícius Júnior", team: "BRA", position: :forward },
+  { name: "Richarlison",     team: "BRA", position: :forward },
+  { name: "Lucas Paquetá",   team: "BRA", position: :midfielder },
+  { name: "Casemiro",        team: "BRA", position: :midfielder },
+  { name: "Raphinha",        team: "BRA", position: :forward },
 
-  # England
-  { name: "Harry Kane", team: "ENG", position: :forward, birth_date: Date.new(1993, 7, 28) },
+  # === England ===
+  { name: "Harry Kane",      team: "ENG", position: :forward, birth_date: Date.new(1993, 7, 28) },
+  { name: "Jordan Henderson", team: "ENG", position: :midfielder },
+  { name: "Bukayo Saka",     team: "ENG", position: :forward },
+  { name: "Marcus Rashford", team: "ENG", position: :forward },
+  { name: "Jude Bellingham", team: "ENG", position: :midfielder },
+  { name: "Phil Foden",      team: "ENG", position: :midfielder },
+  { name: "Raheem Sterling", team: "ENG", position: :forward },
+  { name: "Jack Grealish",   team: "ENG", position: :forward },
 
-  # Portugal
-  { name: "Cristiano Ronaldo", team: "POR", position: :forward, birth_date: Date.new(1985, 2, 5) }
+  # === Portugal ===
+  { name: "Cristiano Ronaldo", team: "POR", position: :forward, birth_date: Date.new(1985, 2, 5) },
+  { name: "Gonçalo Ramos",     team: "POR", position: :forward },
+  { name: "Pepe",              team: "POR", position: :defender },
+  { name: "Raphaël Guerreiro", team: "POR", position: :defender },
+  { name: "Rafael Leão",       team: "POR", position: :forward },
+  { name: "Bruno Fernandes",   team: "POR", position: :midfielder },
+  { name: "João Félix",        team: "POR", position: :forward },
+  { name: "Ricardo Horta",     team: "POR", position: :forward },
+
+  # === Spain ===
+  { name: "Pablo Sarabia",   team: "ESP", position: :forward },
+  { name: "Carlos Soler",    team: "ESP", position: :midfielder },
+  { name: "Sergio Busquets", team: "ESP", position: :midfielder },
+  { name: "Álvaro Morata",   team: "ESP", position: :forward },
+  { name: "Marco Asensio",   team: "ESP", position: :forward },
+  { name: "Ferran Torres",   team: "ESP", position: :forward },
+  { name: "Gavi",            team: "ESP", position: :midfielder },
+  { name: "Dani Olmo",       team: "ESP", position: :forward },
+
+  # === Japan ===
+  { name: "Daizen Maeda",     team: "JPN", position: :forward },
+  { name: "Takumi Minamino",  team: "JPN", position: :forward },
+  { name: "Kaoru Mitoma",     team: "JPN", position: :forward },
+  { name: "Takuma Asano",     team: "JPN", position: :forward },
+  { name: "Maya Yoshida",     team: "JPN", position: :defender },
+  { name: "Ritsu Dōan",       team: "JPN", position: :midfielder },
+  { name: "Ao Tanaka",        team: "JPN", position: :midfielder },
+
+  # === South Korea ===
+  { name: "Paik Seung-ho",   team: "KOR", position: :midfielder },
+  { name: "Cho Gue-sung",    team: "KOR", position: :forward },
+  { name: "Hwang Hee-chan",  team: "KOR", position: :forward },
+  { name: "Kim Young-gwon",  team: "KOR", position: :defender },
+  { name: "Son Heung-min",   team: "KOR", position: :forward },
+
+  # === Switzerland ===
+  { name: "Manuel Akanji",     team: "SUI", position: :defender },
+  { name: "Breel Embolo",      team: "SUI", position: :forward },
+  { name: "Xherdan Shaqiri",   team: "SUI", position: :midfielder },
+  { name: "Remo Freuler",      team: "SUI", position: :midfielder },
+
+  # === Poland ===
+  { name: "Robert Lewandowski",  team: "POL", position: :forward },
+  { name: "Piotr Zieliński",     team: "POL", position: :midfielder },
+
+  # === USA ===
+  { name: "Haji Wright",      team: "USA", position: :forward },
+  { name: "Christian Pulisic", team: "USA", position: :forward },
+  { name: "Timothy Weah",     team: "USA", position: :forward },
+
+  # === Germany ===
+  { name: "İlkay Gündoğan",  team: "GER", position: :midfielder },
+  { name: "Kai Havertz",     team: "GER", position: :forward },
+  { name: "Niclas Füllkrug", team: "GER", position: :forward },
+  { name: "Serge Gnabry",    team: "GER", position: :forward },
+  { name: "Jamal Musiala",   team: "GER", position: :forward },
+  { name: "Leroy Sané",      team: "GER", position: :forward },
+  { name: "Thomas Müller",   team: "GER", position: :forward },
+
+  # === Senegal ===
+  { name: "Boulaye Dia",         team: "SEN", position: :forward },
+  { name: "Famara Diédhiou",     team: "SEN", position: :forward },
+  { name: "Ismaïla Sarr",        team: "SEN", position: :forward },
+  { name: "Bamba Dieng",         team: "SEN", position: :forward },
+  { name: "Kalidou Koulibaly",   team: "SEN", position: :defender },
+
+  # === Belgium ===
+  { name: "Michy Batshuayi", team: "BEL", position: :forward },
+  { name: "Kevin De Bruyne", team: "BEL", position: :midfielder },
+  { name: "Romelu Lukaku",   team: "BEL", position: :forward },
+
+  # === Australia ===
+  { name: "Craig Goodwin",   team: "AUS", position: :forward },
+  { name: "Mitchell Duke",   team: "AUS", position: :forward },
+  { name: "Mathew Leckie",   team: "AUS", position: :forward },
+
+  # === Saudi Arabia ===
+  { name: "Salem Al-Dawsari",   team: "KSA", position: :midfielder },
+  { name: "Saleh Al-Shehri",    team: "KSA", position: :forward },
+
+  # === Tunisia ===
+  { name: "Wahbi Khazri",     team: "TUN", position: :forward },
+
+  # === Cameroon ===
+  { name: "Vincent Aboubakar", team: "CMR", position: :forward },
+  { name: "Eric Maxim Choupo-Moting", team: "CMR", position: :forward },
+
+  # === Ghana ===
+  { name: "Mohammed Salisu",   team: "GHA", position: :defender },
+  { name: "Mohammed Kudus",    team: "GHA", position: :midfielder },
+  { name: "André Ayew",        team: "GHA", position: :forward },
+
+  # === Ecuador ===
+  { name: "Enner Valencia",    team: "ECU", position: :forward },
+
+  # === Iran ===
+  { name: "Rouzbeh Cheshmi",   team: "IRN", position: :defender },
+  { name: "Ramin Rezaeian",    team: "IRN", position: :defender },
+  { name: "Mehdi Taremi",      team: "IRN", position: :forward },
+
+  # === Wales ===
+  { name: "Gareth Bale",       team: "WAL", position: :forward },
+
+  # === Costa Rica ===
+  { name: "Keysher Fuller",    team: "CRC", position: :defender },
+  { name: "Yeltsin Tejeda",    team: "CRC", position: :midfielder },
+  { name: "Juan Pablo Vargas", team: "CRC", position: :defender },
+
+  # === Mexico ===
+  { name: "Henry Martín",      team: "MEX", position: :forward },
+  { name: "Luis Chávez",       team: "MEX", position: :midfielder },
+
+  # === Serbia ===
+  { name: "Strahinja Pavlović",   team: "SRB", position: :defender },
+  { name: "Aleksandar Mitrović",  team: "SRB", position: :forward },
+  { name: "Dušan Vlahović",       team: "SRB", position: :forward },
+  { name: "Sergej Milinković-Savić", team: "SRB", position: :midfielder },
+  { name: "Dušan Tadić",          team: "SRB", position: :forward },
+
+  # === Uruguay ===
+  { name: "Giorgian de Arrascaeta", team: "URU", position: :midfielder },
+  { name: "Maximiliano Gómez",     team: "URU", position: :forward },
+
+  # === Denmark ===
+  { name: "Andreas Christensen", team: "DEN", position: :defender },
+
+  # === Canada ===
+  { name: "Alphonso Davies",    team: "CAN", position: :defender },
+
+  # === Qatar ===
+  { name: "Mohammed Muntari",   team: "QAT", position: :forward },
+
+  # === Ecuador (extra) ===
+  { name: "Moisés Caicedo",     team: "ECU", position: :midfielder },
+
+  # === Argentina (extra group-stage scorer) ===
+  { name: "Alexis Mac Allister", team: "ARG", position: :midfielder },
+
+  # === Morocco (own-goal scorer credited to Canada) ===
+  { name: "Nayef Aguerd",       team: "MAR", position: :defender },
+
+  # === Cameroon (extra) ===
+  { name: "Jean-Charles Castelletto", team: "CMR", position: :defender },
+
+  # === Ghana (extra) ===
+  { name: "Osman Bukari",       team: "GHA", position: :forward }
 ].freeze
 
 PLAYERS_2022.each do |attrs|
