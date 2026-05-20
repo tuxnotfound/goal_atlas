@@ -22,8 +22,9 @@ class GoalsController < ApplicationController
       scope = scope.joins(:goal_taggings).where(goal_taggings: { goal_tag_id: tag.id }) if tag
     end
 
-    @goals = scope.joins(:match).references(:match).order("matches.date ASC, goals.minute ASC")
-    @goal_count = @goals.size
+    scope = scope.joins(:match).references(:match).order("matches.date ASC, goals.minute ASC")
+    @goal_count = scope.size
+    @pagy, @goals = pagy(scope, limit: 50)
 
     @goal_types  = Goal.goal_types.keys
     @stages      = Match.stages.keys.reverse

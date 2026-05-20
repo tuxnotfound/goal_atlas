@@ -24,5 +24,7 @@ class TournamentsController < ApplicationController
       .order(Arel.sql("COUNT(goals.id) DESC, players.name ASC"))
       .limit(TOP_SCORERS_LIMIT)
       .select("players.*, COUNT(goals.id) AS goals_count")
+
+    @awards = @tournament.tournament_awards.includes(:player).ordered
   end
 end

@@ -61,6 +61,25 @@
   </section>
 <% end %>
 
+<%# === Awards === %>
+<% if @awards.any? %>
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">Awards</h2>
+    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <% @awards.each do |award| %>
+        <li class="flex items-baseline gap-3 bg-white border border-stone-200 rounded p-3">
+          <span class="text-xs uppercase tracking-wider text-emerald-700 font-semibold w-32 shrink-0">
+            <%= award.display_name %>
+          </span>
+          <%= link_to award.player.name, player_path(award.player),
+                      class: "font-medium hover:text-emerald-700 transition" %>
+          <span class="text-lg shrink-0 ml-auto"><%= award.player.nationality_team&.flag_emoji %></span>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>
+
 <%# === Top scorers === %>
 <% if @top_scorers.any? %>
   <section class="mb-8">

@@ -49,6 +49,9 @@ gem "discard"
 # Pretty URL slugs for Tournament/Team/Player/Match/Goal
 gem "friendly_id", "~> 5.5"
 
+# Pagination for index pages with large collections (e.g. /goals)
+gem "pagy", "~> 9.0"
+
 group :development, :test do
   # Load environment variables from .env on Rails boot
   gem "dotenv-rails"

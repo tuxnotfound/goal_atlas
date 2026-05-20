@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :tournament do
-    sequence(:year) { |n| 1930 + (n * 4) }
+    sequence(:year) { |n| 1930 + (n % 40) }
     slug { nil }
     name { "FIFA World Cup #{year}" }
     host_countries { ["Qatar"] }

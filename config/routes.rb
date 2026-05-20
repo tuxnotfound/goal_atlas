@@ -19,6 +19,7 @@ Rails.application.routes.draw do
     resources :goal_taggings
     resources :sources
     resources :video_links
+    resources :tournament_awards
     resources :video_link_suggestions, only: [:index, :create]
 
     root to: "tournaments#index"

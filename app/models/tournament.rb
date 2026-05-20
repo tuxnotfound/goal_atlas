@@ -9,6 +9,9 @@ class Tournament < ApplicationRecord
   belongs_to :third_place_team,  class_name: "Team", optional: true
   belongs_to :fourth_place_team, class_name: "Team", optional: true
 
+  has_many :matches, dependent: :restrict_with_error
+  has_many :tournament_awards, dependent: :destroy
+
   validates :year, presence: true, uniqueness: true,
                    numericality: { only_integer: true, greater_than: 1900, less_than: 2100 }
   validates :slug, presence: true, uniqueness: true

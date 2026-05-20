@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_185604) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_20_151132) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -81,6 +81,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_185604) do
     t.bigint "home_team_id", null: false
     t.integer "match_number"
     t.string "referee"
+    t.bigint "replay_of_match_id"
     t.integer "result_type", default: 0, null: false
     t.string "round_label"
     t.string "slug", null: false
@@ -94,6 +95,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_185604) do
     t.index ["date"], name: "index_matches_on_date"
     t.index ["discarded_at"], name: "index_matches_on_discarded_at"
     t.index ["home_team_id"], name: "index_matches_on_home_team_id"
+    t.index ["replay_of_match_id"], name: "index_matches_on_replay_of_match_id"
     t.index ["slug"], name: "index_matches_on_slug", unique: true
     t.index ["stadium_id"], name: "index_matches_on_stadium_id"
     t.index ["stage"], name: "index_matches_on_stage"
@@ -188,6 +190,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_185604) do
     t.index ["successor_team_id"], name: "index_teams_on_successor_team_id"
   end
 
+  create_table "tournament_awards", force: :cascade do |t|
+    t.integer "award_type", null: false
+    t.datetime "created_at", null: false
+    t.text "notes"
+    t.bigint "player_id", null: false
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["award_type"], name: "index_tournament_awards_on_award_type"
+    t.index ["player_id"], name: "index_tournament_awards_on_player_id"
+    t.index ["tournament_id", "award_type", "player_id"], name: "index_tournament_awards_uniq", unique: true
+    t.index ["tournament_id"], name: "index_tournament_awards_on_tournament_id"
+  end
+
   create_table "tournaments", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "discarded_at"
@@ -241,6 +256,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_185604) do
   add_foreign_key "goals", "players"
   add_foreign_key "goals", "players", column: "assist_player_id"
   add_foreign_key "goals", "teams", column: "scoring_team_id"
+  add_foreign_key "matches", "matches", column: "replay_of_match_id"
   add_foreign_key "matches", "stadiums"
   add_foreign_key "matches", "teams", column: "away_team_id"
   add_foreign_key "matches", "teams", column: "home_team_id"
@@ -251,6 +267,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_185604) do
   add_foreign_key "shootout_kicks", "players"
   add_foreign_key "shootout_kicks", "teams"
   add_foreign_key "teams", "teams", column: "successor_team_id"
+  add_foreign_key "tournament_awards", "players"
+  add_foreign_key "tournament_awards", "tournaments"
   add_foreign_key "tournaments", "teams", column: "fourth_place_team_id"
   add_foreign_key "tournaments", "teams", column: "runner_up_team_id"
   add_foreign_key "tournaments", "teams", column: "third_place_team_id"

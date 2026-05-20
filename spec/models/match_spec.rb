@@ -126,6 +126,7 @@ end
 #  updated_at                  :datetime         not null
 #  away_team_id                :bigint           not null
 #  home_team_id                :bigint           not null
+#  replay_of_match_id          :bigint
 #  stadium_id                  :bigint
 #  tournament_id               :bigint           not null
 #  winner_team_id              :bigint
@@ -136,6 +137,7 @@ end
 #  index_matches_on_date                            (date)
 #  index_matches_on_discarded_at                    (discarded_at)
 #  index_matches_on_home_team_id                    (home_team_id)
+#  index_matches_on_replay_of_match_id              (replay_of_match_id)
 #  index_matches_on_slug                            (slug) UNIQUE
 #  index_matches_on_stadium_id                      (stadium_id)
 #  index_matches_on_stage                           (stage)
@@ -147,6 +149,7 @@ end
 #
 #  fk_rails_...  (away_team_id => teams.id)
 #  fk_rails_...  (home_team_id => teams.id)
+#  fk_rails_...  (replay_of_match_id => matches.id)
 #  fk_rails_...  (stadium_id => stadiums.id)
 #  fk_rails_...  (tournament_id => tournaments.id)
 #  fk_rails_...  (winner_team_id => teams.id)
