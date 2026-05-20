@@ -33,6 +33,8 @@ MATCH_VIDEO_LINKS = [
     notes: "FIFA+ — full match replay" },
 
   # ENG 1-2 FRA (QF)
+  { match: 60, source: :youtube_official, url: "https://www.youtube.com/watch?v=Q-zmXSb0WKU",
+    notes: "FIFA YouTube — Giroud header wins it! | England v France | FIFA World Cup Qatar 2022" },
   { match: 60, source: :broadcaster, url: "https://www.youtube.com/watch?v=v4Mp6e4AkIk",
     notes: "Sky Sport NZ — HIGHLIGHTS: England v France (Quarter-Final)" },
 
@@ -142,11 +144,30 @@ GOAL_VIDEO_LINKS.each do |attrs|
   end
 end
 
-# Goals still missing per-goal FIFA+ clips (search returned no result):
-#   - harry-kane-vs-france-2022-54  (penalty)
+# Additional goal-level YouTube clips found via VideoLinkScout
+# (rake video_links:suggest_for_goal) for goals without a FIFA+ clip.
+EXTRA_GOAL_VIDEO_LINKS = [
+  { goal: "harry-kane-vs-france-2022-54",
+    url:  "https://www.youtube.com/watch?v=CDv_hH7jLCY",
+    notes: "FIFA YouTube — Harry Kane scores and misses a penalty! England vs France" },
+  { goal: "mislav-orsic-vs-morocco-2022-42",
+    url:  "https://www.youtube.com/watch?v=B_mSVMx19u8",
+    notes: "FIFA YouTube — Beauty of a goal from Mislav Orsic" }
+].freeze
+
+EXTRA_GOAL_VIDEO_LINKS.each do |attrs|
+  goal = goal!(attrs[:goal])
+  goal.video_links.find_or_create_by!(url: attrs[:url]) do |link|
+    link.source     = :youtube_official
+    link.confidence = :likely
+    link.language   = "en"
+    link.is_active  = true
+  end
+end
+
+# Goals still missing dedicated clips (only match-level highlights cover them):
 #   - achraf-dari-vs-croatia-2022-9
-#   - mislav-orsic-vs-morocco-2022-42
 #   - kylian-mbappe-vs-argentina-2022-80  (first final penalty)
-# Use the rake task video_links:suggest to search for these later.
+# The match-level "Watch the full match" links cover these.
 
 puts "VideoLinks: #{VideoLink.count} (target: ≥ #{MATCH_VIDEO_LINKS.size + GOAL_VIDEO_LINKS.size})"
