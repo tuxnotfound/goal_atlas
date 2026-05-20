@@ -1,0 +1,98 @@
+<% content_for :title, "Suggest video links — Admin" %>
+
+<div class="mb-6">
+  <h1 class="text-3xl font-bold tracking-tight">Suggest video links</h1>
+  <p class="text-stone-500 mt-1">
+    Pick a Match or Goal. The YouTube Data API will return up to 5 candidate clips
+    from FIFA's official channel. Add the ones that match.
+  </p>
+</div>
+
+<% if flash[:notice].present? %>
+  <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded text-sm">
+    <%= flash[:notice] %>
+  </div>
+<% end %>
+
+<%# === Search form === %>
+<section class="bg-white border border-stone-200 rounded-lg p-5 mb-6">
+  <%= form_with url: admin_video_link_suggestions_path, method: :get, local: true, class: "space-y-4" do |f| %>
+    <div>
+      <%= label_tag :linkable, "What do you want to find a video for?", class: "block text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2" %>
+      <select name="combined"
+              onchange="const v = this.value.split(':'); document.getElementById('lt').value = v[0]; document.getElementById('li').value = v[1];"
+              class="w-full border border-stone-300 rounded px-3 py-2 text-sm">
+        <option value="">— Select a match or goal —</option>
+        <optgroup label="Matches">
+          <% @matches.each do |m| %>
+            <% selected = @linkable.is_a?(Match) && @linkable.id == m.id %>
+            <option value="Match:<%= m.id %>" <%= "selected" if selected %>>
+              <%= m.home_team.name %> <%= m.home_score %>–<%= m.away_score %> <%= m.away_team.name %>
+              (<%= m.stage.humanize %>, <%= m.date.strftime("%b %-d, %Y") %>)
+            </option>
+          <% end %>
+        </optgroup>
+        <optgroup label="Goals">
+          <% @goals.each do |g| %>
+            <% selected = @linkable.is_a?(Goal) && @linkable.id == g.id %>
+            <option value="Goal:<%= g.id %>" <%= "selected" if selected %>>
+              <%= g.minute %>' <%= g.player.name %>
+              (<%= g.scoring_team.fifa_code %> vs <%= g.opponent_team.fifa_code %>, <%= g.match.tournament.year %>)
+            </option>
+          <% end %>
+        </optgroup>
+      </select>
+      <%= hidden_field_tag :linkable_type, params[:linkable_type], id: "lt" %>
+      <%= hidden_field_tag :linkable_id,   params[:linkable_id],   id: "li" %>
+    </div>
+
+    <%= submit_tag "Search", class: "bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-4 py-2 rounded transition" %>
+  <% end %>
+</section>
+
+<% if @error.present? %>
+  <div class="mb-4 p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded text-sm">
+    <%= @error %>
+  </div>
+<% end %>
+
+<%# === Results === %>
+<% if @linkable && @results %>
+  <section>
+    <h2 class="text-lg font-semibold mb-3">
+      Suggestions for <%= @linkable.is_a?(Match) ? "match" : "goal" %>
+      <span class="text-stone-500 font-normal">
+        — <%= @linkable.is_a?(Match) ? "#{@linkable.home_team.name} vs #{@linkable.away_team.name}" : "#{@linkable.minute}' #{@linkable.player.name}" %>
+      </span>
+    </h2>
+
+    <% if @results.empty? %>
+      <p class="text-sm text-stone-500">No results from the FIFA channel. Try the rake task with different query terms, or skip.</p>
+    <% else %>
+      <p class="text-xs text-stone-400 mb-3">Query: <code class="bg-stone-100 px-1 py-0.5 rounded"><%= @results.first[:query] %></code></p>
+
+      <ul class="space-y-3">
+        <% @results.each do |r| %>
+          <li class="bg-white border border-stone-200 rounded p-4">
+            <div class="flex items-baseline justify-between gap-4 mb-2">
+              <h3 class="font-medium"><%= r[:title] %></h3>
+              <span class="text-xs text-stone-400 shrink-0"><%= r[:published_at]&.to_date %></span>
+            </div>
+            <div class="text-xs text-stone-500 mb-3">
+              <strong><%= r[:channel] %></strong> ·
+              <%= link_to r[:url], r[:url], target: "_blank", rel: "noopener noreferrer", class: "underline hover:text-emerald-700" %>
+            </div>
+            <%= form_with url: admin_video_link_suggestions_path, method: :post, local: true do |f| %>
+              <%= hidden_field_tag :linkable_type, @linkable.class.name %>
+              <%= hidden_field_tag :linkable_id,   @linkable.id %>
+              <%= hidden_field_tag :url, r[:url] %>
+              <%= hidden_field_tag :source, "youtube_official" %>
+              <%= submit_tag "Add this clip",
+                             class: "bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-3 py-1.5 rounded transition" %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </section>
+<% end %>
