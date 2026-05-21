@@ -6,26 +6,32 @@
 
 <%# === Goal header === %>
 <section class="bg-white border border-stone-200 rounded-lg p-6 mb-6">
-  <div class="text-xs uppercase tracking-wider text-emerald-700 font-semibold mb-2">
-    <%= goal_minute_label(@goal) %> · <%= @goal.goal_type.humanize %>
-    <% if @goal.body_part %> · <%= @goal.body_part.humanize %><% end %>
-  </div>
+  <div class="flex items-start gap-4">
+    <%= render "players/avatar", player: @scorer, tournament: @tournament, size: 88 %>
 
-  <h1 class="text-3xl font-bold tracking-tight flex items-center gap-3 mb-2">
-    <span class="text-4xl"><%= @scoring_team.flag_emoji %></span>
-    <%= link_to @scorer.name, player_path(@scorer),
-                class: "hover:text-emerald-700 transition" %>
-  </h1>
+    <div class="flex-1 min-w-0">
+      <div class="text-xs uppercase tracking-wider text-emerald-700 font-semibold mb-2">
+        <%= goal_minute_label(@goal) %> · <%= @goal.goal_type.humanize %>
+        <% if @goal.body_part %> · <%= @goal.body_part.humanize %><% end %>
+      </div>
 
-  <div class="text-stone-600">
-    <%= link_to @scoring_team.name, team_path(@scoring_team),
-                class: "hover:text-emerald-700 transition" %>
-    vs
-    <%= link_to @opponent_team.name, team_path(@opponent_team),
-                class: "hover:text-emerald-700 transition" %>
-    · <%= stage_label(@match) %> ·
-    <%= link_to @tournament.name, tournament_path(@tournament),
-                class: "hover:text-emerald-700 transition" %>
+      <h1 class="text-3xl font-bold tracking-tight flex items-center gap-3 mb-2">
+        <span class="text-4xl"><%= @scoring_team.flag_emoji %></span>
+        <%= link_to @scorer.name, player_path(@scorer),
+                    class: "hover:text-emerald-700 transition" %>
+      </h1>
+
+      <div class="text-stone-600">
+        <%= link_to @scoring_team.name, team_path(@scoring_team),
+                    class: "hover:text-emerald-700 transition" %>
+        vs
+        <%= link_to @opponent_team.name, team_path(@opponent_team),
+                    class: "hover:text-emerald-700 transition" %>
+        · <%= stage_label(@match) %> ·
+        <%= link_to @tournament.name, tournament_path(@tournament),
+                    class: "hover:text-emerald-700 transition" %>
+      </div>
+    </div>
   </div>
 
   <div class="mt-4 inline-block px-3 py-1 bg-stone-100 rounded font-mono text-sm">

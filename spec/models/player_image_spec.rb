@@ -74,6 +74,30 @@ RSpec.describe PlayerImage, type: :model do
       expect(img.attribution_line).to be_nil
     end
   end
+
+  describe "#thumbnail" do
+    it "swaps the size segment of a Wikimedia thumbnail URL" do
+      img = build(:player_image,
+        thumbnail_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Lionel_Messi.jpg/600px-Lionel_Messi.jpg")
+      expect(img.thumbnail(width: 120)).to eq(
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Lionel_Messi.jpg/120px-Lionel_Messi.jpg"
+      )
+    end
+
+    it "returns the underlying URL unchanged when no size segment is present" do
+      img = build(:player_image,
+                  url: "https://example.com/photo.jpg",
+                  thumbnail_url: "https://example.com/photo.jpg")
+      expect(img.thumbnail(width: 200)).to eq("https://example.com/photo.jpg")
+    end
+
+    it "falls back to the original URL when thumbnail_url is blank" do
+      img = build(:player_image,
+                  url: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/X.jpg/600px-X.jpg",
+                  thumbnail_url: nil)
+      expect(img.thumbnail(width: 80)).to include("80px-X.jpg")
+    end
+  end
 end
 
 # == Schema Information
