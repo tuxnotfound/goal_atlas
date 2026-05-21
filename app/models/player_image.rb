@@ -19,6 +19,15 @@ class PlayerImage < ApplicationRecord
     parts << license if license.present?
     parts.join(" · ").presence
   end
+
+  # Wikimedia thumbnails follow the pattern .../thumb/X/XY/FILE/<width>px-FILE
+  # so we can swap the size segment to request any width. Falls back to the
+  # stored thumbnail_url when the URL doesn't match (e.g. non-Wikimedia source).
+  def thumbnail(width: 200)
+    base = thumbnail_url.presence || url
+    return base if base.blank?
+    base.sub(%r{/\d+px-([^/]+)\z}, "/#{width}px-\\1")
+  end
 end
 
 # == Schema Information

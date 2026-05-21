@@ -74,13 +74,16 @@
       <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <% @results.players.each do |player| %>
           <li>
-            <%= link_to player_path(player), class: "block bg-white border border-stone-200 rounded-md p-3 hover:border-emerald-400 transition" do %>
-              <div class="font-medium"><%= player.name %></div>
-              <div class="text-xs text-stone-500 mt-0.5">
-                <% if player.nationality_team %>
-                  <%= player.nationality_team.flag_emoji %> <%= player.nationality_team.name %>
-                <% end %>
-                <% if player.position %>· <%= player.position.humanize %><% end %>
+            <%= link_to player_path(player), class: "flex items-center gap-3 bg-white border border-stone-200 rounded-md p-3 hover:border-emerald-400 transition" do %>
+              <%= render "players/avatar", player: player, size: 40 %>
+              <div class="flex-1 min-w-0">
+                <div class="font-medium truncate"><%= player.name %></div>
+                <div class="text-xs text-stone-500 mt-0.5">
+                  <% if player.nationality_team %>
+                    <%= player.nationality_team.flag_emoji %> <%= player.nationality_team.name %>
+                  <% end %>
+                  <% if player.position %>· <%= player.position.humanize %><% end %>
+                </div>
               </div>
             <% end %>
           </li>

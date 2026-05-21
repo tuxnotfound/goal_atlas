@@ -2,22 +2,40 @@
 
 <%# === Player header === %>
 <section class="bg-white border border-stone-200 rounded-lg p-6 mb-6">
-  <h1 class="text-3xl font-bold tracking-tight mb-2"><%= @player.name %></h1>
+  <div class="flex items-start gap-5">
+    <%= render "players/avatar", player: @player, size: 120 %>
 
-  <div class="text-stone-500 text-sm space-y-1">
-    <% if @player.nationality_team %>
-      <div>
-        <%= @player.nationality_team.flag_emoji %>
-        <%= link_to @player.nationality_team.name, team_path(@player.nationality_team),
-                    class: "hover:text-emerald-700 transition" %>
+    <div class="flex-1">
+      <h1 class="text-3xl font-bold tracking-tight mb-2"><%= @player.name %></h1>
+
+      <div class="text-stone-500 text-sm space-y-1">
+        <% if @player.nationality_team %>
+          <div>
+            <%= @player.nationality_team.flag_emoji %>
+            <%= link_to @player.nationality_team.name, team_path(@player.nationality_team),
+                        class: "hover:text-emerald-700 transition" %>
+          </div>
+        <% end %>
+        <% if @player.position %>
+          <div><%= @player.position.humanize %></div>
+        <% end %>
+        <% if @player.birth_date %>
+          <div>Born <%= @player.birth_date.strftime("%B %-d, %Y") %></div>
+        <% end %>
+        <% if (img = @player.default_image)&.attribution_line %>
+          <div class="text-xs text-stone-400 pt-1">
+            Photo:
+            <% if img.source_url.present? %>
+              <%= link_to img.attribution_line, img.source_url,
+                          target: "_blank", rel: "noopener",
+                          class: "hover:text-stone-600" %>
+            <% else %>
+              <%= img.attribution_line %>
+            <% end %>
+          </div>
+        <% end %>
       </div>
-    <% end %>
-    <% if @player.position %>
-      <div><%= @player.position.humanize %></div>
-    <% end %>
-    <% if @player.birth_date %>
-      <div>Born <%= @player.birth_date.strftime("%B %-d, %Y") %></div>
-    <% end %>
+    </div>
   </div>
 
   <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
