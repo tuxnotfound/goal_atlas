@@ -36,6 +36,7 @@ Rails.application.routes.draw do
   resources :goals,       only: [:index, :show], param: :slug
   resources :teams,       only: [:show],         param: :slug
   resources :players,     only: [:show],         param: :slug
+  get "search", to: "search#index", as: :search
 
   root "tournaments#index"
 end

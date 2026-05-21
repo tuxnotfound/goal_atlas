@@ -21,12 +21,20 @@
 
   <body class="bg-stone-50 text-stone-900 min-h-screen flex flex-col">
     <header class="bg-emerald-900 text-emerald-50 border-b border-emerald-800">
-      <div class="max-w-5xl mx-auto px-5 py-4 flex items-center justify-between gap-6">
+      <div class="max-w-5xl mx-auto px-5 py-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <%= link_to root_path, class: "font-bold text-xl tracking-tight hover:text-white transition shrink-0" do %>
           Goal Atlas
         <% end %>
 
-        <nav class="flex items-center gap-5 text-sm">
+        <%= form_with url: search_path, method: :get, local: true,
+                      class: "order-3 sm:order-2 w-full sm:w-auto sm:flex-1 sm:max-w-md" do |f| %>
+          <%= f.search_field :q, value: params[:q],
+                placeholder: "Search teams, players, tournaments…",
+                class: "w-full px-3 py-1.5 rounded-md bg-emerald-950/60 placeholder-emerald-300/70 border border-emerald-800 focus:border-emerald-400 focus:outline-none text-sm",
+                autocomplete: "off" %>
+        <% end %>
+
+        <nav class="order-2 sm:order-3 flex items-center gap-5 text-sm">
           <%= link_to "World Cups", tournaments_path, class: "hover:text-white transition" %>
           <%= link_to "Matches",    matches_path,     class: "hover:text-white transition" %>
           <%= link_to "Goals",      goals_path,       class: "hover:text-white transition" %>

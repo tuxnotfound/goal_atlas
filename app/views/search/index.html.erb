@@ -1,0 +1,107 @@
+<% content_for :title, "Search — Goal Atlas" %>
+
+<header class="mb-6">
+  <h1 class="text-2xl font-bold tracking-tight mb-1">
+    <% if @query.present? %>
+      Results for "<%= @query %>"
+    <% else %>
+      Search
+    <% end %>
+  </h1>
+  <% if @query.present? && !@results.empty? %>
+    <p class="text-sm text-stone-500"><%= @results.total %> matches across the archive</p>
+  <% end %>
+</header>
+
+<% if @query.blank? %>
+  <div class="bg-white border border-stone-200 rounded-lg p-6 text-sm text-stone-600">
+    Type a team, player, tournament, or stadium name into the search bar above. Fuzzy matching is on,
+    so partial spellings work: <em>"maradon"</em> finds Maradona, <em>"qatar"</em> finds the 2022 World Cup.
+  </div>
+
+<% elsif @results.too_short? %>
+  <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+    Please enter at least two characters.
+  </div>
+
+<% elsif @results.empty? %>
+  <div class="bg-white border border-stone-200 rounded-lg p-6 text-sm text-stone-600">
+    No results found for <strong><%= @query %></strong>. Check spelling, or try a partial name.
+  </div>
+
+<% else %>
+  <% if @results.tournaments.any? %>
+    <section class="mb-8">
+      <h2 class="text-lg font-semibold mb-3">Tournaments <span class="text-stone-400 font-normal">· <%= @results.tournaments.size %></span></h2>
+      <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <% @results.tournaments.each do |t| %>
+          <li>
+            <%= link_to tournament_path(t), class: "block bg-white border border-stone-200 rounded-md p-3 hover:border-emerald-400 transition" do %>
+              <div class="font-medium"><%= t.name %></div>
+              <div class="text-xs text-stone-500 mt-0.5">
+                <%= t.host_countries.join(", ") %>
+                <% if t.winner_team %>· Won by <%= t.winner_team.name %><% end %>
+              </div>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <% if @results.teams.any? %>
+    <section class="mb-8">
+      <h2 class="text-lg font-semibold mb-3">Teams <span class="text-stone-400 font-normal">· <%= @results.teams.size %></span></h2>
+      <ul class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <% @results.teams.each do |team| %>
+          <li>
+            <%= link_to team_path(team), class: "flex items-center gap-2 bg-white border border-stone-200 rounded-md p-3 hover:border-emerald-400 transition" do %>
+              <span class="text-xl"><%= team.flag_emoji %></span>
+              <span>
+                <span class="font-medium"><%= team.name %></span>
+                <span class="block text-xs text-stone-500"><%= team.fifa_code %></span>
+              </span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <% if @results.players.any? %>
+    <section class="mb-8">
+      <h2 class="text-lg font-semibold mb-3">Players <span class="text-stone-400 font-normal">· <%= @results.players.size %></span></h2>
+      <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <% @results.players.each do |player| %>
+          <li>
+            <%= link_to player_path(player), class: "block bg-white border border-stone-200 rounded-md p-3 hover:border-emerald-400 transition" do %>
+              <div class="font-medium"><%= player.name %></div>
+              <div class="text-xs text-stone-500 mt-0.5">
+                <% if player.nationality_team %>
+                  <%= player.nationality_team.flag_emoji %> <%= player.nationality_team.name %>
+                <% end %>
+                <% if player.position %>· <%= player.position.humanize %><% end %>
+              </div>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <% if @results.stadiums.any? %>
+    <section class="mb-8">
+      <h2 class="text-lg font-semibold mb-3">Stadiums <span class="text-stone-400 font-normal">· <%= @results.stadiums.size %></span></h2>
+      <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <% @results.stadiums.each do |stadium| %>
+          <li class="bg-white border border-stone-200 rounded-md p-3">
+            <div class="font-medium"><%= stadium.name %></div>
+            <div class="text-xs text-stone-500 mt-0.5">
+              <%= [stadium.city, stadium.country].compact.join(", ") %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+<% end %>
