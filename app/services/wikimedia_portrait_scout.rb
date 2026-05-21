@@ -81,6 +81,38 @@ class WikimediaPortraitScout
     }.select(&:freely_licensed?).first(max)
   end
 
+  # Public so backfill tasks can re-query Commons for files we've already
+  # saved (to populate width/height/categories on rows scouted before the
+  # enrichment columns existed).
+  def file_info(file_name)
+    response = api_get(COMMONS_API,
+      action: "query", titles: "File:#{file_name}",
+      prop: "imageinfo|categories", iiprop: "url|size|extmetadata",
+      iiurlwidth: 600, cllimit: "max", clshow: "!hidden", format: "json"
+    )
+    page = response&.dig("query", "pages")&.values&.first
+    info = page&.dig("imageinfo", 0)
+    return nil if info.nil?
+
+    ext = info["extmetadata"] || {}
+    categories = Array(page["categories"]).filter_map { |c|
+      c["title"].to_s.sub(/^Category:/, "").presence
+    }
+
+    {
+      url: info["url"],
+      thumbnail_url: info["thumburl"] || info["url"],
+      source_url: page["title"] ? "https://commons.wikimedia.org/wiki/#{page['title'].tr(' ', '_')}" : nil,
+      license: ext.dig("LicenseShortName", "value"),
+      license_url: ext.dig("LicenseUrl", "value"),
+      author: strip_html(ext.dig("Artist", "value")),
+      description: strip_html(ext.dig("ImageDescription", "value")),
+      width: info["width"],
+      height: info["height"],
+      categories: categories
+    }
+  end
+
   private
 
   attr_reader :logger
@@ -226,35 +258,6 @@ class WikimediaPortraitScout
        .gsub(/[^a-z0-9 ]/, " ")
        .squeeze(" ")
        .strip
-  end
-
-  def file_info(file_name)
-    response = api_get(COMMONS_API,
-      action: "query", titles: "File:#{file_name}",
-      prop: "imageinfo|categories", iiprop: "url|size|extmetadata",
-      iiurlwidth: 600, cllimit: "max", clshow: "!hidden", format: "json"
-    )
-    page = response&.dig("query", "pages")&.values&.first
-    info = page&.dig("imageinfo", 0)
-    return nil if info.nil?
-
-    ext = info["extmetadata"] || {}
-    categories = Array(page["categories"]).filter_map { |c|
-      c["title"].to_s.sub(/^Category:/, "").presence
-    }
-
-    {
-      url: info["url"],
-      thumbnail_url: info["thumburl"] || info["url"],
-      source_url: page["title"] ? "https://commons.wikimedia.org/wiki/#{page['title'].tr(' ', '_')}" : nil,
-      license: ext.dig("LicenseShortName", "value"),
-      license_url: ext.dig("LicenseUrl", "value"),
-      author: strip_html(ext.dig("Artist", "value")),
-      description: strip_html(ext.dig("ImageDescription", "value")),
-      width: info["width"],
-      height: info["height"],
-      categories: categories
-    }
   end
 
   def build_candidate(file_name, info)

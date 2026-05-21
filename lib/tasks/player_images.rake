@@ -52,6 +52,57 @@ namespace :player_images do
     end
   end
 
+  desc "Re-query Commons for existing PlayerImage rows to populate image_width/height/commons_categories."
+  task backfill_commons_metadata: :environment do
+    scope = PlayerImage.kept
+      .where("url LIKE ?", "https://upload.wikimedia.org/wikipedia/commons/%")
+      .where("url NOT LIKE ?", "%/thumb/%")
+      .where("image_width IS NULL OR commons_categories = '{}'")
+      .includes(:player)
+      .order(:id)
+
+    total = scope.count
+    if total.zero?
+      puts "No PlayerImage rows need backfilling. Done."
+      next
+    end
+
+    puts "Backfilling Commons metadata on #{total} player images..."
+    scout = WikimediaPortraitScout.new(logger: Rails.logger)
+    updated = 0
+    missing = 0
+    errored = 0
+
+    scope.find_each.with_index do |img, idx|
+      file_name = commons_filename_from_url(img.url)
+      info = scout.file_info(file_name)
+
+      if info.nil?
+        missing += 1
+        puts "[#{idx + 1}/#{total}] #{img.player.name} (image_id=#{img.id}) — Commons returned nothing"
+        next
+      end
+
+      img.update!(
+        image_width:        info[:width],
+        image_height:       info[:height],
+        commons_categories: info[:categories] || []
+      )
+      updated += 1
+      puts "[#{idx + 1}/#{total}] #{img.player.name} (image_id=#{img.id}) — w=#{info[:width]} h=#{info[:height]} cats=#{(info[:categories] || []).size}"
+      sleep 0.3
+    rescue => e
+      errored += 1
+      puts "[#{idx + 1}/#{total}] image_id=#{img.id} ERROR: #{e.class}: #{e.message}"
+    end
+
+    puts "Backfill done — updated=#{updated} missing=#{missing} errored=#{errored} of #{total}."
+  end
+
+  def commons_filename_from_url(url)
+    CGI.unescape(File.basename(URI.parse(url).path))
+  end
+
   def find_player(identifier)
     Player.friendly.find(identifier) rescue Player.find_by(name: identifier)
   end
