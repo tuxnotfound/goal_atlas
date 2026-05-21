@@ -83,7 +83,47 @@ HISTORICAL_TEAMS = [
   { name: "Bolivia",         country_code: "BOL", fifa_code: "BOL", flag_emoji: "🇧🇴", confederation: :conmebol },
   { name: "Romania",         country_code: "ROU", fifa_code: "ROU", flag_emoji: "🇷🇴", confederation: :uefa },
   { name: "Yugoslavia",      country_code: "YUG", fifa_code: "YUG", flag_emoji: "🇷🇸", confederation: :uefa,
-    active_from: 1919, active_until: 1992 }
+    active_from: 1919, active_until: 1992 },
+
+  # === Pre-war (1934-1938) participants ===
+  { name: "Austria",            country_code: "AUT", fifa_code: "AUT", flag_emoji: "🇦🇹", confederation: :uefa },
+  { name: "Czechoslovakia",     country_code: "TCH", fifa_code: "TCH", flag_emoji: "🇨🇿", confederation: :uefa,
+    active_from: 1920, active_until: 1992, successor_fifa_code: "CZE" },
+  { name: "Cuba",               country_code: "CUB", fifa_code: "CUB", flag_emoji: "🇨🇺", confederation: :concacaf },
+  { name: "Dutch East Indies",  country_code: "DEI", fifa_code: "DEI", flag_emoji: "🇮🇩", confederation: :afc,
+    active_from: 1931, active_until: 1949 },
+
+  # === 1950-1970s additions ===
+  { name: "Haiti",              country_code: "HAI", fifa_code: "HAI", flag_emoji: "🇭🇹", confederation: :concacaf },
+  { name: "Israel",             country_code: "ISR", fifa_code: "ISR", flag_emoji: "🇮🇱", confederation: :uefa },
+  { name: "Norway",             country_code: "NOR", fifa_code: "NOR", flag_emoji: "🇳🇴", confederation: :uefa },
+  { name: "Turkey",             country_code: "TUR", fifa_code: "TUR", flag_emoji: "🇹🇷", confederation: :uefa },
+  { name: "Zaire",              country_code: "ZAI", fifa_code: "ZAI", flag_emoji: "🇨🇩", confederation: :caf,
+    active_from: 1964, active_until: 1997 },
+  { name: "East Germany",       country_code: "GDR", fifa_code: "GDR", flag_emoji: "🇩🇪", confederation: :uefa,
+    active_from: 1949, active_until: 1990, successor_fifa_code: "GER" },
+  { name: "El Salvador",        country_code: "SLV", fifa_code: "SLV", flag_emoji: "🇸🇻", confederation: :concacaf },
+
+  # === 1982-1994 additions ===
+  { name: "New Zealand",        country_code: "NZL", fifa_code: "NZL", flag_emoji: "🇳🇿", confederation: :ofc },
+  { name: "Kuwait",             country_code: "KUW", fifa_code: "KUW", flag_emoji: "🇰🇼", confederation: :afc },
+  { name: "United Arab Emirates", country_code: "UAE", fifa_code: "UAE", flag_emoji: "🇦🇪", confederation: :afc },
+  { name: "Republic of Ireland", country_code: "IRL", fifa_code: "IRL", flag_emoji: "🇮🇪", confederation: :uefa },
+
+  # === 1998-2010 additions ===
+  { name: "Jamaica",            country_code: "JAM", fifa_code: "JAM", flag_emoji: "🇯🇲", confederation: :concacaf },
+  { name: "South Africa",       country_code: "RSA", fifa_code: "RSA", flag_emoji: "🇿🇦", confederation: :caf },
+  { name: "Slovenia",           country_code: "SVN", fifa_code: "SVN", flag_emoji: "🇸🇮", confederation: :uefa },
+  { name: "China",              country_code: "CHN", fifa_code: "CHN", flag_emoji: "🇨🇳", confederation: :afc },
+  { name: "Serbia and Montenegro", country_code: "SCG", fifa_code: "SCG", flag_emoji: "🇷🇸", confederation: :uefa,
+    active_from: 2003, active_until: 2006 },
+  { name: "Ukraine",            country_code: "UKR", fifa_code: "UKR", flag_emoji: "🇺🇦", confederation: :uefa },
+  { name: "Trinidad and Tobago", country_code: "TRI", fifa_code: "TRI", flag_emoji: "🇹🇹", confederation: :concacaf },
+  { name: "Togo",               country_code: "TGO", fifa_code: "TGO", flag_emoji: "🇹🇬", confederation: :caf },
+  { name: "Slovakia",           country_code: "SVK", fifa_code: "SVK", flag_emoji: "🇸🇰", confederation: :uefa },
+  { name: "North Korea",        country_code: "PRK", fifa_code: "PRK", flag_emoji: "🇰🇵", confederation: :afc },
+  { name: "Angola",             country_code: "ANG", fifa_code: "ANG", flag_emoji: "🇦🇴", confederation: :caf },
+  { name: "Czech Republic",     country_code: "CZE", fifa_code: "CZE", flag_emoji: "🇨🇿", confederation: :uefa }
 ].freeze
 
 (TEAMS_2022 + HISTORICAL_TEAMS).each do |attrs|
