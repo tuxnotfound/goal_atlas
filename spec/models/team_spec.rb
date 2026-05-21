@@ -111,6 +111,7 @@ end
 #  index_teams_on_country_code       (country_code)
 #  index_teams_on_discarded_at       (discarded_at)
 #  index_teams_on_name               (name)
+#  index_teams_on_name_trgm          (name) USING gin
 #  index_teams_on_slug               (slug) UNIQUE
 #  index_teams_on_successor_team_id  (successor_team_id)
 #
