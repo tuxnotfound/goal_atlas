@@ -46,6 +46,7 @@ class WikimediaPortraitScout
   ImageCandidate = Struct.new(
     :url, :source_url, :thumbnail_url, :license, :license_url,
     :author, :description, :file_name,
+    :width, :height, :categories,
     keyword_init: true
   ) do
     def freely_licensed?
@@ -230,14 +231,18 @@ class WikimediaPortraitScout
   def file_info(file_name)
     response = api_get(COMMONS_API,
       action: "query", titles: "File:#{file_name}",
-      prop: "imageinfo", iiprop: "url|extmetadata",
-      iiurlwidth: 600, format: "json"
+      prop: "imageinfo|categories", iiprop: "url|size|extmetadata",
+      iiurlwidth: 600, cllimit: "max", clshow: "!hidden", format: "json"
     )
     page = response&.dig("query", "pages")&.values&.first
     info = page&.dig("imageinfo", 0)
     return nil if info.nil?
 
     ext = info["extmetadata"] || {}
+    categories = Array(page["categories"]).filter_map { |c|
+      c["title"].to_s.sub(/^Category:/, "").presence
+    }
+
     {
       url: info["url"],
       thumbnail_url: info["thumburl"] || info["url"],
@@ -245,7 +250,10 @@ class WikimediaPortraitScout
       license: ext.dig("LicenseShortName", "value"),
       license_url: ext.dig("LicenseUrl", "value"),
       author: strip_html(ext.dig("Artist", "value")),
-      description: strip_html(ext.dig("ImageDescription", "value"))
+      description: strip_html(ext.dig("ImageDescription", "value")),
+      width: info["width"],
+      height: info["height"],
+      categories: categories
     }
   end
 
@@ -258,7 +266,10 @@ class WikimediaPortraitScout
       license_url: info[:license_url],
       author: info[:author],
       description: info[:description],
-      file_name: file_name
+      file_name: file_name,
+      width: info[:width],
+      height: info[:height],
+      categories: info[:categories] || []
     )
   end
 

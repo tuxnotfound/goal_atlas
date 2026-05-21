@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_21_170510) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_21_222000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -118,10 +118,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_21_170510) do
 
   create_table "player_images", force: :cascade do |t|
     t.string "author"
+    t.string "commons_categories", default: [], array: true
     t.datetime "created_at", null: false
     t.text "description"
     t.datetime "discarded_at"
     t.datetime "fetched_at"
+    t.integer "image_height"
+    t.integer "image_width"
     t.boolean "is_active", default: true, null: false
     t.boolean "is_default", default: false, null: false
     t.string "license"

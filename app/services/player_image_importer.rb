@@ -84,16 +84,19 @@ class PlayerImageImporter
 
       if is_new
         image.assign_attributes(
-          source_url:    c.source_url,
-          thumbnail_url: c.thumbnail_url,
-          license:       c.license,
-          license_url:   c.license_url,
-          author:        c.author,
-          description:   c.description,
-          position:      @player.player_images.maximum(:position).to_i + 1 + i,
-          is_default:    @player.player_images.default.none? && i.zero?,
-          is_active:     true,
-          fetched_at:    Time.current
+          source_url:         c.source_url,
+          thumbnail_url:      c.thumbnail_url,
+          license:            c.license,
+          license_url:        c.license_url,
+          author:             c.author,
+          description:        c.description,
+          image_width:        c.width,
+          image_height:       c.height,
+          commons_categories: c.categories || [],
+          position:           @player.player_images.maximum(:position).to_i + 1 + i,
+          is_default:         @player.player_images.default.none? && i.zero?,
+          is_active:          true,
+          fetched_at:         Time.current
         )
         image.save!
         added << image
@@ -124,7 +127,40 @@ class PlayerImageImporter
 
     score -= 6 if CLUB_PENALTY_TERMS.any? { |t| text.include?(t) }
 
+    score += category_score(candidate.categories)
+    score += aspect_score(candidate.width, candidate.height)
+    score += 3 if (candidate.description || "").match?(/\b(portrait|headshot|close-?up)\b/i)
+
     score
+  end
+
+  # Commons categories are curated by hand and carry strong signal. The
+  # "Portraits of X" hierarchy is the most reliable indicator that a file is
+  # a clean head/shoulders shot rather than an action photo or team scene.
+  def category_score(categories)
+    return 0 if categories.blank?
+    text = categories.join(" | ").downcase
+    score = 0
+    score += 12 if text.include?("portraits of") || text.match?(/\bportrait/)
+    score += 6  if text.match?(/\b(fifa\s+)?world\s+cup\b/)
+    score += 4  if text.match?(/\bnational\s+(football\s+)?team\b/) || text.match?(/\bselection\b/) || text.match?(/\bsquad\b/)
+    score -= 4  if text.match?(/\bgroup\s+photos\b/) || text.match?(/\bteam\s+photographs\b/)
+    score
+  end
+
+  # Aspect ratio is a cheap proxy for framing. Portraits are taller than wide;
+  # action shots are usually 3:2 landscape. Squarish covers tightly-cropped
+  # headshots either way.
+  def aspect_score(width, height)
+    w, h = width.to_i, height.to_i
+    return 0 if w.zero? || h.zero?
+    ratio = h.to_f / w
+    case ratio
+    when 1.3..2.5  then 5
+    when 0.85..1.3 then 3
+    when 0.0..0.6  then -3
+    else 0
+    end
   end
 
   def competition_terms_for(player)

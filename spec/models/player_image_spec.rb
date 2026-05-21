@@ -104,23 +104,26 @@ end
 #
 # Table name: player_images
 #
-#  id            :bigint           not null, primary key
-#  author        :string
-#  description   :text
-#  discarded_at  :datetime
-#  fetched_at    :datetime
-#  is_active     :boolean          default(TRUE), not null
-#  is_default    :boolean          default(FALSE), not null
-#  license       :string
-#  license_url   :string
-#  notes         :text
-#  position      :integer          default(0), not null
-#  source_url    :string
-#  thumbnail_url :string
-#  url           :string           not null
-#  created_at    :datetime         not null
-#  updated_at    :datetime         not null
-#  player_id     :bigint           not null
+#  id                 :bigint           not null, primary key
+#  author             :string
+#  commons_categories :string           default([]), is an Array
+#  description        :text
+#  discarded_at       :datetime
+#  fetched_at         :datetime
+#  image_height       :integer
+#  image_width        :integer
+#  is_active          :boolean          default(TRUE), not null
+#  is_default         :boolean          default(FALSE), not null
+#  license            :string
+#  license_url        :string
+#  notes              :text
+#  position           :integer          default(0), not null
+#  source_url         :string
+#  thumbnail_url      :string
+#  url                :string           not null
+#  created_at         :datetime         not null
+#  updated_at         :datetime         not null
+#  player_id          :bigint           not null
 #
 # Indexes
 #
