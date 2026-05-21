@@ -27,6 +27,83 @@
   </div>
 </section>
 
+<%# === World Cup history === %>
+<% if @tournament_records.any? %>
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">World Cup history</h2>
+    <div class="overflow-x-auto border border-stone-200 rounded-md bg-white">
+      <table class="w-full text-sm tabular-nums">
+        <thead class="bg-stone-50 text-stone-500 text-xs uppercase tracking-wide">
+          <tr>
+            <th class="text-left px-3 py-2">Year</th>
+            <th class="text-right px-3 py-2">P</th>
+            <th class="text-right px-3 py-2">W</th>
+            <th class="text-right px-3 py-2">D</th>
+            <th class="text-right px-3 py-2">L</th>
+            <th class="text-right px-3 py-2">GF</th>
+            <th class="text-right px-3 py-2">GA</th>
+            <th class="text-right px-3 py-2">GD</th>
+            <th class="text-left px-3 py-2">Finish</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stone-100">
+          <% @tournament_records.each do |r| %>
+            <tr class="hover:bg-stone-50">
+              <td class="px-3 py-2">
+                <%= link_to r.tournament.year, tournament_path(r.tournament),
+                            class: "font-medium hover:text-emerald-700" %>
+              </td>
+              <td class="text-right px-3 py-2"><%= r.matches_played %></td>
+              <td class="text-right px-3 py-2"><%= r.wins %></td>
+              <td class="text-right px-3 py-2"><%= r.draws %></td>
+              <td class="text-right px-3 py-2"><%= r.losses %></td>
+              <td class="text-right px-3 py-2"><%= r.goals_for %></td>
+              <td class="text-right px-3 py-2"><%= r.goals_against %></td>
+              <td class="text-right px-3 py-2 <%= 'text-emerald-700' if r.goal_difference.positive? %><%= 'text-rose-700' if r.goal_difference.negative? %>">
+                <%= r.goal_difference.positive? ? "+#{r.goal_difference}" : r.goal_difference %>
+              </td>
+              <td class="px-3 py-2">
+                <span class="<%= 'font-semibold text-amber-700' if r.champion? %><%= 'text-stone-500' unless r.podium? %>">
+                  <%= r.finish_label %>
+                </span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+<% end %>
+
+<%# === Awards won === %>
+<% if @team_awards.any? %>
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">Tournament awards</h2>
+    <ul class="space-y-3">
+      <% @team_awards.each do |tournament, awards| %>
+        <li class="bg-white border border-stone-200 rounded-md p-4">
+          <div class="text-xs uppercase tracking-wide text-emerald-700 font-semibold mb-2">
+            <%= link_to tournament.year, tournament_path(tournament), class: "hover:text-emerald-900" %>
+          </div>
+          <ul class="space-y-1 text-sm">
+            <% awards.each do |a| %>
+              <li class="flex items-start gap-2">
+                <span class="text-stone-500 min-w-[120px]"><%= a.award_type.to_s.humanize %></span>
+                <span>
+                  <%= link_to a.player.name, player_path(a.player), class: "font-medium hover:text-emerald-700" %>
+                  <% if a.notes.present? %>
+                    <span class="text-stone-500 text-xs">· <%= a.notes %></span>
+                  <% end %>
+                </span>
+              </li>
+            <% end %>
+          </ul>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>
+
 <%# === Goals lane === %>
 <section class="mb-8">
   <h2 class="text-lg font-semibold mb-3">Goals scored by <%= @team.name %></h2>
