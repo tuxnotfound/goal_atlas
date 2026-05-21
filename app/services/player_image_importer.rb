@@ -11,6 +11,25 @@ class PlayerImageImporter
   # so use digit-boundary lookarounds instead.
   WC_YEAR_REGEX = /(?<!\d)(19[3-9]\d|20[0-3]\d)(?!\d)/
 
+  # National-team competitions worth searching Commons for. Generic World Cup
+  # terms apply to everyone; the rest are added based on the player's
+  # confederation so we surface Euro/Copa América/AFCON/etc. photos.
+  COMMON_COMPETITION_TERMS = ["World Cup", "World Cup qualifying"].freeze
+
+  CONFEDERATION_COMPETITION_TERMS = {
+    uefa:     ["UEFA Euro", "Euro qualifying", "Nations League"],
+    conmebol: ["Copa América", "Copa America"],
+    concacaf: ["Gold Cup", "Concacaf Nations League"],
+    afc:      ["AFC Asian Cup", "Asian Cup qualifying"],
+    caf:      ["Africa Cup of Nations", "AFCON"],
+    ofc:      ["OFC Nations Cup"]
+  }.freeze
+
+  # Score boosts when a candidate's description/filename mentions a non-WC
+  # national-team competition (for editorial ranking, not auto-tagging — we
+  # only have WC tournaments in the DB).
+  NATIONAL_COMPETITION_REGEX = /\b(euro|copa\s+am[eé]rica|nations\s+league|gold\s+cup|asian\s+cup|africa\s+cup|afcon|euros)\b/
+
   # Clubs and venues that signal "this is NOT a national-team photo."
   CLUB_PENALTY_TERMS = [
     "psg", "paris saint-germain", "manchester united", "real madrid",
@@ -21,6 +40,8 @@ class PlayerImageImporter
     "madame tussauds", "wax", "graffiti", "mural", "statue"
   ].freeze
 
+  SAVE_LIMIT = 12
+
   Result = Struct.new(:player, :candidates, :added, :tournament_tags, keyword_init: true)
 
   def initialize(player, scout: nil, logger: nil)
@@ -29,16 +50,22 @@ class PlayerImageImporter
     @tournament_years = Tournament.kept.pluck(:year).to_set
     @tournaments_by_year = Tournament.kept.index_by(&:year)
     @nationality_terms = nationality_terms(player)
+    @competition_terms = competition_terms_for(player)
   end
 
   def import!
-    candidates = @scout.search(player_name: @player.name, nationality: @player.nationality_team&.name)
+    candidates = @scout.search(
+      player_name: @player.name,
+      nationality: @player.nationality_team&.name,
+      competition_terms: @competition_terms
+    )
     return Result.new(player: @player, candidates: [], added: [], tournament_tags: 0) if candidates.empty?
 
     scored = candidates
                .map { |c| [editorial_score(c), c] }
                .sort_by { |s, _| -s }
                .map { |_, c| c }
+               .first(SAVE_LIMIT)
 
     added = []
     tags  = 0
@@ -72,10 +99,12 @@ class PlayerImageImporter
   private
 
   def editorial_score(candidate)
-    text = "#{candidate.file_name} #{candidate.description}".downcase
+    text = normalized_text(candidate)
     score = 0
 
-    score += 10 if text.match?(/\bfifa\s+world\s+cup\b/) || text.match?(/\bworld\s+cup\b/)
+    score += 12 if text.match?(/\bfifa\s+world\s+cup\b/) || text.match?(/\bworld\s+cup\b/)
+    score += 8  if text.match?(NATIONAL_COMPETITION_REGEX)
+    score += 6  if text.match?(/\bqualif/) && @nationality_terms.any? { |t| text.include?(t) }
     score += 5  if text.match?(/\bnational\s+team\b/) || text.match?(/\bselection\b/)
     score += 5  if @nationality_terms.any? { |t| text.include?(t) }
 
@@ -88,9 +117,22 @@ class PlayerImageImporter
     score
   end
 
+  def competition_terms_for(player)
+    team = player.nationality_team
+    return COMMON_COMPETITION_TERMS if team.nil?
+    confed = team.confederation&.to_sym
+    extra = CONFEDERATION_COMPETITION_TERMS[confed] || []
+    COMMON_COMPETITION_TERMS + extra
+  end
+
   def apply_tournament_tags(image, candidate)
-    text = "#{candidate.file_name} #{candidate.description}".downcase
+    text = normalized_text(candidate)
     years = text.scan(WC_YEAR_REGEX).flatten.map(&:to_i).uniq
+
+    # File names like "Cristiano_Ronaldo_WC2022_-_01.jpg" pack the year next to
+    # "WC"; the lookahead regex above misses those, so scan for them too.
+    text.scan(/\bwc\s*(20[12]\d|19[3-9]\d)\b/).flatten.each { |y| years << y.to_i }
+    years.uniq!
 
     added = 0
     years.each do |year|
@@ -110,5 +152,11 @@ class PlayerImageImporter
     team = player.nationality_team
     return [] if team.nil?
     [team.name, team.fifa_code, team.country_code].compact.map(&:downcase).uniq
+  end
+
+  # Replace underscores with spaces so regex word boundaries / `\s+` patterns
+  # match on filenames like "Iran_and_Portugal_match_FIFA_World_Cup_2018.jpg".
+  def normalized_text(candidate)
+    "#{candidate.file_name} #{candidate.description}".downcase.tr("_", " ")
   end
 end

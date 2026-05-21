@@ -39,7 +39,9 @@ class WikimediaPortraitScout
 
   FREE_LICENSE_REGEX = /\A(CC0|CC[- ]BY|public[- ]domain|PD)/i
 
-  MAX_CANDIDATES = 12
+  # Large enough to give the importer scoring layer a real pool to choose
+  # from across nationality / World Cup / regional-competition queries.
+  MAX_CANDIDATES = 30
 
   ImageCandidate = Struct.new(
     :url, :source_url, :thumbnail_url, :license, :license_url,
@@ -57,17 +59,18 @@ class WikimediaPortraitScout
   end
 
   # Returns an ordered Array<ImageCandidate>, most authoritative first.
-  # When nationality is provided, an extra Commons File-namespace search is run
-  # for "<name> <nationality>" and "<name> World Cup" — turns up many more
-  # national-team-kit photos than the Wikipedia/Wikidata layers alone.
-  def search(player_name:, nationality: nil, max: MAX_CANDIDATES)
+  # competition_terms is a list of strings (e.g. ["World Cup", "UEFA Euro",
+  # "Nations League"]) that get combined with the player's name to run
+  # Commons File-namespace searches. This is what surfaces national-team
+  # photos that the Wikipedia/Wikidata layers don't have.
+  def search(player_name:, nationality: nil, competition_terms: ["World Cup"], max: MAX_CANDIDATES)
     qid = find_player_qid(player_name)
     return [] if qid.nil?
 
     entity = fetch_entity(qid)
     return [] if entity.nil?
 
-    filenames = collect_filenames(entity, player_name, nationality).first(max * 2)
+    filenames = collect_filenames(entity, player_name, nationality, competition_terms).first(max * 2)
     return [] if filenames.empty?
 
     filenames.filter_map { |fn|
@@ -81,7 +84,7 @@ class WikimediaPortraitScout
 
   attr_reader :logger
 
-  def collect_filenames(entity, player_name, nationality)
+  def collect_filenames(entity, player_name, nationality, competition_terms)
     filenames = []
 
     # 1. Wikidata P18 (canonical)
@@ -89,13 +92,15 @@ class WikimediaPortraitScout
       filenames << canonical
     end
 
-    # 2. Commons File-namespace search — nationality-targeted queries pull
-    # many national-team-kit photos. Run early so they aren't truncated by
+    # 2. Commons File-namespace search — nationality + competition queries
+    # pull national-team-kit photos. Run early so they aren't truncated by
     # the per-player cap when biographical sources are abundant.
     sitelinks = entity["sitelinks"] || {}
     queries = []
     queries << %("#{player_name}" #{nationality}) if nationality.present?
-    queries << %("#{player_name}" "World Cup")
+    competition_terms.each do |term|
+      queries << %("#{player_name}" "#{term}")
+    end
     queries.each do |q|
       filenames += commons_search_portraits(q, player_name, nationality)
     end
