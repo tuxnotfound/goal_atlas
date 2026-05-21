@@ -29,14 +29,17 @@ class WikimediaPortraitScout
   NOISE_SUBSTRINGS = %w[
     signature firma graffiti maillot jersey shirt boot stadium statue monument
     mural casa house childhood barrio infancia family familia trophy medal
-    award ribbon footprint pronunciation autograph cartoon caricature
+    ribbon footprint pronunciation autograph cartoon caricature
     drawing painting silhouette sticker stamp coin currency
+    escultura museu museo museum statua estatua
     bresh fan car coche auto vehiculo predio deportivo plaque facility
   ].freeze
 
+  TEAM_PHOTO_SIGNALS = %w[national world fifa selection selecao seleccion squad team].freeze
+
   FREE_LICENSE_REGEX = /\A(CC0|CC[- ]BY|public[- ]domain|PD)/i
 
-  MAX_CANDIDATES = 8
+  MAX_CANDIDATES = 12
 
   ImageCandidate = Struct.new(
     :url, :source_url, :thumbnail_url, :license, :license_url,
@@ -54,51 +57,65 @@ class WikimediaPortraitScout
   end
 
   # Returns an ordered Array<ImageCandidate>, most authoritative first.
-  def search(player_name:, max: MAX_CANDIDATES)
+  # When nationality is provided, an extra Commons File-namespace search is run
+  # for "<name> <nationality>" and "<name> World Cup" — turns up many more
+  # national-team-kit photos than the Wikipedia/Wikidata layers alone.
+  def search(player_name:, nationality: nil, max: MAX_CANDIDATES)
     qid = find_player_qid(player_name)
     return [] if qid.nil?
 
     entity = fetch_entity(qid)
     return [] if entity.nil?
 
-    filenames = collect_filenames(entity, player_name).first(max)
+    filenames = collect_filenames(entity, player_name, nationality).first(max * 2)
     return [] if filenames.empty?
 
     filenames.filter_map { |fn|
       info = file_info(fn)
       next nil if info.nil?
       build_candidate(fn, info)
-    }.select(&:freely_licensed?)
+    }.select(&:freely_licensed?).first(max)
   end
 
   private
 
   attr_reader :logger
 
-  def collect_filenames(entity, player_name)
+  def collect_filenames(entity, player_name, nationality)
     filenames = []
 
-    # 1. Wikidata P18
+    # 1. Wikidata P18 (canonical)
     if (canonical = canonical_image_file(entity))
       filenames << canonical
     end
 
-    # 2. Per-language Wikipedia lead images
+    # 2. Commons File-namespace search — nationality-targeted queries pull
+    # many national-team-kit photos. Run early so they aren't truncated by
+    # the per-player cap when biographical sources are abundant.
     sitelinks = entity["sitelinks"] || {}
+    queries = []
+    queries << %("#{player_name}" #{nationality}) if nationality.present?
+    queries << %("#{player_name}" "World Cup")
+    queries.each do |q|
+      filenames += commons_search_portraits(q, player_name, nationality)
+    end
+
+    # 3. Per-language Wikipedia lead images
     LANGUAGES.each do |lang|
       sitelink = sitelinks["#{lang}wiki"]
       next if sitelink.nil?
-      title = sitelink["title"]
-      lead = wikipedia_lead_image(lang, title)
+      lead = wikipedia_lead_image(lang, sitelink["title"])
       filenames << lead if lead
     end
 
-    # 3. English Wikipedia inline images (surname-filtered)
+    # 4. English Wikipedia inline images (surname-filtered)
     if (en = sitelinks["enwiki"])
       filenames += wikipedia_inline_portraits(en["title"], player_name)
     end
 
-    filenames.compact.uniq
+    # Commons and Wikipedia APIs return the same file with spaces or underscores
+    # interchangeably; normalize before deduping.
+    filenames.compact.map { |fn| fn.to_s.tr(" ", "_") }.uniq
   end
 
   def find_player_qid(name)
@@ -155,6 +172,32 @@ class WikimediaPortraitScout
     )
     images = response&.dig("parse", "images") || []
     images.select { |fn| portrait_like?(fn, player_name) }
+  end
+
+  def commons_search_portraits(query, player_name, nationality = nil)
+    response = api_get(COMMONS_API,
+      action: "query", list: "search",
+      srsearch: query, srnamespace: 6,
+      srlimit: 20, format: "json"
+    )
+    hits = response&.dig("query", "search") || []
+    hits.map { |h| h["title"].to_s.sub(/^File:/, "") }
+        .select { |fn| portrait_like?(fn, player_name) || team_photo_like?(fn, nationality) }
+  end
+
+  # Looser filter for "Portugal national football team [date].jpg" type files
+  # surfaced by Commons search: require nationality + a team/squad signal,
+  # since the player's name may not be in the filename for group photos.
+  def team_photo_like?(file_name, nationality)
+    return false if nationality.blank?
+    ext = file_name[/\.([a-z0-9]+)\z/i, 1]&.downcase
+    return false unless PHOTO_EXTENSIONS.include?(ext)
+
+    base = normalize(file_name.sub(/\.[a-z0-9]+\z/i, ""))
+    return false unless base.include?(normalize(nationality))
+    return false unless TEAM_PHOTO_SIGNALS.any? { |t| base.include?(t) }
+    return false if NOISE_SUBSTRINGS.any? { |t| base.include?(t) }
+    true
   end
 
   def portrait_like?(file_name, player_name)

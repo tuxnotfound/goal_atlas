@@ -27,36 +27,15 @@ module Admin
 
     def scout
       player = Player.friendly.find(params[:player_id])
-      candidates = ::WikimediaPortraitScout.new(logger: Rails.logger).search(player_name: player.name)
+      result = ::PlayerImageImporter.new(player, logger: Rails.logger).import!
 
-      if candidates.empty?
+      if result.candidates.empty?
         redirect_to admin_player_path(player), alert: "No portraits found for #{player.name}."
         return
       end
 
-      added = 0
-      candidates.each_with_index do |c, i|
-        image = player.player_images.find_or_initialize_by(url: c.url)
-        next if image.persisted?
-
-        image.assign_attributes(
-          source_url:    c.source_url,
-          thumbnail_url: c.thumbnail_url,
-          license:       c.license,
-          license_url:   c.license_url,
-          author:        c.author,
-          description:   c.description,
-          position:      player.player_images.maximum(:position).to_i + 1 + i,
-          is_default:    player.player_images.default.none? && i.zero?,
-          is_active:     true,
-          fetched_at:    Time.current
-        )
-        image.save!
-        added += 1
-      end
-
       redirect_to admin_player_path(player),
-                  notice: "Scouted #{candidates.size} candidate(s) for #{player.name}; #{added} new."
+                  notice: "Scouted #{result.candidates.size} candidate(s) for #{player.name}; #{result.added.size} new, #{result.tournament_tags} tournament tag(s)."
     end
   end
 end
