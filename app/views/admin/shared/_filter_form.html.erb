@@ -1,0 +1,47 @@
+<%#
+  Generic dropdown filter bar for Administrate index pages.
+
+  Locals:
+    filters: Array<Hash> — each with:
+      :name          → query-param symbol (e.g. :team_id)
+      :label         → string shown to the admin
+      :options       → ActiveRecord::Relation or Array of objects
+      :label_for     → optional proc(opt) → display label (default: opt.name)
+      :value_for     → optional proc(opt) → option value (default: opt.id)
+%>
+<% filters ||= [] %>
+<% if filters.any? %>
+  <form method="get" class="admin-filter-form"
+        style="display: flex; gap: 0.75rem; align-items: end; margin: 0.5rem 0 1rem; flex-wrap: wrap;">
+    <% filters.each do |f| %>
+      <% selected = params[f[:name]].to_s %>
+      <label style="display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.85rem;">
+        <span style="color: #555;"><%= f[:label] %></span>
+        <select name="<%= f[:name] %>"
+                onchange="this.form.submit()"
+                style="min-width: 180px; padding: 0.3rem;">
+          <option value="">All</option>
+          <% f[:options].each do |opt| %>
+            <% value = (f[:value_for]&.call(opt) || opt.id).to_s %>
+            <% label = f[:label_for]&.call(opt) || (opt.respond_to?(:name) ? opt.name : opt.to_s) %>
+            <option value="<%= value %>" <%= "selected" if selected == value %>><%= label %></option>
+          <% end %>
+        </select>
+      </label>
+    <% end %>
+
+    <%# Preserve search + sort params so filtering doesn't clobber them. %>
+    <% %i[search order direction _page].each do |k| %>
+      <% v = params[k] %>
+      <% next if v.blank? %>
+      <input type="hidden" name="<%= k %>" value="<%= v %>" />
+    <% end %>
+
+    <% if filters.any? { |f| params[f[:name]].present? } %>
+      <%= link_to "Clear",
+                  url_for(only_path: true, search: params[:search].presence),
+                  class: "button button--alt",
+                  style: "align-self: end;" %>
+    <% end %>
+  </form>
+<% end %>

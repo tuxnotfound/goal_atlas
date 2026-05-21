@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_20_151132) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_21_150323) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -103,6 +103,39 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_20_151132) do
     t.index ["tournament_id"], name: "index_matches_on_tournament_id"
     t.index ["winner_team_id"], name: "index_matches_on_winner_team_id"
     t.check_constraint "home_team_id <> away_team_id", name: "matches_distinct_teams"
+  end
+
+  create_table "player_image_taggings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "player_image_id", null: false
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["player_image_id", "tournament_id"], name: "index_player_image_taggings_unique", unique: true
+    t.index ["player_image_id"], name: "index_player_image_taggings_on_player_image_id"
+    t.index ["tournament_id"], name: "index_player_image_taggings_on_tournament_id"
+  end
+
+  create_table "player_images", force: :cascade do |t|
+    t.string "author"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.datetime "discarded_at"
+    t.datetime "fetched_at"
+    t.boolean "is_active", default: true, null: false
+    t.boolean "is_default", default: false, null: false
+    t.string "license"
+    t.string "license_url"
+    t.text "notes"
+    t.bigint "player_id", null: false
+    t.integer "position", default: 0, null: false
+    t.string "source_url"
+    t.string "thumbnail_url"
+    t.datetime "updated_at", null: false
+    t.string "url", null: false
+    t.index ["discarded_at"], name: "index_player_images_on_discarded_at"
+    t.index ["player_id", "is_default"], name: "index_player_images_one_default_per_player", unique: true, where: "(is_default = true)"
+    t.index ["player_id", "url"], name: "index_player_images_on_player_id_and_url", unique: true
+    t.index ["player_id"], name: "index_player_images_on_player_id"
   end
 
   create_table "players", force: :cascade do |t|
@@ -262,6 +295,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_20_151132) do
   add_foreign_key "matches", "teams", column: "home_team_id"
   add_foreign_key "matches", "teams", column: "winner_team_id"
   add_foreign_key "matches", "tournaments"
+  add_foreign_key "player_image_taggings", "player_images"
+  add_foreign_key "player_image_taggings", "tournaments"
+  add_foreign_key "player_images", "players"
   add_foreign_key "players", "teams", column: "nationality_team_id"
   add_foreign_key "shootout_kicks", "matches"
   add_foreign_key "shootout_kicks", "players"

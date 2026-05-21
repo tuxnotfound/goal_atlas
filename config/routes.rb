@@ -21,6 +21,12 @@ Rails.application.routes.draw do
     resources :video_links
     resources :tournament_awards
     resources :video_link_suggestions, only: [:index, :create]
+    resources :player_images do
+      member do
+        patch :set_default
+      end
+    end
+    post "players/:player_id/scout_images", to: "player_images#scout", as: :scout_player_images
 
     root to: "tournaments#index"
   end
