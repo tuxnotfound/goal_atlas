@@ -1,0 +1,37 @@
+<% player = page.resource %>
+
+<% content_for :before_main do %>
+  <section class="main-content__body" style="margin-bottom: 1.5rem;">
+    <h2 style="margin-top: 0;">Portraits</h2>
+
+    <div style="margin-bottom: 1rem;">
+      <%= button_to "Scout Wikimedia portraits",
+                    admin_scout_player_images_path(player_id: player.slug),
+                    method: :post,
+                    class: "button",
+                    data: { turbo_confirm: "This hits the Wikimedia API and may take a few seconds. Continue?" } %>
+    </div>
+
+    <% if player.player_images.any? %>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem;">
+        <% player.player_images.ordered.each do |img| %>
+          <div style="border: 1px solid <%= img.is_default? ? '#2c8a3a' : '#ddd' %>; padding: 0.4rem; background: #fafafa; opacity: <%= img.is_active? ? '1' : '0.5' %>;">
+            <%= link_to admin_player_image_path(img) do %>
+              <%= image_tag img.thumbnail_url.presence || img.url,
+                            alt: player.name,
+                            style: "width: 100%; height: 120px; object-fit: cover; background: #eee;" %>
+            <% end %>
+            <div style="font-size: 0.7rem; margin-top: 0.25rem; color: #555;">
+              <% if img.is_default? %><strong>★ Default</strong> ·<% end %>
+              <%= img.license.presence || "no license" %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p style="color: #777;">No portraits yet. Click "Scout Wikimedia portraits" to look for some.</p>
+    <% end %>
+  </section>
+<% end %>
+
+<%= render template: "administrate/application/show", locals: { page: page } %>

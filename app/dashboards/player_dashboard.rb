@@ -11,6 +11,7 @@ class PlayerDashboard < Administrate::BaseDashboard
     position: Field::Select.with_options(searchable: false, collection: ->(field) { field.resource.class.send(field.attribute.to_s.pluralize).keys }),
     goals: Field::HasMany,
     assisted_goals: Field::HasMany,
+    player_images: Field::HasMany,
     discarded_at: Field::DateTime,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
@@ -31,6 +32,7 @@ class PlayerDashboard < Administrate::BaseDashboard
     birth_date
     nationality_team
     position
+    player_images
     goals
     assisted_goals
     discarded_at

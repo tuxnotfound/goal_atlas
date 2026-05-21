@@ -1,0 +1,44 @@
+<% image = page.resource %>
+
+<% content_for :before_main do %>
+  <section class="main-content__body" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap;">
+      <div>
+        <% if image.thumbnail_url.present? || image.url.present? %>
+          <%= image_tag image.thumbnail_url.presence || image.url,
+                        alt: image.player.name,
+                        style: "max-width: 320px; max-height: 320px; border: 1px solid #ddd; background: #f6f6f6;" %>
+        <% end %>
+      </div>
+      <div style="flex: 1; min-width: 280px;">
+        <h2 style="margin-top: 0;"><%= image.player.name %></h2>
+        <p style="margin: 0.25rem 0;">
+          <strong>License:</strong>
+          <%= image.license.presence || "—" %>
+          <% if image.license_url.present? %>
+            (<%= link_to "ref", image.license_url, target: "_blank", rel: "noopener" %>)
+          <% end %>
+        </p>
+        <p style="margin: 0.25rem 0;"><strong>Author:</strong> <%= image.author.presence || "—" %></p>
+        <% if image.source_url.present? %>
+          <p style="margin: 0.25rem 0;">
+            <strong>Source:</strong>
+            <%= link_to image.source_url, image.source_url, target: "_blank", rel: "noopener" %>
+          </p>
+        <% end %>
+
+        <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <% if image.is_default? %>
+            <span class="button button--success" style="cursor: default;">★ Default</span>
+          <% else %>
+            <%= button_to "Set as default", set_default_admin_player_image_path(image),
+                          method: :patch, class: "button" %>
+          <% end %>
+          <%= link_to "Open original", image.url, target: "_blank", rel: "noopener", class: "button" %>
+        </div>
+      </div>
+    </div>
+  </section>
+<% end %>
+
+<%= render template: "administrate/application/show", locals: { page: page } %>

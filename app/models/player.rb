@@ -17,6 +17,18 @@ class Player < ApplicationRecord
 
   has_many :goals, dependent: :restrict_with_error
   has_many :assisted_goals, class_name: "Goal", foreign_key: :assist_player_id, dependent: :nullify, inverse_of: :assist_player
+  has_many :player_images, dependent: :destroy
+
+  def default_image
+    player_images.kept.active.default.first || player_images.kept.active.ordered.first
+  end
+
+  def image_for(tournament)
+    return default_image if tournament.blank?
+    player_images.kept.active.joins(:player_image_taggings)
+                 .where(player_image_taggings: { tournament_id: tournament.id })
+                 .ordered.first || default_image
+  end
 
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true
