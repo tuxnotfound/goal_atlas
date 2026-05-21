@@ -102,6 +102,7 @@ end
 #
 #  index_tournaments_on_discarded_at          (discarded_at)
 #  index_tournaments_on_fourth_place_team_id  (fourth_place_team_id)
+#  index_tournaments_on_name_trgm             (name) USING gin
 #  index_tournaments_on_runner_up_team_id     (runner_up_team_id)
 #  index_tournaments_on_slug                  (slug) UNIQUE
 #  index_tournaments_on_third_place_team_id   (third_place_team_id)

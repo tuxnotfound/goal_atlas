@@ -65,6 +65,7 @@ end
 #
 #  index_players_on_discarded_at         (discarded_at)
 #  index_players_on_name                 (name)
+#  index_players_on_name_trgm            (name) USING gin
 #  index_players_on_nationality_team_id  (nationality_team_id)
 #  index_players_on_slug                 (slug) UNIQUE
 #

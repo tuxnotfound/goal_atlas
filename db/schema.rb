@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_21_150323) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_21_170510) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "pg_trgm"
 
   create_table "goal_taggings", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -150,6 +151,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_21_150323) do
     t.datetime "updated_at", null: false
     t.index ["discarded_at"], name: "index_players_on_discarded_at"
     t.index ["name"], name: "index_players_on_name"
+    t.index ["name"], name: "index_players_on_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["nationality_team_id"], name: "index_players_on_nationality_team_id"
     t.index ["slug"], name: "index_players_on_slug", unique: true
   end
@@ -200,6 +202,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_21_150323) do
     t.index ["country_code"], name: "index_stadiums_on_country_code"
     t.index ["discarded_at"], name: "index_stadiums_on_discarded_at"
     t.index ["name"], name: "index_stadiums_on_name"
+    t.index ["name"], name: "index_stadiums_on_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["slug"], name: "index_stadiums_on_slug", unique: true
   end
 
@@ -219,6 +222,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_21_150323) do
     t.index ["country_code"], name: "index_teams_on_country_code"
     t.index ["discarded_at"], name: "index_teams_on_discarded_at"
     t.index ["name"], name: "index_teams_on_name"
+    t.index ["name"], name: "index_teams_on_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["slug"], name: "index_teams_on_slug", unique: true
     t.index ["successor_team_id"], name: "index_teams_on_successor_team_id"
   end
@@ -255,6 +259,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_21_150323) do
     t.integer "year", null: false
     t.index ["discarded_at"], name: "index_tournaments_on_discarded_at"
     t.index ["fourth_place_team_id"], name: "index_tournaments_on_fourth_place_team_id"
+    t.index ["name"], name: "index_tournaments_on_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["runner_up_team_id"], name: "index_tournaments_on_runner_up_team_id"
     t.index ["slug"], name: "index_tournaments_on_slug", unique: true
     t.index ["third_place_team_id"], name: "index_tournaments_on_third_place_team_id"

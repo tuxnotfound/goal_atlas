@@ -47,5 +47,6 @@ end
 #  index_stadiums_on_country_code  (country_code)
 #  index_stadiums_on_discarded_at  (discarded_at)
 #  index_stadiums_on_name          (name)
+#  index_stadiums_on_name_trgm     (name) USING gin
 #  index_stadiums_on_slug          (slug) UNIQUE
 #
