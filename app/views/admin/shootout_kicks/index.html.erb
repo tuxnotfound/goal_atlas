@@ -1,0 +1,16 @@
+<% content_for :before_main do %>
+  <%= render "admin/shared/filter_form", filters: [
+    { name: :tournament_id, label: "Tournament", options: Tournament.kept.ordered_by_year,
+      label_for: ->(t) { "#{t.year} — #{t.host_countries.join(', ')}" } },
+    { name: :match_id,      label: "Match",      options: Match.kept.includes(:home_team, :away_team, :tournament).ordered_by_date,
+      label_for: ->(m) { "#{m.tournament.year} ##{m.match_number}: #{m.home_team.fifa_code}-#{m.away_team.fifa_code}" } }
+  ] %>
+<% end %>
+
+<%= render template: "administrate/application/index", locals: {
+  page: page,
+  resources: resources,
+  search_term: search_term,
+  show_search_bar: show_search_bar,
+  filters: filters
+} %>

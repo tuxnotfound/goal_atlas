@@ -1,0 +1,15 @@
+<% content_for :before_main do %>
+  <%= render "admin/shared/filter_form", filters: [
+    { name: :team_id,       label: "Team",       options: Team.kept.order(:name) },
+    { name: :tournament_id, label: "Tournament", options: Tournament.kept.ordered_by_year,
+      label_for: ->(t) { "#{t.year} — #{t.host_countries.join(', ')}" } }
+  ] %>
+<% end %>
+
+<%= render template: "administrate/application/index", locals: {
+  page: page,
+  resources: resources,
+  search_term: search_term,
+  show_search_bar: show_search_bar,
+  filters: filters
+} %>

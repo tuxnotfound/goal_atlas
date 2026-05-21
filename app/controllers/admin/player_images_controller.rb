@@ -1,11 +1,15 @@
 module Admin
   class PlayerImagesController < Admin::ApplicationController
     def index
-      @players = Player.kept
-                       .includes(:nationality_team, :player_images)
-                       .order(:name)
-                       .to_a
+      scope = Player.kept.includes(:nationality_team, :player_images)
+      scope = scope.where(nationality_team_id: params[:team_id]) if params[:team_id].present?
 
+      if params[:tournament_id].present?
+        ids = player_ids_in_tournament(params[:tournament_id])
+        scope = scope.where(id: ids)
+      end
+
+      @players = scope.order(:name).to_a
       @counts = {
         total:       @players.size,
         with_image:  @players.count { |p| p.player_images.any? },
@@ -24,6 +28,17 @@ module Admin
       redirect_back fallback_location: admin_player_image_path(image),
                     notice: "Default image set for #{image.player.name}."
     end
+
+    private
+
+    def player_ids_in_tournament(tournament_id)
+      scorer_ids = Goal.kept.joins(:match).where(matches: { tournament_id: tournament_id }).distinct.pluck(:player_id)
+      kicker_ids = ShootoutKick.kept.joins(:match).where(matches: { tournament_id: tournament_id }).distinct.pluck(:player_id)
+      award_ids  = TournamentAward.where(tournament_id: tournament_id).pluck(:player_id)
+      (scorer_ids + kicker_ids + award_ids).uniq
+    end
+
+    public
 
     def scout
       player = Player.friendly.find(params[:player_id])

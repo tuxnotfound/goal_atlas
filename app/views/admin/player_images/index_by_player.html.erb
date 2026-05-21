@@ -11,6 +11,11 @@
 </header>
 
 <section class="main-content__body">
+  <%= render "admin/shared/filter_form", filters: [
+    { name: :team_id,       label: "Team",       options: Team.kept.order(:name) },
+    { name: :tournament_id, label: "Tournament", options: Tournament.kept.ordered_by_year,
+      label_for: ->(t) { "#{t.year} — #{t.host_countries.join(', ')}" } }
+  ] %>
   <table style="width: 100%; border-collapse: collapse;">
     <thead>
       <tr style="text-align: left; border-bottom: 1px solid #ccc;">
