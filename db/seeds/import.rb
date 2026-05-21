@@ -9,25 +9,27 @@
 require "csv"
 
 DATA_DIR = Rails.root.join("db", "data", "jfjelstul").freeze
-YEARS = [1986, 2018, 2022].freeze
+YEARS = [1930, 1986, 2014, 2018, 2022].freeze
 TOURNAMENT_IDS = YEARS.map { |y| "WC-#{y}" }.to_set.freeze
 
 # Maps jfjelstul team_id (T-XX) → our Team.fifa_code.
 # Built once from teams.csv but kept explicit for traceability.
 TEAM_ID_TO_FIFA = {
   "T-01" => "ALG", "T-03" => "ARG", "T-04" => "AUS", "T-06" => "BEL",
-  "T-09" => "BRA", "T-10" => "BUL", "T-11" => "CMR", "T-12" => "CAN",
-  "T-16" => "COL", "T-17" => "CRC", "T-18" => "CRO", "T-22" => "DEN",
-  "T-25" => "ECU", "T-26" => "EGY", "T-28" => "ENG", "T-30" => "FRA",
-  "T-31" => "GER", "T-32" => "GHA", "T-36" => "HUN", "T-37" => "ISL",
-  "T-38" => "IRN", "T-39" => "IRQ", "T-41" => "ITA", "T-44" => "JPN",
-  "T-46" => "MEX", "T-47" => "MAR", "T-48" => "NED", "T-50" => "NGA",
-  "T-52" => "NIR", "T-54" => "PAN", "T-55" => "PAR", "T-56" => "PER",
-  "T-57" => "POL", "T-58" => "POR", "T-59" => "QAT", "T-62" => "RUS",
-  "T-63" => "KSA", "T-64" => "SCO", "T-65" => "SEN", "T-66" => "SRB",
-  "T-71" => "KOR", "T-72" => "URS", "T-73" => "ESP", "T-74" => "SWE",
-  "T-75" => "SUI", "T-79" => "TUN", "T-83" => "USA", "T-84" => "URU",
-  "T-85" => "WAL", "T-86" => "FRG"
+  "T-07" => "BOL", "T-08" => "BIH", "T-09" => "BRA", "T-10" => "BUL",
+  "T-11" => "CMR", "T-12" => "CAN", "T-13" => "CHI", "T-16" => "COL",
+  "T-17" => "CRC", "T-18" => "CRO", "T-22" => "DEN", "T-25" => "ECU",
+  "T-26" => "EGY", "T-28" => "ENG", "T-30" => "FRA", "T-31" => "GER",
+  "T-32" => "GHA", "T-33" => "GRE", "T-35" => "HON", "T-36" => "HUN",
+  "T-37" => "ISL", "T-38" => "IRN", "T-39" => "IRQ", "T-41" => "ITA",
+  "T-42" => "CIV", "T-44" => "JPN", "T-46" => "MEX", "T-47" => "MAR",
+  "T-48" => "NED", "T-50" => "NGA", "T-52" => "NIR", "T-54" => "PAN",
+  "T-55" => "PAR", "T-56" => "PER", "T-57" => "POL", "T-58" => "POR",
+  "T-59" => "QAT", "T-61" => "ROU", "T-62" => "RUS", "T-63" => "KSA",
+  "T-64" => "SCO", "T-65" => "SEN", "T-66" => "SRB", "T-71" => "KOR",
+  "T-72" => "URS", "T-73" => "ESP", "T-74" => "SWE", "T-75" => "SUI",
+  "T-79" => "TUN", "T-83" => "USA", "T-84" => "URU", "T-85" => "WAL",
+  "T-86" => "FRG", "T-87" => "YUG"
 }.freeze
 
 # jfjelstul stadium name → our seeded stadium name (when they differ).

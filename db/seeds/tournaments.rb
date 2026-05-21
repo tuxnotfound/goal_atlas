@@ -2,11 +2,25 @@
 
 TOURNAMENTS = [
   {
+    year: 1930, name: "FIFA World Cup 1930",
+    host_countries: ["Uruguay"],
+    start_date: Date.new(1930, 7, 13), end_date: Date.new(1930, 7, 30),
+    total_matches: 18, total_goals: 70,
+    winner: "URU", runner_up: "ARG", third: "USA", fourth: "YUG"
+  },
+  {
     year: 1986, name: "FIFA World Cup 1986",
     host_countries: ["Mexico"],
     start_date: Date.new(1986, 5, 31), end_date: Date.new(1986, 6, 29),
     total_matches: 52, total_goals: 132,
     winner: "ARG", runner_up: "FRG", third: "FRA", fourth: "BEL"
+  },
+  {
+    year: 2014, name: "FIFA World Cup 2014",
+    host_countries: ["Brazil"],
+    start_date: Date.new(2014, 6, 12), end_date: Date.new(2014, 7, 13),
+    total_matches: 64, total_goals: 171,
+    winner: "GER", runner_up: "ARG", third: "NED", fourth: "BRA"
   },
   {
     year: 2018, name: "FIFA World Cup 2018",

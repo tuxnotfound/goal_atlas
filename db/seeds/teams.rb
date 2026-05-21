@@ -70,7 +70,20 @@ HISTORICAL_TEAMS = [
   { name: "Nigeria",          country_code: "NGA", fifa_code: "NGA", flag_emoji: "🇳🇬", confederation: :caf },
   { name: "Sweden",           country_code: "SWE", fifa_code: "SWE", flag_emoji: "🇸🇪", confederation: :uefa },
   { name: "Panama",           country_code: "PAN", fifa_code: "PAN", flag_emoji: "🇵🇦", confederation: :concacaf },
-  { name: "Colombia",         country_code: "COL", fifa_code: "COL", flag_emoji: "🇨🇴", confederation: :conmebol }
+  { name: "Colombia",         country_code: "COL", fifa_code: "COL", flag_emoji: "🇨🇴", confederation: :conmebol },
+
+  # === 2014 squad participants not already listed ===
+  { name: "Bosnia and Herzegovina", country_code: "BIH", fifa_code: "BIH", flag_emoji: "🇧🇦", confederation: :uefa },
+  { name: "Chile",                  country_code: "CHI", fifa_code: "CHI", flag_emoji: "🇨🇱", confederation: :conmebol },
+  { name: "Greece",                 country_code: "GRE", fifa_code: "GRE", flag_emoji: "🇬🇷", confederation: :uefa },
+  { name: "Honduras",               country_code: "HON", fifa_code: "HON", flag_emoji: "🇭🇳", confederation: :concacaf },
+  { name: "Ivory Coast",            country_code: "CIV", fifa_code: "CIV", flag_emoji: "🇨🇮", confederation: :caf },
+
+  # === 1930 squad participants not already listed ===
+  { name: "Bolivia",         country_code: "BOL", fifa_code: "BOL", flag_emoji: "🇧🇴", confederation: :conmebol },
+  { name: "Romania",         country_code: "ROU", fifa_code: "ROU", flag_emoji: "🇷🇴", confederation: :uefa },
+  { name: "Yugoslavia",      country_code: "YUG", fifa_code: "YUG", flag_emoji: "🇷🇸", confederation: :uefa,
+    active_from: 1919, active_until: 1992 }
 ].freeze
 
 (TEAMS_2022 + HISTORICAL_TEAMS).each do |attrs|

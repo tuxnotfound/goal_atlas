@@ -13,6 +13,16 @@ AWARDS = {
     { type: :silver_boot,        player: "Diego Maradona",     notes: "5 goals" },
     { type: :bronze_boot,        player: "Emilio Butragueño",  notes: "5 goals" }
   ],
+  2014 => [
+    { type: :golden_ball,        player: "Lionel Messi" },
+    { type: :silver_ball,        player: "Thomas Müller" },
+    { type: :bronze_ball,        player: "Arjen Robben" },
+    { type: :golden_boot,        player: "James Rodríguez",  notes: "6 goals" },
+    { type: :silver_boot,        player: "Thomas Müller",    notes: "5 goals" },
+    { type: :bronze_boot,        player: "Neymar",           notes: "4 goals (ahead of Messi/van Persie on assists tiebreaker)" },
+    { type: :golden_glove,       player: "Manuel Neuer" },
+    { type: :best_young_player,  player: "Paul Pogba" }
+  ],
   2018 => [
     { type: :golden_ball,        player: "Luka Modrić" },
     { type: :silver_ball,        player: "Eden Hazard" },

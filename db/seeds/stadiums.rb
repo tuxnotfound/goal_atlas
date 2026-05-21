@@ -118,4 +118,61 @@ STADIUMS_2018.each do |attrs|
   end
 end
 
-puts "Stadiums: #{Stadium.count} (target: #{STADIUMS_2022.size + STADIUMS_1986.size + STADIUMS_2018.size})"
+# The 12 venues used at the 2014 FIFA World Cup in Brazil.
+STADIUMS_2014 = [
+  { name: "Estádio do Maracanã", city: "Rio de Janeiro", country: "Brazil", country_code: "BR",
+    latitude: -22.9122, longitude: -43.2302, current_capacity: 78_838,
+    notes: "Hosted the 2014 World Cup final (Germany 1-0 Argentina, a.e.t.). Also hosted the 1950 final." },
+  { name: "Estádio Mineirão", city: "Belo Horizonte", country: "Brazil", country_code: "BR",
+    latitude: -19.8657, longitude: -43.9710, current_capacity: 61_846,
+    notes: "Hosted the 7-1 Germany–Brazil semi-final." },
+  { name: "Arena Corinthians", city: "São Paulo", country: "Brazil", country_code: "BR",
+    latitude: -23.5453, longitude: -46.4744, current_capacity: 49_000,
+    notes: "Hosted the opening match (Brazil 3-1 Croatia)." },
+  { name: "Estádio Nacional", city: "Brasília", country: "Brazil", country_code: "BR",
+    latitude: -15.7836, longitude: -47.8990, current_capacity: 69_349,
+    notes: "Also known as Estádio Mané Garrincha." },
+  { name: "Estádio Castelão", city: "Fortaleza", country: "Brazil", country_code: "BR",
+    latitude: -3.8073, longitude: -38.5223, current_capacity: 63_903 },
+  { name: "Arena Fonte Nova", city: "Salvador", country: "Brazil", country_code: "BR",
+    latitude: -12.9789, longitude: -38.5044, current_capacity: 51_708 },
+  { name: "Arena Pernambuco", city: "Recife", country: "Brazil", country_code: "BR",
+    latitude: -8.0388, longitude: -35.0119, current_capacity: 44_248 },
+  { name: "Arena da Amazônia", city: "Manaus", country: "Brazil", country_code: "BR",
+    latitude: -3.0833, longitude: -60.0271, current_capacity: 40_549 },
+  { name: "Estádio Beira-Rio", city: "Porto Alegre", country: "Brazil", country_code: "BR",
+    latitude: -30.0651, longitude: -51.2358, current_capacity: 50_287 },
+  { name: "Arena Pantanal", city: "Cuiabá", country: "Brazil", country_code: "BR",
+    latitude: -15.6033, longitude: -56.1196, current_capacity: 41_390 },
+  { name: "Arena das Dunas", city: "Natal", country: "Brazil", country_code: "BR",
+    latitude: -5.8290, longitude: -35.2129, current_capacity: 31_375 },
+  { name: "Arena da Baixada", city: "Curitiba", country: "Brazil", country_code: "BR",
+    latitude: -25.4485, longitude: -49.2767, current_capacity: 42_372 }
+].freeze
+
+STADIUMS_2014.each do |attrs|
+  Stadium.find_or_create_by!(name: attrs[:name]) do |stadium|
+    stadium.assign_attributes(attrs)
+  end
+end
+
+# The 3 venues used at the 1930 FIFA World Cup in Uruguay — all in Montevideo.
+STADIUMS_1930 = [
+  { name: "Estadio Centenario", city: "Montevideo", country: "Uruguay", country_code: "UY",
+    latitude: -34.8941, longitude: -56.1525, current_capacity: 60_235,
+    notes: "Built for the 1930 World Cup; hosted the final (Uruguay 4-2 Argentina). Now a FIFA Historic Football Monument." },
+  { name: "Estadio Gran Parque Central", city: "Montevideo", country: "Uruguay", country_code: "UY",
+    latitude: -34.8956, longitude: -56.1844, current_capacity: 30_000,
+    notes: "Hosted the opening match (Uruguay's home of Club Nacional)." },
+  { name: "Estadio Pocitos", city: "Montevideo", country: "Uruguay", country_code: "UY",
+    latitude: -34.9145, longitude: -56.1572, current_capacity: 1_000,
+    notes: "Hosted the first match of the tournament (USA 3-0 Belgium). Demolished in 1940." }
+].freeze
+
+STADIUMS_1930.each do |attrs|
+  Stadium.find_or_create_by!(name: attrs[:name]) do |stadium|
+    stadium.assign_attributes(attrs)
+  end
+end
+
+puts "Stadiums: #{Stadium.count} (target: #{STADIUMS_2022.size + STADIUMS_1986.size + STADIUMS_2018.size + STADIUMS_2014.size + STADIUMS_1930.size})"
