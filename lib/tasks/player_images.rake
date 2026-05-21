@@ -46,31 +46,31 @@ namespace :player_images do
   def fetch_for_player(player, scout)
     candidates = scout.search(player_name: player.name)
     if candidates.empty?
-      puts "#{player.name} — no portrait found"
+      puts "#{player.name} — no portraits found"
       return
     end
 
-    c = candidates.first
-    image = player.player_images.find_or_initialize_by(url: c.url)
-    if image.persisted?
-      puts "#{player.name} — already has this portrait"
-      return
-    end
+    added = 0
+    candidates.each_with_index do |c, i|
+      image = player.player_images.find_or_initialize_by(url: c.url)
+      next if image.persisted?
 
-    image.assign_attributes(
-      source_url:    c.source_url,
-      thumbnail_url: c.thumbnail_url,
-      license:       c.license,
-      license_url:   c.license_url,
-      author:        c.author,
-      description:   c.description,
-      position:      player.player_images.maximum(:position).to_i + 1,
-      is_default:    player.player_images.default.none?,
-      is_active:     true,
-      fetched_at:    Time.current
-    )
-    image.save!
-    puts "#{player.name} — added portrait (#{c.license})"
+      image.assign_attributes(
+        source_url:    c.source_url,
+        thumbnail_url: c.thumbnail_url,
+        license:       c.license,
+        license_url:   c.license_url,
+        author:        c.author,
+        description:   c.description,
+        position:      player.player_images.maximum(:position).to_i + 1 + i,
+        is_default:    player.player_images.default.none? && i.zero?,
+        is_active:     true,
+        fetched_at:    Time.current
+      )
+      image.save!
+      added += 1
+    end
+    puts "#{player.name} — #{candidates.size} candidate(s), #{added} new"
   rescue => e
     puts "#{player.name} — ERROR: #{e.class}: #{e.message}"
   end
