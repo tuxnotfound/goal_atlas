@@ -44,33 +44,33 @@ namespace :player_images do
   end
 
   def fetch_for_player(player, scout)
-    candidates = scout.search(player_name: player.name, max: 8)
+    candidates = scout.search(player_name: player.name)
     if candidates.empty?
-      puts "#{player.name} — no candidates"
+      puts "#{player.name} — no portrait found"
       return
     end
 
-    created = 0
-    candidates.each_with_index do |c, i|
-      image = player.player_images.find_or_initialize_by(url: c.url)
-      next unless image.new_record? # don't overwrite admin-edited rows
-
-      image.assign_attributes(
-        source_url:    c.source_url,
-        thumbnail_url: c.thumbnail_url,
-        license:       c.license,
-        license_url:   c.license_url,
-        author:        c.author,
-        description:   c.description,
-        position:      i,
-        is_default:    (i == 0 && player.player_images.default.none?),
-        is_active:     true,
-        fetched_at:    Time.current
-      )
-      image.save!
-      created += 1
+    c = candidates.first
+    image = player.player_images.find_or_initialize_by(url: c.url)
+    if image.persisted?
+      puts "#{player.name} — already has this portrait"
+      return
     end
-    puts "#{player.name} — #{candidates.size} candidates (#{created} new)"
+
+    image.assign_attributes(
+      source_url:    c.source_url,
+      thumbnail_url: c.thumbnail_url,
+      license:       c.license,
+      license_url:   c.license_url,
+      author:        c.author,
+      description:   c.description,
+      position:      player.player_images.maximum(:position).to_i + 1,
+      is_default:    player.player_images.default.none?,
+      is_active:     true,
+      fetched_at:    Time.current
+    )
+    image.save!
+    puts "#{player.name} — added portrait (#{c.license})"
   rescue => e
     puts "#{player.name} — ERROR: #{e.class}: #{e.message}"
   end

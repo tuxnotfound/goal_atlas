@@ -1,0 +1,70 @@
+<% content_for(:title) { "Player portraits" } %>
+
+<header class="main-content__header">
+  <h1 class="main-content__page-title">Player portraits</h1>
+  <div style="color: #555; font-size: 0.9rem;">
+    <%= @counts[:with_default] %> with default portrait
+    · <%= @counts[:with_image] - @counts[:with_default] %> with images but no default
+    · <%= @counts[:total] - @counts[:with_image] %> missing
+    · <%= @counts[:total] %> players total
+  </div>
+</header>
+
+<section class="main-content__body">
+  <table style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr style="text-align: left; border-bottom: 1px solid #ccc;">
+        <th style="padding: 0.5rem; width: 80px;"></th>
+        <th style="padding: 0.5rem;">Player</th>
+        <th style="padding: 0.5rem;">Team</th>
+        <th style="padding: 0.5rem; text-align: right;">Images</th>
+        <th style="padding: 0.5rem;">Default license</th>
+        <th style="padding: 0.5rem; width: 220px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @players.each do |player| %>
+        <% default = player.default_image %>
+        <% images_count = player.player_images.size %>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem;">
+            <% if default %>
+              <%= image_tag default.thumbnail_url.presence || default.url,
+                            alt: player.name,
+                            style: "width: 60px; height: 60px; object-fit: cover; border-radius: 4px; background: #eee;" %>
+            <% else %>
+              <div style="width: 60px; height: 60px; background: #eee; border-radius: 4px;"></div>
+            <% end %>
+          </td>
+          <td style="padding: 0.4rem;">
+            <%= link_to player.name, admin_player_path(player), style: "font-weight: 500;" %>
+          </td>
+          <td style="padding: 0.4rem; color: #666;">
+            <%= player.nationality_team&.fifa_code %>
+          </td>
+          <td style="padding: 0.4rem; text-align: right; font-variant-numeric: tabular-nums;">
+            <%= images_count %>
+          </td>
+          <td style="padding: 0.4rem; color: #666; font-size: 0.85rem;">
+            <%= default&.license || "—" %>
+          </td>
+          <td style="padding: 0.4rem; text-align: right;">
+            <% if images_count.zero? %>
+              <%= button_to "Scout portrait",
+                            admin_scout_player_images_path(player_id: player.slug),
+                            method: :post,
+                            class: "button button--alt",
+                            form_class: "inline-form" %>
+            <% else %>
+              <%= link_to "Manage (#{images_count})", admin_player_path(player), class: "button button--alt" %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</section>
+
+<style>
+  .inline-form { display: inline; }
+</style>

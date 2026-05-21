@@ -1,10 +1,13 @@
 require "net/http"
 require "json"
 
-# Looks up player portraits on Wikidata + Wikimedia Commons.
+# Looks up the canonical player portrait on Wikidata (P18) and resolves its
+# license metadata via Wikimedia Commons.
 #
-# Returns only freely-licensed images (CC0 / CC-BY / CC-BY-SA / Public domain)
-# with full attribution metadata so each result can be displayed responsibly.
+# Returns at most ONE image per player — the curated Wikipedia infobox portrait.
+# Returning the wider Commons category content is too noisy (signatures, cars,
+# facilities, fan photos); admins can hand-add additional URLs if they need
+# more than one image per player.
 class WikimediaPortraitScout
   USER_AGENT = "GoalAtlas/0.1 (https://goalatlas.local; pcioga@gmail.com)".freeze
   WIKIDATA_API = "https://www.wikidata.org/w/api.php".freeze
@@ -30,81 +33,27 @@ class WikimediaPortraitScout
     @logger  = logger
   end
 
-  # Returns an Array<ImageCandidate>, filtered to freely-licensed portraits.
-  def search(player_name:, max: 8)
+  # Returns an Array<ImageCandidate> of length 0 or 1.
+  def search(player_name:)
     qid = find_player_qid(player_name)
     return [] if qid.nil?
 
     entity = fetch_entity(qid)
     return [] if entity.nil?
 
-    candidates = []
+    file_name = canonical_image_file(entity)
+    return [] if file_name.nil?
 
-    if (canonical = canonical_image_file(entity))
-      add_candidate(candidates, canonical)
-    end
+    info = file_info(file_name)
+    return [] if info.nil?
 
-    if (category = commons_category(entity)) && candidates.size < max
-      # Cast a wider net (50 files) then keep only those whose filename starts
-      # with the player's name — Commons categories include lots of tangentially
-      # related media (graffiti, birthplaces, family) we don't want.
-      category_files(category, 50).each do |file_name|
-        next if candidates.any? { |c| c.file_name == file_name }
-        next unless portrait_named?(file_name, player_name)
-        add_candidate(candidates, file_name)
-        break if candidates.size >= max
-      end
-    end
-
-    candidates.select(&:freely_licensed?)
-  end
-
-  PHOTO_EXTENSIONS = %w[jpg jpeg png webp].freeze
-
-  # Tokens whose presence in a filename strongly suggests it's not a portrait.
-  NOISE_TOKENS = %w[
-    signature firma sig graffiti maillot jersey shirt boot boots
-    stadium statue monument estatua mural casa house childhood barrio infancia
-    family familia trophy trophies medal medals award ribbon footprint print
-    pronunciation pronounce name fans crowd autograph cartoon caricature
-    drawing painting silhouette logo sticker stamp coin currency
-  ].freeze
-
-  def portrait_named?(file_name, player_name)
-    ext = file_name[/\.([a-z0-9]+)\z/i, 1]&.downcase
-    return false unless PHOTO_EXTENSIONS.include?(ext)
-
-    base = normalize(file_name.sub(/\.[a-z0-9]+\z/i, ""))
-    tokens = normalize(player_name).split.reject { |t| t.length < 3 }
-    return false if tokens.empty?
-
-    family = tokens.last
-    name_present = base.start_with?(family) || base[0, 40].include?(family)
-    return false unless name_present
-
-    base_words = base.split
-    return false if (base_words & NOISE_TOKENS).any?
-
-    true
-  end
-
-  def normalize(str)
-    str.to_s.unicode_normalize(:nfkd)
-       .gsub(/[̀-ͯ]/, "")
-       .downcase
-       .gsub(/[^a-z0-9 ]/, " ")
-       .squeeze(" ")
-       .strip
+    candidate = build_candidate(file_name, info)
+    candidate.freely_licensed? ? [candidate] : []
   end
 
   private
 
   attr_reader :logger
-
-  def add_candidate(list, file_name)
-    info = file_info(file_name)
-    list << build_candidate(file_name, info) if info
-  end
 
   def find_player_qid(name)
     response = api_get(WIKIDATA_API,
@@ -143,10 +92,6 @@ class WikimediaPortraitScout
     claim_values(entity, "P18").first
   end
 
-  def commons_category(entity)
-    claim_values(entity, "P373").first
-  end
-
   def file_info(file_name)
     response = api_get(COMMONS_API,
       action: "query", titles: "File:#{file_name}",
@@ -167,17 +112,6 @@ class WikimediaPortraitScout
       author: strip_html(ext.dig("Artist", "value")),
       description: strip_html(ext.dig("ImageDescription", "value"))
     }
-  end
-
-  def category_files(category, limit)
-    return [] if limit <= 0
-    response = api_get(COMMONS_API,
-      action: "query", list: "categorymembers",
-      cmtitle: "Category:#{category}", cmtype: "file",
-      cmlimit: limit, format: "json"
-    )
-    members = response&.dig("query", "categorymembers") || []
-    members.map { |m| m["title"].to_s.sub(/^File:/, "") }
   end
 
   def build_candidate(file_name, info)
