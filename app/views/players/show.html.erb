@@ -20,11 +20,98 @@
     <% end %>
   </div>
 
-  <div class="mt-4">
-    <div class="text-stone-500 text-xs uppercase tracking-wide">Goals scored</div>
-    <div class="font-semibold text-lg tabular-nums"><%= @goals.size %></div>
+  <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+    <div>
+      <div class="text-stone-500 text-xs uppercase tracking-wide">Goals</div>
+      <div class="font-semibold text-lg tabular-nums"><%= @goals.size %></div>
+    </div>
+    <% if @shootout_totals[:taken].positive? %>
+      <div>
+        <div class="text-stone-500 text-xs uppercase tracking-wide">Shootout kicks</div>
+        <div class="font-semibold text-lg tabular-nums">
+          <%= @shootout_totals[:scored] %>/<%= @shootout_totals[:taken] %>
+        </div>
+      </div>
+    <% end %>
+    <% if @tournament_records.any? %>
+      <div>
+        <div class="text-stone-500 text-xs uppercase tracking-wide">Tournaments</div>
+        <div class="font-semibold text-lg tabular-nums"><%= @tournament_records.size %></div>
+      </div>
+    <% end %>
   </div>
 </section>
+
+<%# === World Cup history === %>
+<% if @tournament_records.any? %>
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">World Cup history</h2>
+    <div class="overflow-x-auto border border-stone-200 rounded-md bg-white">
+      <table class="w-full text-sm tabular-nums">
+        <thead class="bg-stone-50 text-stone-500 text-xs uppercase tracking-wide">
+          <tr>
+            <th class="text-left px-3 py-2">Year</th>
+            <th class="text-right px-3 py-2">Goals</th>
+            <th class="text-right px-3 py-2">Assists</th>
+            <th class="text-right px-3 py-2">Shootouts</th>
+            <th class="text-left px-3 py-2">Awards</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stone-100">
+          <% @tournament_records.each do |r| %>
+            <tr class="hover:bg-stone-50">
+              <td class="px-3 py-2">
+                <%= link_to r.tournament.year, tournament_path(r.tournament),
+                            class: "font-medium hover:text-emerald-700" %>
+              </td>
+              <td class="text-right px-3 py-2"><%= r.goals_count.positive? ? r.goals_count : "—" %></td>
+              <td class="text-right px-3 py-2"><%= r.assists_count.positive? ? r.assists_count : "—" %></td>
+              <td class="text-right px-3 py-2">
+                <% if r.shootout_kicks_count.positive? %>
+                  <%= r.shootout_kicks_scored %>/<%= r.shootout_kicks_count %>
+                <% else %>
+                  —
+                <% end %>
+              </td>
+              <td class="px-3 py-2">
+                <% if r.has_award? %>
+                  <ul class="space-y-0.5">
+                    <% r.awards.each do |a| %>
+                      <li class="text-amber-700">
+                        <%= a.award_type.to_s.humanize %><%
+                        %><% if a.notes.present? %>
+                          <span class="text-stone-500 text-xs">· <%= a.notes %></span>
+                        <% end %>
+                      </li>
+                    <% end %>
+                  </ul>
+                <% else %>
+                  <span class="text-stone-300">—</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+<% end %>
+
+<%# === Goal type breakdown === %>
+<% if @goal_type_breakdown.any? && @goals.size > 1 %>
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">Goal type breakdown</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <% Goal::GOAL_TYPES.keys.each do |type| %>
+        <% count = @goal_type_breakdown[type] || 0 %>
+        <div class="bg-white border border-stone-200 rounded-md p-3">
+          <div class="text-stone-500 text-xs uppercase tracking-wide"><%= type.to_s.humanize %></div>
+          <div class="font-semibold text-lg tabular-nums <%= "text-stone-300" if count.zero? %>"><%= count %></div>
+        </div>
+      <% end %>
+    </div>
+  </section>
+<% end %>
 
 <%# === Goals lane === %>
 <section class="mb-8">
