@@ -65,7 +65,16 @@ class PlayerImageImporter
                .map { |c| [editorial_score(c), c] }
                .sort_by { |s, _| -s }
                .map { |_, c| c }
-               .first(SAVE_LIMIT)
+
+    # Diversity cap — at most 2 candidates from the same filename stem so a
+    # single press-shoot sequence (e.g. "Cristiano_Ronaldo_0866/0876/0889…")
+    # doesn't crowd out context-rich photos from other events.
+    stem_counts = Hash.new(0)
+    scored = scored.select do |c|
+      stem = filename_stem(c.file_name)
+      stem_counts[stem] += 1
+      stem_counts[stem] <= 2
+    end.first(SAVE_LIMIT)
 
     added = []
     tags  = 0
@@ -102,7 +111,8 @@ class PlayerImageImporter
     text = normalized_text(candidate)
     score = 0
 
-    score += 12 if text.match?(/\bfifa\s+world\s+cup\b/) || text.match?(/\bworld\s+cup\b/)
+    # "World Cup" / "FIFA World Cup" full mentions plus "WC2022"-style shorthand.
+    score += 12 if text.match?(/\b(fifa\s+)?world\s+cup\b/) || text.match?(/\bwc\s*\d{4}\b/)
     score += 8  if text.match?(NATIONAL_COMPETITION_REGEX)
     score += 6  if text.match?(/\bqualif/) && @nationality_terms.any? { |t| text.include?(t) }
     score += 5  if text.match?(/\bnational\s+team\b/) || text.match?(/\bselection\b/)
@@ -158,5 +168,18 @@ class PlayerImageImporter
   # match on filenames like "Iran_and_Portugal_match_FIFA_World_Cup_2018.jpg".
   def normalized_text(candidate)
     "#{candidate.file_name} #{candidate.description}".downcase.tr("_", " ")
+  end
+
+  # Group "Cristiano_Ronaldo_0866.jpg" / "..._0876.jpg" / "..._2275_(cropped).jpg"
+  # / "..._2277.jpg" under the same stem so the diversity cap can dedupe them.
+  # Years like 1986/2018/2022 are preserved because they carry signal.
+  # Sequence numbers (e.g., "_5" / "_9" at the end of match-photo names) and
+  # parenthesized qualifiers (e.g., "(cropped)") are also stripped.
+  def filename_stem(file_name)
+    base = file_name.to_s.downcase.sub(/\.[a-z0-9]+\z/, "").tr("_", " ")
+    base = base.gsub(/\(.+?\)/, " ")                                        # strip "(cropped)" etc.
+    base = base.gsub(/(?<!\d)\d{3,4}(?!\d)/) { |n| n.to_i.between?(1900, 2099) ? n : "NNNN" }
+    base = base.gsub(/\s+\d{1,2}\s*\z/, "")                                 # strip trailing "_5"/"_9"
+    base.squeeze(" ").strip
   end
 end
