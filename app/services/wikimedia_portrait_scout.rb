@@ -285,23 +285,61 @@ class WikimediaPortraitScout
     html.gsub(/<[^>]+>/, "").gsub(/\s+/, " ").strip
   end
 
+  # Retries on transient failures (network errors and 429/5xx responses) with
+  # exponential backoff. Without this, silent rate-limit windows propagate as
+  # nil and downstream callers can't tell a missing-file from a throttling event.
+  RETRY_STATUSES = %w[429 500 502 503 504].freeze
+  RETRY_BACKOFFS = [1, 3, 8].freeze # seconds; 3 retries total
+
   def api_get(url, **params)
     uri = URI(url)
     uri.query = URI.encode_www_form(params)
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = (uri.scheme == "https")
-    http.read_timeout = @timeout
-    http.open_timeout = @timeout
 
-    req = Net::HTTP::Get.new(uri.request_uri)
-    req["User-Agent"] = USER_AGENT
+    attempt = 0
+    loop do
+      begin
+        http = Net::HTTP.new(uri.host, uri.port)
+        http.use_ssl = (uri.scheme == "https")
+        http.read_timeout = @timeout
+        http.open_timeout = @timeout
 
-    response = http.request(req)
-    return nil unless response.is_a?(Net::HTTPSuccess)
+        req = Net::HTTP::Get.new(uri.request_uri)
+        req["User-Agent"] = USER_AGENT
 
-    JSON.parse(response.body)
-  rescue StandardError => e
-    logger&.warn("[WikimediaPortraitScout] #{e.class}: #{e.message} on #{uri}")
-    nil
+        response = http.request(req)
+        return JSON.parse(response.body) if response.is_a?(Net::HTTPSuccess)
+
+        # Non-success: retry on transient statuses, surface others as warnings.
+        if RETRY_STATUSES.include?(response.code) && attempt < RETRY_BACKOFFS.length
+          sleep RETRY_BACKOFFS[attempt]
+          attempt += 1
+          warn_log("HTTP #{response.code} on #{uri.host}#{uri.path}; retry #{attempt}/#{RETRY_BACKOFFS.length}")
+          next
+        end
+
+        warn_log("HTTP #{response.code} on #{uri.host}#{uri.path}; giving up")
+        return nil
+      rescue Net::OpenTimeout, Net::ReadTimeout, Errno::ECONNRESET, Errno::ECONNREFUSED, SocketError, OpenSSL::SSL::SSLError => e
+        if attempt < RETRY_BACKOFFS.length
+          sleep RETRY_BACKOFFS[attempt]
+          attempt += 1
+          warn_log("#{e.class} on #{uri.host}#{uri.path}; retry #{attempt}/#{RETRY_BACKOFFS.length}")
+          next
+        end
+        warn_log("#{e.class}: #{e.message} on #{uri.host}#{uri.path}; giving up")
+        return nil
+      rescue JSON::ParserError => e
+        warn_log("JSON parse error on #{uri.host}#{uri.path}: #{e.message}")
+        return nil
+      end
+    end
+  end
+
+  # Writes to both Rails logger (when present) and STDERR so bulk rake tasks
+  # don't silently swallow rate-limit events.
+  def warn_log(msg)
+    full = "[WikimediaPortraitScout] #{msg}"
+    logger&.warn(full)
+    Kernel.warn(full)
   end
 end
