@@ -114,6 +114,7 @@ end
 #  image_width        :integer
 #  is_active          :boolean          default(TRUE), not null
 #  is_default         :boolean          default(FALSE), not null
+#  is_portrait        :boolean          default(FALSE), not null
 #  license            :string
 #  license_url        :string
 #  notes              :text
@@ -127,10 +128,11 @@ end
 #
 # Indexes
 #
-#  index_player_images_on_discarded_at         (discarded_at)
-#  index_player_images_on_player_id            (player_id)
-#  index_player_images_on_player_id_and_url    (player_id,url) UNIQUE
-#  index_player_images_one_default_per_player  (player_id,is_default) UNIQUE WHERE (is_default = true)
+#  index_player_images_on_discarded_at          (discarded_at)
+#  index_player_images_on_player_id             (player_id)
+#  index_player_images_on_player_id_and_url     (player_id,url) UNIQUE
+#  index_player_images_one_default_per_player   (player_id,is_default) UNIQUE WHERE (is_default = true)
+#  index_player_images_one_portrait_per_player  (player_id,is_portrait) UNIQUE WHERE (is_portrait = true)
 #
 # Foreign Keys
 #

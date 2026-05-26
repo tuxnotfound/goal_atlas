@@ -15,7 +15,8 @@
     <% if player.player_images.any? %>
       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem;">
         <% player.player_images.ordered.each do |img| %>
-          <div style="border: 1px solid <%= img.is_default? ? '#2c8a3a' : '#ddd' %>; padding: 0.4rem; background: #fafafa; opacity: <%= img.is_active? ? '1' : '0.5' %>;">
+          <% border_color = img.is_portrait? ? '#1d4ed8' : (img.is_default? ? '#2c8a3a' : '#ddd') %>
+          <div style="border: 2px solid <%= border_color %>; padding: 0.4rem; background: #fafafa; opacity: <%= img.is_active? ? '1' : '0.5' %>;">
             <%= link_to admin_player_image_path(img) do %>
               <%= image_tag img.thumbnail_url.presence || img.url,
                             alt: player.name,
@@ -23,6 +24,7 @@
             <% end %>
             <div style="font-size: 0.7rem; margin-top: 0.25rem; color: #555;">
               <% if img.is_default? %><strong>★ Default</strong> ·<% end %>
+              <% if img.is_portrait? %><strong style="color: #1d4ed8;">◉ Portrait</strong> ·<% end %>
               <%= img.license.presence || "no license" %>
             </div>
           </div>

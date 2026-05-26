@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_21_222000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_22_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -127,6 +127,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_21_222000) do
     t.integer "image_width"
     t.boolean "is_active", default: true, null: false
     t.boolean "is_default", default: false, null: false
+    t.boolean "is_portrait", default: false, null: false
     t.string "license"
     t.string "license_url"
     t.text "notes"
@@ -138,6 +139,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_21_222000) do
     t.string "url", null: false
     t.index ["discarded_at"], name: "index_player_images_on_discarded_at"
     t.index ["player_id", "is_default"], name: "index_player_images_one_default_per_player", unique: true, where: "(is_default = true)"
+    t.index ["player_id", "is_portrait"], name: "index_player_images_one_portrait_per_player", unique: true, where: "(is_portrait = true)"
     t.index ["player_id", "url"], name: "index_player_images_on_player_id_and_url", unique: true
     t.index ["player_id"], name: "index_player_images_on_player_id"
   end

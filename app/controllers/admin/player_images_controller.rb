@@ -29,6 +29,16 @@ module Admin
                     notice: "Default image set for #{image.player.name}."
     end
 
+    def set_portrait
+      image = PlayerImage.find(params[:id])
+      PlayerImage.transaction do
+        image.player.player_images.where.not(id: image.id).update_all(is_portrait: false)
+        image.update!(is_portrait: true)
+      end
+      redirect_back fallback_location: admin_player_image_path(image),
+                    notice: "Portrait image set for #{image.player.name}."
+    end
+
     private
 
     def player_ids_in_tournament(tournament_id)

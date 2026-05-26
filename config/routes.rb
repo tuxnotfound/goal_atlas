@@ -24,6 +24,7 @@ Rails.application.routes.draw do
     resources :player_images do
       member do
         patch :set_default
+        patch :set_portrait
       end
     end
     post "players/:player_id/scout_images", to: "player_images#scout", as: :scout_player_images

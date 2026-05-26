@@ -52,6 +52,42 @@ namespace :player_images do
     end
   end
 
+  desc "Score every player's images and tag the highest-scoring one as is_portrait."
+  task tag_portraits: :environment do
+    players = Player.kept.joins(:player_images).distinct.order(:name).to_a
+    total = players.size
+    puts "Tagging portraits across #{total} players..."
+
+    promoted = 0
+    unchanged = 0
+    skipped = 0
+
+    players.each_with_index do |player, idx|
+      scorable = player.player_images.kept.active.to_a
+      if scorable.empty?
+        skipped += 1
+        next
+      end
+
+      scorer = PortraitScorer.new(player)
+      best = scorable.max_by { |img| scorer.score_image(img) }
+
+      if best.is_portrait?
+        unchanged += 1
+        next
+      end
+
+      PlayerImage.transaction do
+        player.player_images.where(is_portrait: true).where.not(id: best.id).update_all(is_portrait: false)
+        best.update!(is_portrait: true)
+      end
+      promoted += 1
+      puts "[#{idx + 1}/#{total}] #{player.name} — image_id=#{best.id} tagged as portrait"
+    end
+
+    puts "Done — promoted=#{promoted} unchanged=#{unchanged} skipped=#{skipped} of #{total}."
+  end
+
   desc "Re-query Commons for existing PlayerImage rows to populate image_width/height/commons_categories."
   task backfill_commons_metadata: :environment do
     scope = PlayerImage.kept

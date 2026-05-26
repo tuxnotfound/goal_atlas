@@ -12,6 +12,7 @@ class PlayerImageDashboard < Administrate::BaseDashboard
     author: Field::String,
     description: Field::Text,
     is_default: Field::Boolean,
+    is_portrait: Field::Boolean,
     position: Field::Number,
     is_active: Field::Boolean,
     fetched_at: Field::DateTime,
@@ -27,6 +28,7 @@ class PlayerImageDashboard < Administrate::BaseDashboard
     license
     author
     is_default
+    is_portrait
     is_active
   ].freeze
 
@@ -40,6 +42,7 @@ class PlayerImageDashboard < Administrate::BaseDashboard
     author
     description
     is_default
+    is_portrait
     is_active
     position
     tournaments
@@ -59,6 +62,7 @@ class PlayerImageDashboard < Administrate::BaseDashboard
     author
     description
     is_default
+    is_portrait
     is_active
     position
     tournaments
@@ -66,7 +70,8 @@ class PlayerImageDashboard < Administrate::BaseDashboard
   ].freeze
 
   COLLECTION_FILTERS = {
-    default: ->(resources) { resources.default },
+    default:  ->(resources) { resources.default },
+    portrait: ->(resources) { resources.portrait },
     inactive: ->(resources) { resources.where(is_active: false) },
     untagged: ->(resources) { resources.left_outer_joins(:player_image_taggings).where(player_image_taggings: { id: nil }) }
   }.freeze

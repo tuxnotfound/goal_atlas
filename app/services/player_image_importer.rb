@@ -1,16 +1,12 @@
 # Coordinates portrait scouting for a single player:
 #   1. Calls WikimediaPortraitScout
-#   2. Scores each candidate on editorial fit (World Cup / national team)
+#   2. Scores each candidate via PortraitScorer
 #   3. Persists ordered PlayerImage rows
 #   4. Auto-tags images with Tournament records when descriptions match years
 #
 # Idempotent: re-running for a player skips already-saved URLs but still
 # refreshes tournament taggings for existing rows.
 class PlayerImageImporter
-  # Word-boundary form `\b\d+\b` fails on `_2018.jpg` because `_` is a word char,
-  # so use digit-boundary lookarounds instead.
-  WC_YEAR_REGEX = /(?<!\d)(19[3-9]\d|20[0-3]\d)(?!\d)/
-
   # National-team competitions worth searching Commons for. Generic World Cup
   # terms apply to everyone; the rest are added based on the player's
   # confederation so we surface Euro/Copa América/AFCON/etc. photos.
@@ -25,32 +21,16 @@ class PlayerImageImporter
     ofc:      ["OFC Nations Cup"]
   }.freeze
 
-  # Score boosts when a candidate's description/filename mentions a non-WC
-  # national-team competition (for editorial ranking, not auto-tagging — we
-  # only have WC tournaments in the DB).
-  NATIONAL_COMPETITION_REGEX = /\b(euro|copa\s+am[eé]rica|nations\s+league|gold\s+cup|asian\s+cup|africa\s+cup|afcon|euros)\b/
-
-  # Clubs and venues that signal "this is NOT a national-team photo."
-  CLUB_PENALTY_TERMS = [
-    "psg", "paris saint-germain", "manchester united", "real madrid",
-    "fc barcelona", "barcelona vs", "inter miami", "tottenham", "spurs",
-    "juventus", "chelsea", "manchester city", "arsenal", "liverpool",
-    "al-nassr", "al nassr", "sporting cp", "atletico madrid", "atlético madrid",
-    "valencia", "valladolid", "borussia", "bayern", "ajax", "psv",
-    "madame tussauds", "wax", "graffiti", "mural", "statue"
-  ].freeze
-
   SAVE_LIMIT = 12
 
   Result = Struct.new(:player, :candidates, :added, :tournament_tags, keyword_init: true)
 
   def initialize(player, scout: nil, logger: nil)
-    @player = player
-    @scout = scout || WikimediaPortraitScout.new(logger: logger)
-    @tournament_years = Tournament.kept.pluck(:year).to_set
+    @player              = player
+    @scout               = scout || WikimediaPortraitScout.new(logger: logger)
+    @scorer              = PortraitScorer.new(player)
     @tournaments_by_year = Tournament.kept.index_by(&:year)
-    @nationality_terms = nationality_terms(player)
-    @competition_terms = competition_terms_for(player)
+    @competition_terms   = competition_terms_for(player)
   end
 
   def import!
@@ -62,7 +42,7 @@ class PlayerImageImporter
     return Result.new(player: @player, candidates: [], added: [], tournament_tags: 0) if candidates.empty?
 
     scored = candidates
-               .map { |c| [editorial_score(c), c] }
+               .map { |c| [@scorer.score_candidate(c), c] }
                .sort_by { |s, _| -s }
                .map { |_, c| c }
 
@@ -110,59 +90,6 @@ class PlayerImageImporter
 
   private
 
-  def editorial_score(candidate)
-    text = normalized_text(candidate)
-    score = 0
-
-    # "World Cup" / "FIFA World Cup" full mentions plus "WC2022"-style shorthand.
-    score += 12 if text.match?(/\b(fifa\s+)?world\s+cup\b/) || text.match?(/\bwc\s*\d{4}\b/)
-    score += 8  if text.match?(NATIONAL_COMPETITION_REGEX)
-    score += 6  if text.match?(/\bqualif/) && @nationality_terms.any? { |t| text.include?(t) }
-    score += 5  if text.match?(/\bnational\s+team\b/) || text.match?(/\bselection\b/)
-    score += 5  if @nationality_terms.any? { |t| text.include?(t) }
-
-    text.scan(WC_YEAR_REGEX).flatten.uniq.each do |year|
-      score += 4 if @tournament_years.include?(year.to_i)
-    end
-
-    score -= 6 if CLUB_PENALTY_TERMS.any? { |t| text.include?(t) }
-
-    score += category_score(candidate.categories)
-    score += aspect_score(candidate.width, candidate.height)
-    score += 3 if (candidate.description || "").match?(/\b(portrait|headshot|close-?up)\b/i)
-
-    score
-  end
-
-  # Commons categories are curated by hand and carry strong signal. The
-  # "Portraits of X" hierarchy is the most reliable indicator that a file is
-  # a clean head/shoulders shot rather than an action photo or team scene.
-  def category_score(categories)
-    return 0 if categories.blank?
-    text = categories.join(" | ").downcase
-    score = 0
-    score += 12 if text.include?("portraits of") || text.match?(/\bportrait/)
-    score += 6  if text.match?(/\b(fifa\s+)?world\s+cup\b/)
-    score += 4  if text.match?(/\bnational\s+(football\s+)?team\b/) || text.match?(/\bselection\b/) || text.match?(/\bsquad\b/)
-    score -= 4  if text.match?(/\bgroup\s+photos\b/) || text.match?(/\bteam\s+photographs\b/)
-    score
-  end
-
-  # Aspect ratio is a cheap proxy for framing. Portraits are taller than wide;
-  # action shots are usually 3:2 landscape. Squarish covers tightly-cropped
-  # headshots either way.
-  def aspect_score(width, height)
-    w, h = width.to_i, height.to_i
-    return 0 if w.zero? || h.zero?
-    ratio = h.to_f / w
-    case ratio
-    when 1.3..2.5  then 5
-    when 0.85..1.3 then 3
-    when 0.0..0.6  then -3
-    else 0
-    end
-  end
-
   def competition_terms_for(player)
     team = player.nationality_team
     return COMMON_COMPETITION_TERMS if team.nil?
@@ -172,8 +99,8 @@ class PlayerImageImporter
   end
 
   def apply_tournament_tags(image, candidate)
-    text = normalized_text(candidate)
-    years = text.scan(WC_YEAR_REGEX).flatten.map(&:to_i).uniq
+    text = "#{candidate.file_name} #{candidate.description}".downcase.tr("_", " ")
+    years = text.scan(PortraitScorer::WC_YEAR_REGEX).flatten.map(&:to_i).uniq
 
     # File names like "Cristiano_Ronaldo_WC2022_-_01.jpg" pack the year next to
     # "WC"; the lookahead regex above misses those, so scan for them too.
@@ -192,18 +119,6 @@ class PlayerImageImporter
   rescue ActiveRecord::RecordNotUnique
     # Race / duplicate; tagging already exists.
     0
-  end
-
-  def nationality_terms(player)
-    team = player.nationality_team
-    return [] if team.nil?
-    [team.name, team.fifa_code, team.country_code].compact.map(&:downcase).uniq
-  end
-
-  # Replace underscores with spaces so regex word boundaries / `\s+` patterns
-  # match on filenames like "Iran_and_Portugal_match_FIFA_World_Cup_2018.jpg".
-  def normalized_text(candidate)
-    "#{candidate.file_name} #{candidate.description}".downcase.tr("_", " ")
   end
 
   # Group "Cristiano_Ronaldo_0866.jpg" / "..._0876.jpg" / "..._2275_(cropped).jpg"

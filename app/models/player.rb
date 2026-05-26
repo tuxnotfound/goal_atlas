@@ -25,6 +25,10 @@ class Player < ApplicationRecord
     player_images.kept.active.default.first || player_images.kept.active.ordered.first
   end
 
+  def portrait_image
+    player_images.kept.active.portrait.first || default_image
+  end
+
   def image_for(tournament)
     return default_image if tournament.blank?
     player_images.kept.active.joins(:player_image_taggings)

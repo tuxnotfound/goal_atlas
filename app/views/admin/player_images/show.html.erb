@@ -34,6 +34,12 @@
             <%= button_to "Set as default", set_default_admin_player_image_path(image),
                           method: :patch, class: "button" %>
           <% end %>
+          <% if image.is_portrait? %>
+            <span class="button button--success" style="cursor: default;">◉ Portrait</span>
+          <% else %>
+            <%= button_to "Set as portrait", set_portrait_admin_player_image_path(image),
+                          method: :patch, class: "button" %>
+          <% end %>
           <%= link_to "Open original", image.url, target: "_blank", rel: "noopener", class: "button" %>
         </div>
       </div>
