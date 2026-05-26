@@ -71,7 +71,7 @@ class WikimediaPortraitScout
     entity = fetch_entity(qid)
     return [] if entity.nil?
 
-    filenames = collect_filenames(entity, player_name, nationality, competition_terms).first(max * 2)
+    filenames = collect_filenames(qid, entity, player_name, nationality, competition_terms).first(max * 2)
     return [] if filenames.empty?
 
     filenames.filter_map { |fn|
@@ -117,7 +117,7 @@ class WikimediaPortraitScout
 
   attr_reader :logger
 
-  def collect_filenames(entity, player_name, nationality, competition_terms)
+  def collect_filenames(qid, entity, player_name, nationality, competition_terms)
     filenames = []
 
     # 1. Wikidata P18 (canonical)
@@ -138,7 +138,12 @@ class WikimediaPortraitScout
       filenames += commons_search_portraits(q, player_name, nationality)
     end
 
-    # 3. Per-language Wikipedia lead images
+    # 3. Commons "depicts" (P180) structured-data search. Surfaces photos that
+    # don't have the player's name in the filename (e.g. ceremony photos,
+    # team photos where the player is one of the people tagged by Q-ID).
+    filenames += commons_search_depicts(qid, player_name, nationality)
+
+    # 4. Per-language Wikipedia lead images
     LANGUAGES.each do |lang|
       sitelink = sitelinks["#{lang}wiki"]
       next if sitelink.nil?
@@ -146,7 +151,7 @@ class WikimediaPortraitScout
       filenames << lead if lead
     end
 
-    # 4. Per-language Wikipedia inline images (surname-filtered).
+    # 5. Per-language Wikipedia inline images (surname-filtered).
     # Non-English Wikipedias often carry photos en.wikipedia is missing,
     # especially for Brazilian / German / Italian / Spanish players —
     # e.g., pt.wikipedia has 13 Zico photos while en.wikipedia has 0.
@@ -222,6 +227,22 @@ class WikimediaPortraitScout
       action: "query", list: "search",
       srsearch: query, srnamespace: 6,
       srlimit: 20, format: "json"
+    )
+    hits = response&.dig("query", "search") || []
+    hits.map { |h| h["title"].to_s.sub(/^File:/, "") }
+        .select { |fn| portrait_like?(fn, player_name) || team_photo_like?(fn, nationality) }
+  end
+
+  # Queries Commons by Wikidata structured-data "depicts" (P180) claim. Surfaces
+  # photos where the player is tagged but their name isn't in the filename,
+  # such as ceremony photos, mixed-team shots, or third-party uploads.
+  # The portrait/team filters still apply so we don't import unrelated noise.
+  def commons_search_depicts(qid, player_name, nationality = nil)
+    return [] if qid.blank?
+    response = api_get(COMMONS_API,
+      action: "query", list: "search",
+      srsearch: "haswbstatement:P180=#{qid}",
+      srnamespace: 6, srlimit: 30, format: "json"
     )
     hits = response&.dig("query", "search") || []
     hits.map { |h| h["title"].to_s.sub(/^File:/, "") }
