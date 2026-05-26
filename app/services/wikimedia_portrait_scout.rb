@@ -146,9 +146,14 @@ class WikimediaPortraitScout
       filenames << lead if lead
     end
 
-    # 4. English Wikipedia inline images (surname-filtered)
-    if (en = sitelinks["enwiki"])
-      filenames += wikipedia_inline_portraits(en["title"], player_name)
+    # 4. Per-language Wikipedia inline images (surname-filtered).
+    # Non-English Wikipedias often carry photos en.wikipedia is missing,
+    # especially for Brazilian / German / Italian / Spanish players —
+    # e.g., pt.wikipedia has 13 Zico photos while en.wikipedia has 0.
+    LANGUAGES.each do |lang|
+      sitelink = sitelinks["#{lang}wiki"]
+      next if sitelink.nil?
+      filenames += wikipedia_inline_portraits(lang, sitelink["title"], player_name)
     end
 
     # Commons and Wikipedia APIs return the same file with spaces or underscores
@@ -203,8 +208,8 @@ class WikimediaPortraitScout
     page&.dig("pageimage")
   end
 
-  def wikipedia_inline_portraits(title, player_name)
-    response = api_get(wikipedia_api("en"),
+  def wikipedia_inline_portraits(lang, title, player_name)
+    response = api_get(wikipedia_api(lang),
       action: "parse", page: title, prop: "images",
       format: "json"
     )
