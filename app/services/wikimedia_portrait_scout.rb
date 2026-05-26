@@ -41,7 +41,10 @@ class WikimediaPortraitScout
 
   # Large enough to give the importer scoring layer a real pool to choose
   # from across nationality / World Cup / regional-competition queries.
-  MAX_CANDIDATES = 30
+  # Bumped from 30 once we added multi-language Wikipedia inline scraping
+  # and Commons depicts-search — popular players now generate 60+ unique
+  # candidates and the previous cap truncated real signal before scoring.
+  MAX_CANDIDATES = 60
 
   ImageCandidate = Struct.new(
     :url, :source_url, :thumbnail_url, :license, :license_url,
