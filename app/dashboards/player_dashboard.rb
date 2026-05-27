@@ -12,6 +12,7 @@ class PlayerDashboard < Administrate::BaseDashboard
     goals: Field::HasMany,
     assisted_goals: Field::HasMany,
     player_images: Field::HasMany,
+    stylized: Field::String.with_options(searchable: false),
     discarded_at: Field::DateTime,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
@@ -22,6 +23,7 @@ class PlayerDashboard < Administrate::BaseDashboard
     nationality_team
     position
     birth_date
+    stylized
   ].freeze
 
   SHOW_PAGE_ATTRIBUTES = %i[

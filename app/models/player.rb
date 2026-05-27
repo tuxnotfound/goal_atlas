@@ -26,6 +26,13 @@ class Player < ApplicationRecord
     stylized_portraits.selected.first
   end
 
+  # Compact checkmark string for the admin Players index — Administrate
+  # renders Field::Boolean as "Yes"/"No" text, so we use a String column
+  # instead with an explicit ✓ glyph.
+  def stylized
+    stylized_portraits.selected.exists? ? "✓" : ""
+  end
+
   def default_image
     player_images.kept.active.default.first || player_images.kept.active.ordered.first
   end
