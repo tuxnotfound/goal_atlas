@@ -60,6 +60,117 @@ namespace :video_links do
     puts "✓ Linked #{match.slug} → #{link.url} (#{link.source})"
   end
 
+  # YouTube enforces ~10 search calls/min/project. 7s between calls keeps
+  # us comfortably under that ceiling without burning user wall-time.
+  AUTOFETCH_SLEEP_SECONDS = 7
+
+  desc "Auto-attach FIFA/broadcaster YouTube highlight reels to MATCHES in a tournament that lack any video link. Usage: rake video_links:autofetch_matches[<year>,<limit>]"
+  task :autofetch_matches, [:year, :limit] => :environment do |_t, args|
+    abort "Usage: rake video_links:autofetch_matches[<year>,<limit?>]" unless args[:year]
+    limit = args[:limit].to_i
+    limit = nil if limit.zero?
+
+    tournament = Tournament.find_by!(year: args[:year].to_i)
+    scope = tournament.matches.left_outer_joins(:video_links)
+                       .where(video_links: { id: nil })
+                       .order(:match_number)
+    scope = scope.limit(limit) if limit
+    matches = scope.to_a
+
+    puts "Tournament: #{tournament.year} #{tournament.name}"
+    puts "Matches without any video_link: #{matches.size}#{limit ? " (limited)" : ""}"
+    puts "Estimated YouTube quota: #{matches.size * 100}-#{matches.size * 200} units"
+    puts "Throttling: #{AUTOFETCH_SLEEP_SECONDS}s between API calls (~#{matches.size * AUTOFETCH_SLEEP_SECONDS}s minimum)"
+    puts ""
+
+    scout = VideoLinkScout.new
+    attached = 0
+    skipped  = 0
+
+    matches.each_with_index do |m, idx|
+      label = "M#{m.match_number} #{m.home_team.fifa_code} v #{m.away_team.fifa_code}"
+      result = with_rate_limit_retry { scout.find_best_for_match(m) }
+      if result.nil?
+        puts "#{label}: no relevant result"
+        skipped += 1
+      else
+        link = m.video_links.find_or_initialize_by(url: result[:url])
+        was_new = link.new_record?
+        link.assign_attributes(source: result[:source], confidence: :unverified, language: "en", is_active: true)
+        link.save!
+        puts "#{label}: → #{result[:url]} (#{result[:source]}) #{was_new ? "[NEW]" : "[exists]"}"
+        attached += 1 if was_new
+      end
+      sleep AUTOFETCH_SLEEP_SECONDS unless idx == matches.size - 1
+    end
+
+    puts ""
+    puts "Attached: #{attached} new match-level link(s). Skipped: #{skipped}."
+  end
+
+  desc "Auto-attach FIFA/broadcaster YouTube clips to GOALS in a tournament that lack any video link. Usage: rake video_links:autofetch_goals[<year>,<limit>]"
+  task :autofetch_goals, [:year, :limit] => :environment do |_t, args|
+    abort "Usage: rake video_links:autofetch_goals[<year>,<limit?>]" unless args[:year]
+    limit = args[:limit].to_i
+    limit = nil if limit.zero?
+
+    tournament = Tournament.find_by!(year: args[:year].to_i)
+    scope = Goal.joins(:match).where(matches: { tournament_id: tournament.id })
+                .left_outer_joins(:video_links).where(video_links: { id: nil })
+                .order("matches.match_number, goals.minute")
+    scope = scope.limit(limit) if limit
+    goals = scope.to_a
+
+    puts "Tournament: #{tournament.year} #{tournament.name}"
+    puts "Goals without any video_link: #{goals.size}#{limit ? " (limited)" : ""}"
+    puts "Estimated YouTube quota: #{goals.size * 100}-#{goals.size * 200} units"
+    puts "Throttling: #{AUTOFETCH_SLEEP_SECONDS}s between API calls (~#{goals.size * AUTOFETCH_SLEEP_SECONDS}s minimum)"
+    puts ""
+
+    scout = VideoLinkScout.new
+    attached = 0
+    skipped  = 0
+
+    begin
+      goals.each_with_index do |g, idx|
+        label = "#{g.minute}' #{g.player.name} (#{g.scoring_team.fifa_code} v #{g.opponent_team.fifa_code})"
+        result = with_rate_limit_retry { scout.find_best_for_goal(g) }
+        if result.nil?
+          puts "#{label}: no relevant result"
+          skipped += 1
+        else
+          link = g.video_links.find_or_initialize_by(url: result[:url])
+          was_new = link.new_record?
+          link.assign_attributes(source: result[:source], confidence: :unverified, language: "en", is_active: true)
+          link.save!
+          puts "#{label}: → #{result[:url]} (#{result[:source]}) #{was_new ? "[NEW]" : "[exists]"}"
+          attached += 1 if was_new
+        end
+        sleep AUTOFETCH_SLEEP_SECONDS unless idx == goals.size - 1
+      end
+    rescue VideoLinkScout::DailyQuotaExhausted => e
+      puts ""
+      puts "Stopping early: #{e.message}."
+      puts "Re-run the same task tomorrow (after the YouTube quota resets) to continue."
+    end
+
+    puts ""
+    puts "Attached: #{attached} new goal-level link(s). Skipped: #{skipped}."
+  end
+
+  def with_rate_limit_retry(max_retries: 2, backoff_seconds: 65)
+    attempts = 0
+    begin
+      yield
+    rescue VideoLinkScout::RateLimited => e
+      attempts += 1
+      raise if attempts > max_retries
+      puts "  ! rate-limited (#{e.message}); sleeping #{backoff_seconds}s (attempt #{attempts}/#{max_retries})…"
+      sleep backoff_seconds
+      retry
+    end
+  end
+
   def print_suggestions(results)
     if results.empty?
       puts "No results."
