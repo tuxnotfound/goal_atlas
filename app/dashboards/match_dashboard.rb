@@ -28,6 +28,7 @@ class MatchDashboard < Administrate::BaseDashboard
     goals: Field::HasMany,
     shootout_kicks: Field::HasMany,
     video_links: Field::HasMany,
+    video: Field::String.with_options(searchable: false),
     discarded_at: Field::DateTime,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
@@ -38,6 +39,7 @@ class MatchDashboard < Administrate::BaseDashboard
     stage
     home_team
     away_team
+    video
   ].freeze
 
   SHOW_PAGE_ATTRIBUTES = %i[

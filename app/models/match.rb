@@ -55,6 +55,13 @@ class Match < ApplicationRecord
 
   scope :ordered_by_date, -> { order(date: :asc, id: :asc) }
 
+  # Compact checkmark string for the admin Matches index — Administrate
+  # renders Field::Boolean as "Yes"/"No" text, so we use a String column
+  # instead with an explicit ✓ glyph.
+  def video
+    video_links.kept.active.exists? ? "✓" : ""
+  end
+
   def slug_candidates
     base = "#{home_team&.slug}-vs-#{away_team&.slug}-#{date&.year}"
     base = base.sub(/-+/, "-")
