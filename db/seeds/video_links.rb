@@ -177,4 +177,33 @@ end
 #     FIFA channel didn't post a dedicated clip — match highlight (Match 63)
 #     covers the goal at the 9-minute mark.
 
-puts "VideoLinks: #{VideoLink.count} (target: ≥ #{MATCH_VIDEO_LINKS.size + GOAL_VIDEO_LINKS.size})"
+
+# === HISTORICAL (pre-2000) ===
+# Archive.org hosts publicly-embeddable full-match recordings for early
+# World Cups. Their /embed/<identifier> URLs render an inline player on the
+# goal/match pages (see app/helpers/video_links_helper.rb + the _video_links
+# partial). Confidence is :unverified — content is real but the recording
+# quality / completeness hasn't been hand-verified yet.
+ARCHIVE_ORG_FINALS = [
+  { year: 1930, identifier: "1930-world-cup-final-uruguay-4-2-argentina" },
+  { year: 1958, identifier: "world-cup-1958.-final-brazil-sweden-ru" },
+  { year: 1966, identifier: "1966.-wc.-final.-england-w.-germany" },
+  { year: 1970, identifier: "1970-fifa-world-cup-final-brazil-italy" }
+].freeze
+
+ARCHIVE_ORG_FINALS.each do |attrs|
+  tournament = Tournament.find_by!(year: attrs[:year])
+  match = tournament.matches.where(stage: :final).first
+  next unless match
+
+  url = "https://archive.org/details/#{attrs[:identifier]}"
+  match.video_links.find_or_create_by!(url: url) do |link|
+    link.source        = :archive_org
+    link.confidence    = :unverified
+    link.language      = "en"
+    link.is_active     = true
+    link.embed_allowed = true
+  end
+end
+
+puts "VideoLinks: #{VideoLink.count} (target: ≥ #{MATCH_VIDEO_LINKS.size + GOAL_VIDEO_LINKS.size + ARCHIVE_ORG_FINALS.size})"
