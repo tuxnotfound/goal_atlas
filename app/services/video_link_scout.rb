@@ -1,5 +1,6 @@
 require "net/http"
 require "json"
+require "cgi"
 
 # Suggests video links for a given Goal or Match by querying the YouTube
 # Data API v3, restricted to legal channels (FIFA's official channel + a
@@ -24,8 +25,12 @@ class VideoLinkScout
   # those are the human-readable registry; this hash is the lookup the
   # YouTube Data API needs (it filters by channelId, not channel handle).
   CHANNELS = {
-    fifa:         "UCpcTrCXblq78GZrTUTLWeBw", # @FIFA (verified 2026-05-20)
-    sky_sport_nz: "UC8f1U3h2TAcKOktgonnL0Yw"  # @SkySportNZ (verified 2026-05-27)
+    fifa:         "UCpcTrCXblq78GZrTUTLWeBw", # @FIFA            (verified 2026-05-20)
+    sky_sport_nz: "UC8f1U3h2TAcKOktgonnL0Yw", # @SkySportNZ      (verified 2026-05-27)
+    tyc_sports:   "UC72ZaBKI-Bo5fjmWEYonhJw", # @TycSports       (verified 2026-05-27)
+    tf1:          "UC26vXhYofHiZDM2ar1zUuwQ", # @TF1             (verified 2026-05-27)
+    bbc_sport:    "UCW6-BQWFA70Dyyc7ZpZ9Xlg", # @bbcsport        (verified 2026-05-27)
+    rtp_noticias: "UCIM-wfyv9hg2oEiA81mQc2A"  # @RTPNoticias     (verified 2026-05-27)
     # When adding a new tournament source:
     #   1. Add a Source record in db/seeds/sources.rb (with channel ID in notes)
     #   2. Mirror the channel ID here so the scout can filter searches to it
@@ -34,12 +39,23 @@ class VideoLinkScout
   # VideoLink.source enum value for each channel.
   CHANNEL_SOURCES = {
     fifa:         :youtube_official,
-    sky_sport_nz: :broadcaster
+    sky_sport_nz: :broadcaster,
+    tyc_sports:   :broadcaster,
+    tf1:          :broadcaster,
+    bbc_sport:    :broadcaster,
+    rtp_noticias: :broadcaster
   }.freeze
 
   # Default priority order for find_best_for_goal: try FIFA first, then
-  # broadcasters. Override via the `channels:` kwarg.
-  DEFAULT_CHANNEL_PRIORITY = %i[fifa sky_sport_nz].freeze
+  # broadcasters. Each additional channel adds ~100 quota units per goal
+  # ONLY when prior channels return nothing relevant — FIFA covers most
+  # 2022+ World Cup content, so the broadcaster fallbacks rarely fire.
+  DEFAULT_CHANNEL_PRIORITY = %i[fifa sky_sport_nz tyc_sports tf1 bbc_sport rtp_noticias].freeze
+
+  # YouTube's oEmbed endpoint returns 200 + JSON when a video allows
+  # third-party embedding and 401 when the uploader has blocked it.
+  # Free, no quota, no auth.
+  OEMBED_ENDPOINT = "https://www.youtube.com/oembed"
 
   class ApiKeyMissing < StandardError; end
   class ApiError < StandardError; end
@@ -58,15 +74,16 @@ class VideoLinkScout
   # Picks a single best YouTube result for a goal across the given channels,
   # in priority order. Each result must pass a title-relevance check before
   # it's returned (otherwise we'd auto-attach unrelated compilation videos).
-  # Returns { title:, url:, channel:, published_at:, query:, source: } or nil.
-  # `source:` is the VideoLink enum value (:youtube_official or :broadcaster).
-  # Each channel attempted costs 100 YouTube API quota units.
+  # Returns { title:, url:, channel:, published_at:, query:, source:, embed_allowed: }
+  # or nil. `source:` is the VideoLink enum value (:youtube_official or :broadcaster).
+  # Each channel attempted costs 100 YouTube API quota units; non-FIFA channels
+  # add one cheap oEmbed probe to decide embed_allowed.
   def find_best_for_goal(goal, channels: DEFAULT_CHANNEL_PRIORITY, max_results: 5)
     channels.each do |channel|
       results = suggest_for_goal(goal, max_results: max_results, channel: channel)
       match = results.find { |r| relevant_to_goal?(r, goal) }
       next unless match
-      return match.merge(source: CHANNEL_SOURCES.fetch(channel))
+      return decorate_with_source_and_embed(match, channel)
     end
     nil
   end
@@ -77,9 +94,26 @@ class VideoLinkScout
       results = suggest_for_match(match, max_results: max_results, channel: channel)
       hit = results.find { |r| relevant_to_match?(r, match) }
       next unless hit
-      return hit.merge(source: CHANNEL_SOURCES.fetch(channel))
+      return decorate_with_source_and_embed(hit, channel)
     end
     nil
+  end
+
+  # Probes YouTube's oEmbed endpoint for `url` and returns true iff the
+  # video allows third-party embedding (HTTP 200). FIFA's channel returns
+  # 401 here, so this is how autofetch decides VideoLink#embed_allowed
+  # automatically.
+  def self.youtube_embeddable?(url, timeout: 5)
+    return false if url.blank?
+    uri = URI(OEMBED_ENDPOINT)
+    uri.query = URI.encode_www_form(url: url, format: "json")
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true,
+                               open_timeout: timeout, read_timeout: timeout) do |http|
+      http.get(uri.request_uri)
+    end
+    response.is_a?(Net::HTTPSuccess)
+  rescue StandardError
+    false
   end
 
   def suggest_for_match(match, max_results: 5, channel: :fifa)
@@ -122,6 +156,16 @@ class VideoLinkScout
   end
 
   private
+
+  # Adds source: (VideoLink enum) and embed_allowed: to a raw search result.
+  # FIFA's channel is hardcoded to embed_allowed=false because YouTube's
+  # oEmbed/videos.list both lie about FIFA's domain-whitelist block.
+  # Other channels are probed via the cheap oEmbed endpoint.
+  def decorate_with_source_and_embed(result, channel)
+    source = CHANNEL_SOURCES.fetch(channel)
+    embed_allowed = source != :youtube_official && self.class.youtube_embeddable?(result[:url])
+    result.merge(source: source, embed_allowed: embed_allowed)
+  end
 
   def goal_query(goal)
     bits = [

@@ -41,6 +41,48 @@ SOURCES = [
       New Zealand broadcaster's official YouTube. Posts FIFA World Cup match
       highlights under license. Useful when FIFA's own channel hasn't uploaded
       a particular match.
+      YouTube channel ID: UC8f1U3h2TAcKOktgonnL0Yw
+    NOTES
+  },
+  {
+    name: "TyC Sports",
+    url: "https://www.youtube.com/@TycSports",
+    reliability: :high,
+    notes: <<~NOTES.strip
+      Argentine sports broadcaster. Strong coverage of Argentine national team
+      matches — useful fallback for 2022 Argentina goals when FIFA's channel
+      lacks a specific clip.
+      YouTube channel ID: UC72ZaBKI-Bo5fjmWEYonhJw
+    NOTES
+  },
+  {
+    name: "TF1",
+    url: "https://www.youtube.com/@TF1",
+    reliability: :high,
+    notes: <<~NOTES.strip
+      French national broadcaster. Holds rights to the French national team
+      and posts highlights on YouTube. Useful fallback for 2022 France goals.
+      YouTube channel ID: UC26vXhYofHiZDM2ar1zUuwQ
+    NOTES
+  },
+  {
+    name: "BBC Sport",
+    url: "https://www.youtube.com/@bbcsport",
+    reliability: :high,
+    notes: <<~NOTES.strip
+      UK broadcaster. Posts post-match analysis and selected highlights;
+      sometimes uploads goal-only clips that FIFA's channel doesn't have.
+      YouTube channel ID: UCW6-BQWFA70Dyyc7ZpZ9Xlg
+    NOTES
+  },
+  {
+    name: "RTP Notícias",
+    url: "https://www.youtube.com/@RTPNoticias",
+    reliability: :high,
+    notes: <<~NOTES.strip
+      Portuguese public broadcaster news channel. Posts Portugal national
+      team coverage — fallback for 2022 Portugal goals.
+      YouTube channel ID: UCIM-wfyv9hg2oEiA81mQc2A
     NOTES
   }
 ].freeze

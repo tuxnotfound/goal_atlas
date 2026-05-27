@@ -96,7 +96,7 @@ namespace :video_links do
       else
         link = m.video_links.find_or_initialize_by(url: result[:url])
         was_new = link.new_record?
-        link.assign_attributes(source: result[:source], confidence: :unverified, language: "en", is_active: true)
+        link.assign_attributes(source: result[:source], confidence: :unverified, language: "en", is_active: true, embed_allowed: result.fetch(:embed_allowed, false))
         link.save!
         puts "#{label}: → #{result[:url]} (#{result[:source]}) #{was_new ? "[NEW]" : "[exists]"}"
         attached += 1 if was_new
@@ -141,7 +141,7 @@ namespace :video_links do
         else
           link = g.video_links.find_or_initialize_by(url: result[:url])
           was_new = link.new_record?
-          link.assign_attributes(source: result[:source], confidence: :unverified, language: "en", is_active: true)
+          link.assign_attributes(source: result[:source], confidence: :unverified, language: "en", is_active: true, embed_allowed: result.fetch(:embed_allowed, false))
           link.save!
           puts "#{label}: → #{result[:url]} (#{result[:source]}) #{was_new ? "[NEW]" : "[exists]"}"
           attached += 1 if was_new
@@ -156,6 +156,38 @@ namespace :video_links do
 
     puts ""
     puts "Attached: #{attached} new goal-level link(s). Skipped: #{skipped}."
+  end
+
+  desc "Probe oEmbed for every YouTube VideoLink and update embed_allowed. FIFA's channel is forced to false (their domain block is invisible to YouTube APIs)."
+  task probe_embed_allowed: :environment do
+    links = VideoLink.kept.where(source: [:youtube_official, :broadcaster]).to_a
+    puts "Probing #{links.size} VideoLink(s)…"
+    puts ""
+
+    changed = 0
+    forced_false = 0
+    probed_true = 0
+    probed_false = 0
+
+    links.each do |link|
+      desired =
+        if link.source == "youtube_official"
+          forced_false += 1
+          false
+        else
+          ok = VideoLinkScout.youtube_embeddable?(link.url)
+          ok ? probed_true += 1 : probed_false += 1
+          ok
+        end
+
+      next if link.embed_allowed == desired
+      link.update!(embed_allowed: desired)
+      changed += 1
+      puts "  #{link.id} (#{link.source}) → embed_allowed=#{desired} | #{link.url.truncate(80)}"
+    end
+
+    puts ""
+    puts "Done. Forced false (youtube_official=FIFA): #{forced_false}, probed embeddable: #{probed_true}, probed blocked: #{probed_false}, rows updated: #{changed}."
   end
 
   def with_rate_limit_retry(max_retries: 2, backoff_seconds: 65)
