@@ -27,7 +27,8 @@ Rails.application.routes.draw do
         patch :set_portrait
       end
     end
-    post "players/:player_id/scout_images", to: "player_images#scout", as: :scout_player_images
+    post "players/:player_id/scout_images",  to: "player_images#scout",   as: :scout_player_images
+    post "players/:player_id/add_image_url", to: "player_images#add_url", as: :add_player_image_url
 
     post "players/:player_id/stylize_portrait", to: "stylized_portraits#create", as: :stylize_player_portrait
     resources :stylized_portraits, only: [:destroy] do

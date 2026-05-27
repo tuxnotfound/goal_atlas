@@ -65,13 +65,30 @@
   <section class="main-content__body" style="margin-bottom: 1.5rem;">
     <h2 style="margin-top: 0;">Portraits</h2>
 
-    <div style="margin-bottom: 1rem;">
+    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;">
       <%= button_to "Scout Wikimedia portraits",
                     admin_scout_player_images_path(player_id: player.slug),
                     method: :post,
                     class: "button",
                     data: { turbo_confirm: "This hits the Wikimedia API and may take a few seconds. Continue?" } %>
+
+      <%= form_with url: admin_add_player_image_url_path(player_id: player.slug),
+                    method: :post, local: true,
+                    style: "display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;" do |f| %>
+        <%= f.url_field :url,
+              placeholder: "Paste image URL (manual override)",
+              required: true,
+              size: 40,
+              style: "padding: 0.35rem 0.5rem; border: 1px solid #ccc; border-radius: 4px;" %>
+        <%= f.submit "Add image URL", class: "button" %>
+      <% end %>
     </div>
+
+    <p style="font-size: 0.8rem; color: #888; margin: -0.5rem 0 1rem;">
+      Use the URL form when the scout can't find a usable portrait for this
+      player. The URL is treated like any scouted image: pickable as portrait,
+      usable as input to the stylizer.
+    </p>
 
     <% if player.player_images.any? %>
       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem;">

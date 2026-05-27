@@ -62,5 +62,38 @@ module Admin
       redirect_to admin_player_path(player),
                   notice: "Scouted #{result.candidates.size} candidate(s) for #{player.name}; #{result.added.size} new, #{result.tournament_tags} tournament tag(s)."
     end
+
+    # Manual escape hatch for players whose portraits the Wikimedia scout can't
+    # find. Admin pastes any image URL; we add it as a regular PlayerImage so
+    # it shows up in the gallery and can be selected as is_portrait / fed into
+    # the stylizer like any other image.
+    def add_url
+      player = Player.friendly.find(params[:player_id])
+      url    = params[:url].to_s.strip
+
+      if url.blank?
+        redirect_to admin_player_path(player), alert: "Image URL required."
+        return
+      end
+
+      image = player.player_images.build(
+        url:           url,
+        thumbnail_url: url,
+        description:   params[:description].presence || "Manually added by admin",
+        author:        params[:author].presence,
+        license:       params[:license].presence,
+        is_active:     true,
+        position:      (player.player_images.maximum(:position) || 0) + 1,
+        fetched_at:    Time.current
+      )
+
+      if image.save
+        redirect_to admin_player_path(player),
+                    notice: "Added manual image ##{image.id} for #{player.name}."
+      else
+        redirect_to admin_player_path(player),
+                    alert: "Couldn't add image: #{image.errors.full_messages.join(', ')}"
+      end
+    end
   end
 end
