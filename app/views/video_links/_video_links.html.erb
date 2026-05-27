@@ -4,14 +4,14 @@
       title  — Optional section heading (defaults to "Watch") %>
 <% local_title = local_assigns[:title] || "Watch" %>
 <% if links.any? %>
-  <% embed     = links.find { |l| youtube_embeddable?(l) } %>
+  <% embed     = best_embed(links) %>
   <% thumbnail = embed ? nil : links.find { |l| youtube_video_id(l.url).present? } %>
   <section class="mb-6">
     <h2 class="text-lg font-semibold mb-3"><%= local_title %></h2>
 
     <% if embed %>
       <div class="aspect-video mb-3 rounded overflow-hidden border border-stone-200 bg-black">
-        <iframe src="<%= youtube_embed_url(embed) %>"
+        <iframe src="<%= embed[:embed_url] %>"
                 title="<%= local_title %>"
                 class="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

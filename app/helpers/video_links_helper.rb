@@ -55,4 +55,36 @@ module VideoLinksHelper
     id = youtube_video_id(link.url)
     id && "https://img.youtube.com/vi/#{id}/hqdefault.jpg"
   end
+
+  ARCHIVE_ORG_REGEX = %r{archive\.org/(?:details|embed)/([^/?#&]+)}.freeze
+
+  # Extracts the archive.org item identifier from either /details/ or /embed/ URLs.
+  def archive_org_identifier(url)
+    return nil if url.blank?
+    match = url.match(ARCHIVE_ORG_REGEX)
+    match && match[1]
+  end
+
+  # Archive.org content is freely embeddable by design — every public item
+  # has an iframe player at /embed/IDENTIFIER. We ignore VideoLink#embed_allowed
+  # for archive.org and always embed.
+  def archive_org_embeddable?(link)
+    archive_org_identifier(link.url).present?
+  end
+
+  def archive_org_embed_url(link)
+    id = archive_org_identifier(link.url)
+    id && "https://archive.org/embed/#{id}"
+  end
+
+  # Returns the best embed strategy for the section: an iframe-able link
+  # (YouTube embeddable OR archive.org) with the corresponding embed URL,
+  # or nil if nothing in `links` can be embedded.
+  def best_embed(links)
+    yt = links.find { |l| youtube_embeddable?(l) }
+    return { link: yt, embed_url: youtube_embed_url(yt) } if yt
+    archive = links.find { |l| archive_org_embeddable?(l) }
+    return { link: archive, embed_url: archive_org_embed_url(archive) } if archive
+    nil
+  end
 end
