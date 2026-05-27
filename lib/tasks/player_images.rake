@@ -52,6 +52,48 @@ namespace :player_images do
     end
   end
 
+  desc "Generate stylized portraits for all scorers in a tournament year, skipping anyone who already has one. Usage: rake 'player_images:stylize_scorers[2022]'"
+  task :stylize_scorers, [:year] => :environment do |_t, args|
+    abort "Usage: rake 'player_images:stylize_scorers[<year>]'" unless args[:year]
+    tournament = Tournament.find_by!(year: args[:year].to_i)
+
+    scorers = Player.kept
+                .joins(goals: :match)
+                .where(matches: { tournament_id: tournament.id })
+                .distinct
+                .left_outer_joins(:stylized_portraits)
+                .where(stylized_portraits: { id: nil })
+                .order(:name)
+                .to_a
+
+    total = scorers.size
+    puts "Stylizing #{total} scorers from #{tournament.name} (skipping those already styled)..."
+
+    ok = 0
+    fail = 0
+    scorers.each_with_index do |player, idx|
+      unless player.portrait_image
+        puts "[#{idx + 1}/#{total}] #{player.name} — no portrait_image, skipping"
+        fail += 1
+        next
+      end
+
+      begin
+        portrait = ::PortraitStylizer.new(player, logger: Rails.logger).generate!
+        ok += 1
+        puts "[#{idx + 1}/#{total}] #{player.name} — stylized id=#{portrait.id}"
+      rescue => e
+        fail += 1
+        puts "[#{idx + 1}/#{total}] #{player.name} — ERROR: #{e.class}: #{e.message.to_s.truncate(160)}"
+      end
+
+      # Brief pause to be polite to OpenAI's rate limits.
+      sleep 1
+    end
+
+    puts "Done — ok=#{ok} fail=#{fail} of #{total}."
+  end
+
   desc "Score every player's images and tag the highest-scoring one as is_portrait."
   task tag_portraits: :environment do
     players = Player.kept.joins(:player_images).distinct.order(:name).to_a

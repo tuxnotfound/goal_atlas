@@ -1,10 +1,13 @@
 <%#
-  Renders a player's portrait — tournament-tagged when a tournament is given,
-  default otherwise. Falls back to a colored initials disc when no image exists.
+  Renders a player's portrait. Priority:
+    1. Selected stylized portrait (AI-generated, our preferred look)
+    2. Tournament-tagged player image (when tournament given)
+    3. Default player image
+    4. Colored initials disc
 
   Locals:
     player:     Player (required)
-    tournament: Tournament|nil (optional, picks tournament-tagged image when set)
+    tournament: Tournament|nil (optional)
     size:       Integer pixels (default 40)
     rounded:    Boolean (default true — render as circle)
 %>
@@ -12,9 +15,15 @@
 <% tournament ||= nil %>
 <% rounded     = local_assigns.fetch(:rounded, true) %>
 <% radius      = rounded ? "9999px" : "6px" %>
-<% image       = player.image_for(tournament) %>
+<% stylized    = player.selected_stylized_portrait %>
+<% image       = player.image_for(tournament) unless stylized&.file_exists? %>
 
-<% if image %>
+<% if stylized&.file_exists? %>
+  <%= image_tag stylized.public_url,
+        alt: player.name,
+        loading: "lazy",
+        style: "width: #{size}px; height: #{size}px; object-fit: cover; object-position: top; border-radius: #{radius}; background: #fff;" %>
+<% elsif image %>
   <%= image_tag image.thumbnail(width: size * 2),
         alt: player.name,
         loading: "lazy",
