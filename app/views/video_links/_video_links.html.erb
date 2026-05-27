@@ -4,8 +4,40 @@
       title  — Optional section heading (defaults to "Watch") %>
 <% local_title = local_assigns[:title] || "Watch" %>
 <% if links.any? %>
+  <% embed     = links.find { |l| youtube_embeddable?(l) } %>
+  <% thumbnail = embed ? nil : links.find { |l| youtube_video_id(l.url).present? } %>
   <section class="mb-6">
     <h2 class="text-lg font-semibold mb-3"><%= local_title %></h2>
+
+    <% if embed %>
+      <div class="aspect-video mb-3 rounded overflow-hidden border border-stone-200 bg-black">
+        <iframe src="<%= youtube_embed_url(embed) %>"
+                title="<%= local_title %>"
+                class="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen></iframe>
+      </div>
+    <% elsif thumbnail %>
+      <%= link_to video_link_url(thumbnail), target: "_blank", rel: "noopener noreferrer",
+                  class: "block aspect-video mb-3 rounded overflow-hidden border border-stone-200 bg-black relative group" do %>
+        <img src="<%= youtube_thumbnail_url(thumbnail) %>"
+             alt="<%= local_title %> — opens on YouTube"
+             loading="lazy"
+             class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition" />
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-16 h-16 rounded-full bg-black/60 group-hover:bg-red-600 transition flex items-center justify-center shadow-lg">
+            <svg class="w-7 h-7 text-white ml-1" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+        <div class="absolute bottom-2 right-2 text-xs text-white/90 bg-black/60 px-2 py-1 rounded">
+          Opens on YouTube
+        </div>
+      <% end %>
+    <% end %>
+
     <div class="flex flex-wrap gap-2">
       <% links.each do |link| %>
         <%= link_to video_link_url(link), target: "_blank", rel: "noopener noreferrer",
