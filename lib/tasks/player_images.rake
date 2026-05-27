@@ -94,9 +94,25 @@ namespace :player_images do
     puts "Done — ok=#{ok} fail=#{fail} of #{total}."
   end
 
-  desc "Score every player's images and tag the highest-scoring one as is_portrait."
-  task tag_portraits: :environment do
-    players = Player.kept.joins(:player_images).distinct.order(:name).to_a
+  desc "Score every player's images and tag the highest-scoring one as is_portrait. Optional [skip_year] excludes players who appeared in that tournament (useful when a stylize batch is running on them). Usage: rake 'player_images:tag_portraits[2022]'"
+  task :tag_portraits, [:skip_year] => :environment do |_t, args|
+    scope = Player.kept.joins(:player_images).distinct
+
+    if args[:skip_year]
+      skip_t = Tournament.find_by(year: args[:skip_year].to_i)
+      if skip_t
+        scorer_ids = Goal.kept.joins(:match).where(matches: { tournament_id: skip_t.id }).distinct.pluck(:player_id)
+        kicker_ids = ShootoutKick.kept.joins(:match).where(matches: { tournament_id: skip_t.id }).distinct.pluck(:player_id)
+        award_ids  = TournamentAward.where(tournament: skip_t).pluck(:player_id)
+        skip_ids   = (scorer_ids + kicker_ids + award_ids).compact.uniq
+        scope = scope.where.not(id: skip_ids)
+        puts "Skipping #{skip_ids.size} players who appeared in #{skip_t.name}"
+      else
+        puts "No tournament found for year #{args[:skip_year]}; processing all players."
+      end
+    end
+
+    players = scope.order(:name).to_a
     total = players.size
     puts "Tagging portraits across #{total} players..."
 
