@@ -21,6 +21,8 @@ Rails.application.routes.draw do
     resources :video_links
     resources :tournament_awards
     resources :video_link_suggestions, only: [:index, :create]
+    get  "matches/:match_id/video_timestamps", to: "match_video_timestamps#edit",   as: :match_video_timestamps
+    patch "matches/:match_id/video_timestamps", to: "match_video_timestamps#update"
     resources :player_images do
       member do
         patch :set_default

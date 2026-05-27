@@ -1,0 +1,86 @@
+<% content_for(:title) { "Video timestamps — #{@match.home_team.fifa_code} v #{@match.away_team.fifa_code}" } %>
+
+<header class="main-content__header">
+  <h1 class="main-content__page-title">
+    Video timestamps:
+    <%= @match.home_team.name %> <%= @match.home_score %>–<%= @match.away_score %> <%= @match.away_team.name %>
+  </h1>
+  <div style="color: #666; font-size: 0.9rem;">
+    <%= @match.date.to_fs(:long_ordinal) rescue @match.date %>
+    · <%= @match.stage.to_s.humanize %>
+    · <%= link_to "Back to match", admin_match_path(@match), style: "color: #1d4ed8;" %>
+  </div>
+</header>
+
+<section class="main-content__body">
+  <% if @match_video_links.any? %>
+    <h2 style="margin-top: 0;">Match-level video (for reference)</h2>
+    <ul style="list-style: none; padding-left: 0; margin: 0 0 1rem 0; display: flex; flex-direction: column; gap: 0.4rem;">
+      <% @match_video_links.each do |link| %>
+        <li>
+          <%= link_to link.url, target: "_blank", rel: "noopener noreferrer", style: "color: #1d4ed8;" do %>
+            <%= video_source_label(link) %> — <%= link.url %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <%= form_with url: admin_match_video_timestamps_path(@match), method: :patch, local: true do |f| %>
+    <h2>Goals</h2>
+
+    <% if @goals.empty? %>
+      <p style="color: #777;">This match has no goals.</p>
+    <% end %>
+
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      <% @goals.each do |goal| %>
+        <% goal_links = goal.video_links.kept.active.to_a %>
+        <div style="border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.75rem; background: #fafafa;">
+          <div style="display: flex; gap: 0.5rem; align-items: baseline; flex-wrap: wrap;">
+            <strong><%= goal.minute %>'<%= "+#{goal.stoppage_time}" if goal.stoppage_time.present? %></strong>
+            <span><%= goal.player&.name %></span>
+            <span style="color: #888; font-size: 0.85rem;">
+              (<%= goal.scoring_team&.fifa_code %><% if goal.own_goal? %> — own goal<% end %>)
+            </span>
+            <span style="margin-left: auto; font-size: 0.8rem;">
+              <%= link_to "View on site →", goal_path(goal.slug), target: "_blank", style: "color: #1d4ed8;" %>
+            </span>
+          </div>
+
+          <% if goal_links.empty? %>
+            <div style="color: #999; font-size: 0.85rem; margin-top: 0.4rem;">
+              No video link yet. Run autofetch or add one in admin.
+            </div>
+          <% else %>
+            <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem;">
+              <% goal_links.each do |link| %>
+                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; font-size: 0.85rem;">
+                  <span style="color: #555; min-width: 70px;"><%= video_source_label(link) %>:</span>
+                  <%= link_to link.url, target: "_blank", rel: "noopener noreferrer",
+                              style: "color: #1d4ed8; max-width: 50ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" do %>
+                    <%= link.url.truncate(70) %>
+                  <% end %>
+                  <label style="margin-left: auto; display: flex; gap: 0.4rem; align-items: center;">
+                    Start at (s):
+                    <%= number_field_tag "video_links[#{link.id}][starts_at_seconds]",
+                                         link.starts_at_seconds,
+                                         min: 0, step: 1,
+                                         style: "width: 6rem; padding: 0.2rem 0.4rem;" %>
+                  </label>
+                  <% if link.starts_at_seconds.present? %>
+                    <span style="color: #888;">→ &t=<%= link.starts_at_seconds %></span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <div style="margin-top: 1rem;">
+      <%= f.submit "Save all timestamps", class: "button button--success" %>
+    </div>
+  <% end %>
+</section>

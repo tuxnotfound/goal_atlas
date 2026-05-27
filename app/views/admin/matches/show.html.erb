@@ -1,0 +1,14 @@
+<% match = page.resource %>
+
+<% content_for :before_main do %>
+  <section class="main-content__body" style="margin-bottom: 1.5rem;">
+    <%= link_to "Edit video timestamps for this match →",
+                admin_match_video_timestamps_path(match),
+                class: "button" %>
+    <span style="font-size: 0.8rem; color: #888; margin-left: 0.5rem;">
+      Bulk-edit <code>starts_at_seconds</code> for every goal and video link in this match.
+    </span>
+  </section>
+<% end %>
+
+<%= render template: "administrate/application/show", locals: { page: page } %>
