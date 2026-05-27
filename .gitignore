@@ -40,3 +40,4 @@
 
 # Claude Code session-local settings (auto-generated permission allowlist).
 /.claude/
+/public/stylized_portraits/

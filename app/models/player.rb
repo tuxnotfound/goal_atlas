@@ -20,6 +20,11 @@ class Player < ApplicationRecord
   has_many :shootout_kicks, dependent: :restrict_with_error
   has_many :tournament_awards, dependent: :restrict_with_error
   has_many :player_images, dependent: :destroy
+  has_many :stylized_portraits, dependent: :destroy
+
+  def selected_stylized_portrait
+    stylized_portraits.selected.first
+  end
 
   def default_image
     player_images.kept.active.default.first || player_images.kept.active.ordered.first

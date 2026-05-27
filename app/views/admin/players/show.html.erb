@@ -1,6 +1,67 @@
 <% player = page.resource %>
 
 <% content_for :before_main do %>
+  <% stylized = player.stylized_portraits.recent.to_a %>
+
+  <section class="main-content__body" style="margin-bottom: 1.5rem;">
+    <h2 style="margin-top: 0;">Stylized portraits</h2>
+
+    <div style="margin-bottom: 1rem;">
+      <%= button_to "Generate new stylized portrait",
+                    admin_stylize_player_portrait_path(player_id: player.slug),
+                    method: :post,
+                    class: "button",
+                    data: { turbo_confirm: "This calls OpenAI gpt-image-1 and blocks for ~60s. Continue?" } %>
+      <span style="font-size: 0.8rem; color: #888; margin-left: 0.5rem;">
+        Adds to the pool; doesn't delete existing variants.
+      </span>
+    </div>
+
+    <% if stylized.any? %>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem;">
+        <% stylized.each do |portrait| %>
+          <% border = portrait.is_selected? ? "3px solid #1d4ed8" : "1px solid #ddd" %>
+          <div style="border: <%= border %>; padding: 0.5rem; background: #fafafa;">
+            <% if portrait.file_exists? %>
+              <%= image_tag portrait.public_url,
+                            alt: "#{player.name} (stylized ##{portrait.id})",
+                            style: "width: 100%; height: 200px; object-fit: cover; background: #fff;" %>
+            <% else %>
+              <div style="height: 200px; display: flex; align-items: center; justify-content: center; background: #eee; color: #888; font-size: 0.8rem;">
+                File missing
+              </div>
+            <% end %>
+
+            <div style="font-size: 0.7rem; margin-top: 0.4rem; color: #555;">
+              <% if portrait.is_selected? %>
+                <strong style="color: #1d4ed8;">◉ Selected</strong> ·
+              <% end %>
+              <%= portrait.generated_at.strftime("%b %-d, %-l:%M %p") %>
+            </div>
+
+            <div style="margin-top: 0.4rem; display: flex; gap: 0.3rem; flex-wrap: wrap;">
+              <% unless portrait.is_selected? %>
+                <%= button_to "Select",
+                              set_selected_admin_stylized_portrait_path(portrait),
+                              method: :patch,
+                              class: "button button--success",
+                              style: "padding: 0.2rem 0.5rem; font-size: 0.75rem;" %>
+              <% end %>
+              <%= button_to "Delete",
+                            admin_stylized_portrait_path(portrait),
+                            method: :delete,
+                            class: "button",
+                            data: { turbo_confirm: "Delete this stylized portrait? The file will be removed from disk." },
+                            style: "padding: 0.2rem 0.5rem; font-size: 0.75rem; background: #b91c1c;" %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p style="color: #777;">No stylized portraits yet. Click "Generate new stylized portrait" to make one.</p>
+    <% end %>
+  </section>
+
   <section class="main-content__body" style="margin-bottom: 1.5rem;">
     <h2 style="margin-top: 0;">Portraits</h2>
 

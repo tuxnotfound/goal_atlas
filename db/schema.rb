@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_22_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -211,6 +211,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_210000) do
     t.index ["slug"], name: "index_stadiums_on_slug", unique: true
   end
 
+  create_table "stylized_portraits", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "file_path", null: false
+    t.datetime "generated_at", null: false
+    t.boolean "is_selected", default: false, null: false
+    t.string "model"
+    t.bigint "player_id", null: false
+    t.text "prompt"
+    t.string "quality"
+    t.string "size"
+    t.bigint "source_player_image_id"
+    t.datetime "updated_at", null: false
+    t.index ["player_id", "is_selected"], name: "index_stylized_portraits_one_selected_per_player", unique: true, where: "(is_selected = true)"
+    t.index ["player_id"], name: "index_stylized_portraits_on_player_id"
+    t.index ["source_player_image_id"], name: "index_stylized_portraits_on_source_player_image_id"
+  end
+
   create_table "teams", force: :cascade do |t|
     t.integer "active_from"
     t.integer "active_until"
@@ -312,6 +329,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_210000) do
   add_foreign_key "shootout_kicks", "matches"
   add_foreign_key "shootout_kicks", "players"
   add_foreign_key "shootout_kicks", "teams"
+  add_foreign_key "stylized_portraits", "player_images", column: "source_player_image_id"
+  add_foreign_key "stylized_portraits", "players"
   add_foreign_key "teams", "teams", column: "successor_team_id"
   add_foreign_key "tournament_awards", "players"
   add_foreign_key "tournament_awards", "tournaments"

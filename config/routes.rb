@@ -29,6 +29,13 @@ Rails.application.routes.draw do
     end
     post "players/:player_id/scout_images", to: "player_images#scout", as: :scout_player_images
 
+    post "players/:player_id/stylize_portrait", to: "stylized_portraits#create", as: :stylize_player_portrait
+    resources :stylized_portraits, only: [:destroy] do
+      member do
+        patch :set_selected
+      end
+    end
+
     root to: "tournaments#index"
   end
 
