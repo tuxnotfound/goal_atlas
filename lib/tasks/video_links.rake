@@ -158,6 +158,47 @@ namespace :video_links do
     puts "Attached: #{attached} new goal-level link(s). Skipped: #{skipped}."
   end
 
+  desc "Scout archive.org for match-level video for every match in a tournament that lacks a video link. Usage: rake video_links:scout_archive_org[<year>]"
+  task :scout_archive_org, [:year, :limit] => :environment do |_t, args|
+    abort "Usage: rake video_links:scout_archive_org[<year>,<limit?>]" unless args[:year]
+
+    tournament = Tournament.find_by!(year: args[:year].to_i)
+    scope = tournament.matches.left_outer_joins(:video_links)
+                       .where(video_links: { id: nil })
+                       .order(:match_number)
+    limit = args[:limit].to_i
+    scope = scope.limit(limit) if limit.positive?
+    matches = scope.to_a
+
+    puts "Tournament: #{tournament.year} #{tournament.name}"
+    puts "Matches without any video_link: #{matches.size}"
+    puts ""
+
+    scout = ArchiveOrgScout.new
+    attached = 0
+    skipped  = 0
+
+    matches.each_with_index do |m, idx|
+      label = "M#{m.match_number} #{m.home_team.fifa_code} v #{m.away_team.fifa_code}"
+      hit = scout.find_best_for_match(m)
+      if hit.nil?
+        puts "#{label}: no relevant result"
+        skipped += 1
+      else
+        link = m.video_links.find_or_initialize_by(url: hit["url"])
+        was_new = link.new_record?
+        link.assign_attributes(source: :archive_org, confidence: :unverified, language: "en", is_active: true, embed_allowed: true)
+        link.save!
+        puts "#{label}: → #{hit["title"].to_s.truncate(80)} (downloads: #{hit["downloads"]}) #{was_new ? "[NEW]" : "[exists]"}"
+        attached += 1 if was_new
+      end
+      sleep 1 unless idx == matches.size - 1  # be nice to archive.org
+    end
+
+    puts ""
+    puts "Attached: #{attached} new archive.org link(s). Skipped: #{skipped}."
+  end
+
   desc "Probe oEmbed for every YouTube VideoLink and update embed_allowed. FIFA's channel is forced to false (their domain block is invisible to YouTube APIs)."
   task probe_embed_allowed: :environment do
     links = VideoLink.kept.where(source: [:youtube_official, :broadcaster]).to_a
