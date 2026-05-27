@@ -72,6 +72,13 @@ class Goal < ApplicationRecord
     goal_type == "own_goal"
   end
 
+  # Compact checkmark string for the admin Goals index — Administrate
+  # renders Field::Boolean as "Yes"/"No" text, so we use a String column
+  # instead with an explicit ✓ glyph.
+  def video
+    video_links.kept.active.exists? ? "✓" : ""
+  end
+
   # The team that did NOT score this goal (the other team in the match).
   # For own goals: this is the scorer's own nationality team.
   def opponent_team
