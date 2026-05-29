@@ -59,6 +59,7 @@ end
 #  slug                  :string           not null
 #  source_notes          :text
 #  stoppage_time         :integer
+#  video_scout_failed_at :datetime
 #  created_at            :datetime         not null
 #  updated_at            :datetime         not null
 #  assist_player_id      :bigint

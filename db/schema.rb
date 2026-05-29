@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_29_150230) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -55,6 +55,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_110000) do
     t.text "source_notes"
     t.integer "stoppage_time"
     t.datetime "updated_at", null: false
+    t.datetime "video_scout_failed_at"
     t.index ["assist_player_id"], name: "index_goals_on_assist_player_id"
     t.index ["discarded_at"], name: "index_goals_on_discarded_at"
     t.index ["goal_type"], name: "index_goals_on_goal_type"
