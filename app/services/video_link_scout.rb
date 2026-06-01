@@ -25,12 +25,13 @@ class VideoLinkScout
   # those are the human-readable registry; this hash is the lookup the
   # YouTube Data API needs (it filters by channelId, not channel handle).
   CHANNELS = {
-    fifa:         "UCpcTrCXblq78GZrTUTLWeBw", # @FIFA            (verified 2026-05-20)
-    sky_sport_nz: "UC8f1U3h2TAcKOktgonnL0Yw", # @SkySportNZ      (verified 2026-05-27)
-    tyc_sports:   "UC72ZaBKI-Bo5fjmWEYonhJw", # @TycSports       (verified 2026-05-27)
-    tf1:          "UC26vXhYofHiZDM2ar1zUuwQ", # @TF1             (verified 2026-05-27)
-    bbc_sport:    "UCW6-BQWFA70Dyyc7ZpZ9Xlg", # @bbcsport        (verified 2026-05-27)
-    rtp_noticias: "UCIM-wfyv9hg2oEiA81mQc2A"  # @RTPNoticias     (verified 2026-05-27)
+    fifa:           "UCpcTrCXblq78GZrTUTLWeBw", # @FIFA            (verified 2026-05-20)
+    sky_sport_nz:   "UC8f1U3h2TAcKOktgonnL0Yw", # @SkySportNZ      (verified 2026-05-27)
+    tyc_sports:     "UC72ZaBKI-Bo5fjmWEYonhJw", # @TycSports       (verified 2026-05-27)
+    tf1:            "UC26vXhYofHiZDM2ar1zUuwQ", # @TF1             (verified 2026-05-27)
+    bbc_sport:      "UCW6-BQWFA70Dyyc7ZpZ9Xlg", # @bbcsport        (verified 2026-05-27)
+    rtp_noticias:   "UCIM-wfyv9hg2oEiA81mQc2A", # @RTPNoticias     (verified 2026-05-27)
+    british_pathe:  "UCGp4u0WHLsK8OAxnvwiTyhA"  # @BritishPathe    (verified 2026-05-30)
     # When adding a new tournament source:
     #   1. Add a Source record in db/seeds/sources.rb (with channel ID in notes)
     #   2. Mirror the channel ID here so the scout can filter searches to it
@@ -38,12 +39,13 @@ class VideoLinkScout
 
   # VideoLink.source enum value for each channel.
   CHANNEL_SOURCES = {
-    fifa:         :youtube_official,
-    sky_sport_nz: :broadcaster,
-    tyc_sports:   :broadcaster,
-    tf1:          :broadcaster,
-    bbc_sport:    :broadcaster,
-    rtp_noticias: :broadcaster
+    fifa:           :youtube_official,
+    sky_sport_nz:   :broadcaster,
+    tyc_sports:     :broadcaster,
+    tf1:            :broadcaster,
+    bbc_sport:      :broadcaster,
+    rtp_noticias:   :broadcaster,
+    british_pathe:  :broadcaster
   }.freeze
 
   # Default priority order for find_best_for_goal: try FIFA first, then

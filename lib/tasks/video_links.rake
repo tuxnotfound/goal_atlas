@@ -163,6 +163,142 @@ namespace :video_links do
     puts "Attached: #{attached} new goal-level link(s). Skipped: #{skipped}."
   end
 
+  desc "Scout British Pathé YouTube channel for pre-1970 World Cup videos and attach to identifiable matches. No args."
+  task scout_pathe: :environment do
+    # Fetch up to pages_to_fetch × 50 = 250 Pathé videos matching 'world cup'.
+    # 100 quota units per page; 5 pages = 500 units.
+    pages_to_fetch = 5
+    api_key = ENV.fetch("YOUTUBE_API_KEY") {
+      File.read(Rails.root.join(".env"))[/YOUTUBE_API_KEY=(.+)/, 1]
+    }
+    pathe_channel = VideoLinkScout::CHANNELS.fetch(:british_pathe)
+
+    all_videos = []
+    page_token = nil
+    pages_to_fetch.times do |i|
+      uri = URI("https://www.googleapis.com/youtube/v3/search")
+      params = {
+        key: api_key, part: "snippet", channelId: pathe_channel,
+        q: "world cup", maxResults: 50, type: "video", order: "relevance"
+      }
+      params[:pageToken] = page_token if page_token
+      uri.query = URI.encode_www_form(params)
+      response = Net::HTTP.get_response(uri)
+      data = JSON.parse(response.body)
+      items = data["items"] || []
+      all_videos += items
+      puts "Pathé page #{i + 1}: +#{items.size} (total: #{all_videos.size})"
+      page_token = data["nextPageToken"]
+      break unless page_token
+    end
+
+    puts ""
+    puts "Inspecting #{all_videos.size} videos for FIFA World Cup match identifiability…"
+    puts ""
+
+    # Country name → Team mapping for the title parser. Includes common
+    # historical names Pathé would have used (West Germany, USSR, Czechoslovakia).
+    wc_years = Tournament.distinct.pluck(:year).sort
+    teams_by_alias = build_team_alias_map
+
+    attached = 0
+    matched_no_attach = 0
+    unmatched = 0
+    log = []
+
+    all_videos.each do |item|
+      title    = item.dig("snippet", "title").to_s.gsub(/&#39;|&quot;/, "'")
+      video_id = item.dig("id", "videoId")
+      next unless video_id
+
+      year = extract_wc_year(title, wc_years)
+      teams = extract_teams(title, teams_by_alias)
+
+      label = title[0, 75]
+      if year.nil? || teams.size != 2
+        unmatched += 1
+        next
+      end
+
+      match = find_match(year, teams)
+      if match.nil?
+        matched_no_attach += 1
+        log << "  ! #{year} #{teams.map(&:fifa_code).join(' v ')}: no match in DB | #{label}"
+        next
+      end
+
+      url = "https://www.youtube.com/watch?v=#{video_id}"
+      link = match.video_links.find_or_initialize_by(url: url)
+      was_new = link.new_record?
+      embeddable = VideoLinkScout.youtube_embeddable?(url)
+      link.assign_attributes(source: :broadcaster, confidence: :unverified,
+                              language: "en", is_active: true,
+                              embed_allowed: embeddable)
+      link.save!
+      attached += 1 if was_new
+      log << "  ✓ M#{match.match_number} #{teams.map(&:fifa_code).join(' v ')} #{year}: #{was_new ? 'NEW' : 'exists'} embed=#{embeddable} | #{label}"
+    end
+
+    puts log.join("\n")
+    puts ""
+    puts "Attached: #{attached} new | matched but no DB record: #{matched_no_attach} | unmatched: #{unmatched}"
+  end
+
+  # ----- helpers for scout_pathe -----
+
+  # Returns hash of downcased alias → Team. Includes Pathé-era variants.
+  def build_team_alias_map
+    map = {}
+    historical_aliases = {
+      "FRG" => ["West Germany", "Germany"],
+      "GDR" => ["East Germany"],
+      "URS" => ["USSR", "Soviet Union", "Russia"],
+      "TCH" => ["Czechoslovakia"],
+      "FRY" => ["Yugoslavia"],
+      "SCG" => ["Serbia and Montenegro"]
+    }
+    Team.kept.each do |t|
+      add_alias = ->(name) { map[name.to_s.downcase] = t if name.present? && name.length > 2 }
+      add_alias.call(t.name)
+      add_alias.call(t.fifa_code)
+      (historical_aliases[t.fifa_code] || []).each(&add_alias)
+    end
+    map
+  end
+
+  # Finds a 4-digit WC tournament year mentioned anywhere in the title.
+  def extract_wc_year(title, wc_years)
+    title.scan(/\b(19[3-9]\d|20[0-2]\d)\b/).flatten.map(&:to_i).find { |y| wc_years.include?(y) }
+  end
+
+  # Finds 2+ team aliases mentioned in the title. Returns Array of Team
+  # (in order they appear), de-duplicated, capped at 2 (home/away order
+  # doesn't matter for matching — we try both).
+  def extract_teams(title, alias_map)
+    downcased = title.downcase
+    seen = {}
+    alias_map.each do |name, team|
+      idx = downcased.index(name)
+      next unless idx
+      # boundary check — alias must be surrounded by non-letter (avoid "iran" inside "irani")
+      before = idx == 0 || downcased[idx - 1] !~ /[a-z]/
+      after_idx = idx + name.length
+      after = after_idx >= downcased.length || downcased[after_idx] !~ /[a-z]/
+      next unless before && after
+      seen[team.id] ||= [idx, team]
+    end
+    seen.values.sort_by { |idx, _| idx }.map(&:last).first(2)
+  end
+
+  # Tries both team orderings.
+  def find_match(year, teams)
+    return nil if teams.size != 2
+    a, b = teams
+    Match.joins(:tournament).where(tournaments: { year: year })
+         .where("(home_team_id = ? AND away_team_id = ?) OR (home_team_id = ? AND away_team_id = ?)",
+                a.id, b.id, b.id, a.id).first
+  end
+
   desc "Scout archive.org for match-level video for every match in a tournament that lacks a video link. Usage: rake video_links:scout_archive_org[<year>]"
   task :scout_archive_org, [:year, :limit] => :environment do |_t, args|
     abort "Usage: rake video_links:scout_archive_org[<year>,<limit?>]" unless args[:year]
