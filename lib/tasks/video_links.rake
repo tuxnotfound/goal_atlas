@@ -163,6 +163,44 @@ namespace :video_links do
     puts "Attached: #{attached} new goal-level link(s). Skipped: #{skipped}."
   end
 
+  desc "Bulk-apply heuristic timestamp suggestions to every goal video_link without starts_at_seconds, for one tournament. Usage: rake video_links:bulk_apply_timestamps[<year>]"
+  task :bulk_apply_timestamps, [:year] => :environment do |_t, args|
+    abort "Usage: rake video_links:bulk_apply_timestamps[<year>]" unless args[:year]
+
+    tournament = Tournament.find_by!(year: args[:year].to_i)
+    puts "Tournament: #{tournament.year} #{tournament.name}"
+    matches = tournament.matches.kept.includes(goals: :video_links).to_a
+    puts "Matches to process: #{matches.size}"
+    puts ""
+
+    applied = 0
+    skipped = 0
+    matches_touched = 0
+
+    matches.each do |match|
+      suggester = GoalTimestampSuggester.new(match)
+      suggester.warm_durations!
+      suggestions = suggester.suggestions_by_link
+      if suggestions.empty?
+        skipped += 1
+        next
+      end
+
+      matches_touched += 1
+      VideoLink.where(id: suggestions.keys).each do |link|
+        # suggestions_by_link already filtered to links with starts_at_seconds.nil?,
+        # but re-check to stay idempotent across concurrent edits.
+        next unless link.starts_at_seconds.nil?
+        link.update_column(:starts_at_seconds, suggestions[link.id])
+        applied += 1
+      end
+      print "  M#{match.match_number} #{match.home_team.fifa_code} v #{match.away_team.fifa_code}: +#{suggestions.size} timestamp(s) saved\n"
+    end
+
+    puts ""
+    puts "Applied: #{applied} timestamp(s) across #{matches_touched} match(es). Matches skipped (no candidates): #{skipped}."
+  end
+
   desc "Scout British Pathé YouTube channel for pre-1970 World Cup videos and attach to identifiable matches. No args."
   task scout_pathe: :environment do
     # Fetch up to pages_to_fetch × 50 = 250 Pathé videos matching 'world cup'.
