@@ -1,5 +1,17 @@
 module Admin
   class VideoLinksController < Admin::ApplicationController
+    # Pre-fill the polymorphic linkable from query params so links like
+    # /admin/video_links/new?linkable_type=Goal&linkable_id=42 open the form
+    # with the goal (or match) already selected.
+    def new
+      resource = new_resource
+      if params[:linkable_type].in?(%w[Match Goal]) && params[:linkable_id].present?
+        resource.linkable = params[:linkable_type].constantize.find_by(id: params[:linkable_id])
+      end
+      authorize_resource(resource)
+      render locals: { page: Administrate::Page::Form.new(dashboard, resource) }
+    end
+
     # Overwrite any of the RESTful controller actions to implement custom behavior
     # For example, you may want to send an email after a foo is updated.
     #

@@ -27,14 +27,14 @@ module VideoLinksHelper
 
   # Accepts "443", "7:23", or "1:07:23" and returns total seconds. Returns nil
   # for blank input. Raises ArgumentError if the format is not recognized.
+  # Base 10 is forced so "08" parses as 8, not as an octal error.
   def parse_hms_to_seconds(str)
     raw = str.to_s.strip
     return nil if raw.empty?
-    return Integer(raw) if raw.match?(/\A\d+\z/)
+    return Integer(raw, 10) if raw.match?(/\A\d+\z/)
     parts = raw.split(":")
     raise ArgumentError, "expected m:ss or h:mm:ss, got #{raw.inspect}" unless [2, 3].include?(parts.size)
-    nums = parts.map { |p| Integer(p) }
-    raise ArgumentError, "negative components in #{raw.inspect}" if nums.any?(&:negative?)
+    nums = parts.map { |p| Integer(p, 10) }
     h, m, s = parts.size == 3 ? nums : [0, *nums]
     h * 3600 + m * 60 + s
   end

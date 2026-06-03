@@ -21,6 +21,8 @@
           <%= link_to link.url, target: "_blank", rel: "noopener noreferrer", style: "color: #1d4ed8;" do %>
             <%= video_source_label(link) %> — <%= link.url %>
           <% end %>
+          <%= link_to "edit", edit_admin_video_link_path(link), target: "_blank",
+                      style: "color: #6b7280; font-size: 0.75rem; text-decoration: underline; margin-left: 0.4rem;" %>
         </li>
       <% end %>
     </ul>
@@ -57,7 +59,11 @@
 
           <% if goal_links.empty? %>
             <div style="color: #999; font-size: 0.85rem; margin-top: 0.4rem;">
-              No video link yet. Run autofetch or add one in admin.
+              No video link yet. Run autofetch or
+              <%= link_to "add one",
+                          new_admin_video_link_path(linkable_type: "Goal", linkable_id: goal.id),
+                          target: "_blank",
+                          style: "color: #1d4ed8; text-decoration: underline;" %>.
             </div>
           <% else %>
             <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem;">
@@ -70,6 +76,8 @@
                               style: "color: #1d4ed8; max-width: 50ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" do %>
                     <%= link.url.truncate(70) %>
                   <% end %>
+                  <%= link_to "edit", edit_admin_video_link_path(link), target: "_blank",
+                              style: "color: #6b7280; font-size: 0.75rem; text-decoration: underline;" %>
                   <label style="margin-left: auto; display: flex; gap: 0.4rem; align-items: center;">
                     Start at (m:ss):
                     <%= text_field_tag "video_links[#{link.id}][starts_at]",
