@@ -62,29 +62,45 @@
           <% else %>
             <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem;">
               <% goal_links.each do |link| %>
+                <% suggested = @suggestions[link.id] %>
+                <% input_id = "vl_#{link.id}_starts" %>
                 <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; font-size: 0.85rem;">
                   <span style="color: #555; min-width: 70px;"><%= video_source_label(link) %>:</span>
                   <%= link_to link.url, target: "_blank", rel: "noopener noreferrer",
                               style: "color: #1d4ed8; max-width: 50ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" do %>
                     <%= link.url.truncate(70) %>
                   <% end %>
-                  <% suggested = @suggestions[link.id] %>
-                  <% input_id = "vl_#{link.id}_starts" %>
                   <label style="margin-left: auto; display: flex; gap: 0.4rem; align-items: center;">
-                    Start at (s):
-                    <%= number_field_tag "video_links[#{link.id}][starts_at_seconds]",
-                                         link.starts_at_seconds,
-                                         min: 0, step: 1, id: input_id,
-                                         placeholder: suggested && link.starts_at_seconds.nil? ? "≈#{suggested}" : nil,
-                                         style: "width: 6rem; padding: 0.2rem 0.4rem;" %>
+                    Start at (m:ss):
+                    <%= text_field_tag "video_links[#{link.id}][starts_at]",
+                                       format_seconds_as_hms(link.starts_at_seconds),
+                                       id: input_id,
+                                       placeholder: suggested && link.starts_at_seconds.nil? ? "≈#{format_seconds_as_hms(suggested)}" : "m:ss",
+                                       inputmode: "numeric",
+                                       style: "width: 6rem; padding: 0.2rem 0.4rem;" %>
+                  </label>
+                  <button type="button"
+                          class="js-open-video-at-timestamp"
+                          data-video-url="<%= link.url %>"
+                          data-video-source="<%= link.source %>"
+                          data-input-id="<%= input_id %>"
+                          style="padding: 0.2rem 0.5rem; font-size: 0.8rem; border: 1px solid #1d4ed8; color: #1d4ed8; background: white; border-radius: 3px; cursor: pointer;">
+                    Open ↗
+                  </button>
+                  <%= hidden_field_tag "video_links[#{link.id}][timestamp_validated]", "0" %>
+                  <label style="display: flex; gap: 0.3rem; align-items: center; color: <%= link.timestamp_validated_at? ? "#15803d" : "#666" %>;">
+                    <%= check_box_tag "video_links[#{link.id}][timestamp_validated]", "1", link.timestamp_validated_at.present? %>
+                    Validated<% if link.timestamp_validated_at.present? %>
+                      <span style="color: #888; font-size: 0.75rem;">(<%= link.timestamp_validated_at.to_date.to_fs(:long) rescue link.timestamp_validated_at.to_date %>)</span>
+                    <% end %>
                   </label>
                   <% if suggested && link.starts_at_seconds.nil? %>
-                    <% mm, ss = suggested.divmod(60) %>
-                    <a href="#" onclick="document.getElementById('<%= input_id %>').value=<%= suggested %>;return false;"
-                       style="color: #1d4ed8; font-size: 0.8rem;">use ≈<%= "#{mm}:#{ss.to_s.rjust(2, '0')}" %></a>
+                    <% suggested_hms = format_seconds_as_hms(suggested) %>
+                    <a href="#" onclick="document.getElementById('<%= input_id %>').value='<%= suggested_hms %>';return false;"
+                       style="color: #1d4ed8; font-size: 0.8rem;">use ≈<%= suggested_hms %></a>
                   <% end %>
                   <% if link.starts_at_seconds.present? %>
-                    <span style="color: #888;">→ &t=<%= link.starts_at_seconds %></span>
+                    <span style="color: #888;">→ <%= format_seconds_as_hms(link.starts_at_seconds) %></span>
                   <% end %>
                 </div>
               <% end %>
@@ -99,3 +115,40 @@
     </div>
   <% end %>
 </section>
+
+<script>
+  (function() {
+    // Accepts "443", "7:23", or "1:07:23" → total seconds. Returns null on invalid input.
+    function parseHmsToSeconds(raw) {
+      raw = (raw || "").trim();
+      if (raw === "") return null;
+      if (/^\d+$/.test(raw)) return parseInt(raw, 10);
+      var parts = raw.split(":");
+      if (parts.length < 2 || parts.length > 3) return null;
+      var nums = parts.map(function(p) { return /^\d+$/.test(p) ? parseInt(p, 10) : NaN; });
+      if (nums.some(function(n) { return isNaN(n); })) return null;
+      if (parts.length === 2) return nums[0] * 60 + nums[1];
+      return nums[0] * 3600 + nums[1] * 60 + nums[2];
+    }
+
+    function appendTimestamp(url, source, seconds) {
+      var sep = url.indexOf("?") === -1 ? "?" : "&";
+      if (source === "youtube_official") return url + sep + "t=" + seconds;
+      if (source === "archive_org") return url + sep + "start=" + seconds;
+      return url;
+    }
+
+    document.querySelectorAll(".js-open-video-at-timestamp").forEach(function(btn) {
+      btn.addEventListener("click", function(e) {
+        e.preventDefault();
+        var url = btn.getAttribute("data-video-url");
+        var source = btn.getAttribute("data-video-source");
+        var inputId = btn.getAttribute("data-input-id");
+        var input = document.getElementById(inputId);
+        var seconds = parseHmsToSeconds(input && input.value);
+        if (seconds !== null) url = appendTimestamp(url, source, seconds);
+        window.open(url, "_blank", "noopener,noreferrer");
+      });
+    });
+  })();
+</script>

@@ -40,6 +40,7 @@ end
 #  linkable_type          :string           not null
 #  source                 :integer          not null
 #  starts_at_seconds      :integer
+#  timestamp_validated_at :datetime
 #  url                    :string           not null
 #  video_duration_seconds :integer
 #  created_at             :datetime         not null

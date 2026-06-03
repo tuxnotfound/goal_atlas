@@ -23,6 +23,7 @@ class GoalDashboard < Administrate::BaseDashboard
     goal_tags: Field::HasMany,
     video_links: Field::HasMany,
     video: Field::String.with_options(searchable: false),
+    video_validated: Field::String.with_options(searchable: false),
     discarded_at: Field::DateTime,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
@@ -35,6 +36,7 @@ class GoalDashboard < Administrate::BaseDashboard
     scoring_team
     goal_type
     video
+    video_validated
   ].freeze
 
   SHOW_PAGE_ATTRIBUTES = %i[

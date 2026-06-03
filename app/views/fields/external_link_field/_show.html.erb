@@ -1,0 +1,4 @@
+<% url = field.data %>
+<% if url.present? %>
+  <%= link_to url, url, target: "_blank", rel: "noopener noreferrer", class: "underline hover:text-emerald-700" %>
+<% end %>

@@ -16,6 +16,29 @@ module VideoLinksHelper
     SOURCE_LABELS[link.source] || "Watch"
   end
 
+  # Formats an integer second-offset as "m:ss" (under an hour) or "h:mm:ss".
+  def format_seconds_as_hms(seconds)
+    return nil if seconds.nil?
+    s = seconds.to_i
+    h, rem = s.divmod(3600)
+    m, ss = rem.divmod(60)
+    h.positive? ? format("%d:%02d:%02d", h, m, ss) : format("%d:%02d", m, ss)
+  end
+
+  # Accepts "443", "7:23", or "1:07:23" and returns total seconds. Returns nil
+  # for blank input. Raises ArgumentError if the format is not recognized.
+  def parse_hms_to_seconds(str)
+    raw = str.to_s.strip
+    return nil if raw.empty?
+    return Integer(raw) if raw.match?(/\A\d+\z/)
+    parts = raw.split(":")
+    raise ArgumentError, "expected m:ss or h:mm:ss, got #{raw.inspect}" unless [2, 3].include?(parts.size)
+    nums = parts.map { |p| Integer(p) }
+    raise ArgumentError, "negative components in #{raw.inspect}" if nums.any?(&:negative?)
+    h, m, s = parts.size == 3 ? nums : [0, *nums]
+    h * 3600 + m * 60 + s
+  end
+
   # Appends ?t=<seconds> to YouTube URLs when a start timestamp is set.
   # Other sources are returned as-is (FIFA+ has no standard timestamp param).
   def video_link_url(link)

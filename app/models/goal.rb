@@ -79,6 +79,12 @@ class Goal < ApplicationRecord
     video_links.kept.active.exists? ? "✓" : ""
   end
 
+  # ✓ when at least one kept video_link for this goal has its
+  # timestamp_validated_at set on the video timestamps admin page.
+  def video_validated
+    video_links.kept.where.not(timestamp_validated_at: nil).exists? ? "✓" : ""
+  end
+
   # The team that did NOT score this goal (the other team in the match).
   # For own goals: this is the scorer's own nationality team.
   def opponent_team

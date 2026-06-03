@@ -3,11 +3,14 @@
 
   Locals:
     filters: Array<Hash> — each with:
-      :name          → query-param symbol (e.g. :team_id)
-      :label         → string shown to the admin
-      :options       → ActiveRecord::Relation or Array of objects
-      :label_for     → optional proc(opt) → display label (default: opt.name)
-      :value_for     → optional proc(opt) → option value (default: opt.id)
+      :name              → query-param symbol (e.g. :team_id)
+      :label             → string shown to the admin
+      :options           → ActiveRecord::Relation or Array of objects
+      :label_for         → optional proc(opt) → display label (default: opt.name)
+      :value_for         → optional proc(opt) → option value (default: opt.id)
+      :on_change_clear   → optional Array<Symbol> of sibling filter names to clear
+                            when this select changes (e.g. clear :match_id when
+                            :tournament_id changes).
 %>
 <% filters ||= [] %>
 <% if filters.any? %>
@@ -15,10 +18,11 @@
         style="display: flex; gap: 0.75rem; align-items: end; margin: 0.5rem 0 1rem; flex-wrap: wrap;">
     <% filters.each do |f| %>
       <% selected = params[f[:name]].to_s %>
+      <% clear_js = (f[:on_change_clear] || []).map { |n| "var s=this.form.querySelector('select[name=#{n}]'); if(s) s.value='';" }.join(" ") %>
       <label style="display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.85rem;">
         <span style="color: #555;"><%= f[:label] %></span>
         <select name="<%= f[:name] %>"
-                onchange="this.form.submit()"
+                onchange="<%= clear_js %>this.form.submit()"
                 style="min-width: 180px; padding: 0.3rem;">
           <option value="">All</option>
           <% f[:options].each do |opt| %>

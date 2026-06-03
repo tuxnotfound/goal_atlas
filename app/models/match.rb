@@ -62,6 +62,14 @@ class Match < ApplicationRecord
     video_links.kept.active.exists? ? "✓" : ""
   end
 
+  # ✓ when the match has at least one goal AND every kept goal has at least
+  # one kept video_link whose timestamp_validated_at is set.
+  def video_validated
+    kept_goals = goals.kept.to_a
+    return "" if kept_goals.empty?
+    kept_goals.all? { |g| g.video_links.kept.where.not(timestamp_validated_at: nil).exists? } ? "✓" : ""
+  end
+
   def slug_candidates
     base = "#{home_team&.slug}-vs-#{away_team&.slug}-#{date&.year}"
     base = base.sub(/-+/, "-")
