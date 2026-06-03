@@ -56,7 +56,8 @@ class Goal < ApplicationRecord
   validate :own_goal_player_team_mismatch
 
   scope :ordered_within_match, -> {
-    order(:period, :minute, :stoppage_time, :goal_order)
+    # NULLS FIRST so a 90' goal (stoppage_time NULL) sorts before a 90'+N goal.
+    order(:period, :minute, Arel.sql("stoppage_time ASC NULLS FIRST"), :goal_order)
   }
 
   scope :by_team,        ->(team)       { where(scoring_team_id: team.id) }

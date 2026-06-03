@@ -73,6 +73,18 @@ RSpec.describe Goal, type: :model do
 
       expect(match.goals.ordered_within_match).to eq([g_5, g_45_2, g_60, g_108])
     end
+
+    it "sorts a 90' goal (stoppage_time NULL) before a 90'+N goal" do
+      match = create(:match, :final_2022)
+      g_90_plus_2 = create(:goal, match: match, scoring_team: match.home_team,
+                                  minute: 90, stoppage_time: 2, period: :second_half,
+                                  score_after_goal_home: 2, score_after_goal_away: 0)
+      g_90 = create(:goal, match: match, scoring_team: match.home_team,
+                           minute: 90, stoppage_time: nil, period: :second_half,
+                           score_after_goal_home: 1, score_after_goal_away: 0)
+
+      expect(match.goals.ordered_within_match).to eq([g_90, g_90_plus_2])
+    end
   end
 
   describe "enums" do
