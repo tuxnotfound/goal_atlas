@@ -12,6 +12,13 @@ module Admin
                    .includes(:player, :scoring_team,
                              video_links: [])
       @match_video_links = @match.video_links.kept.active
+
+      # Heuristic-based suggestions for any goal video_link missing a timestamp.
+      # warm_durations! makes one cheap (1u) YouTube call to populate any
+      # missing durations on first load; subsequent loads are free.
+      suggester = GoalTimestampSuggester.new(@match)
+      suggester.warm_durations!
+      @suggestions = suggester.suggestions_by_link
     end
 
     # PATCH /admin/matches/:match_id/video_timestamps

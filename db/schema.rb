@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_29_150230) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_03_000710) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -305,6 +305,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_150230) do
     t.integer "starts_at_seconds"
     t.datetime "updated_at", null: false
     t.string "url", null: false
+    t.integer "video_duration_seconds"
     t.index ["discarded_at"], name: "index_video_links_on_discarded_at"
     t.index ["is_active"], name: "index_video_links_on_is_active"
     t.index ["linkable_type", "linkable_id"], name: "index_video_links_on_linkable"

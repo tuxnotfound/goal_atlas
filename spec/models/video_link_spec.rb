@@ -70,21 +70,22 @@ end
 #
 # Table name: video_links
 #
-#  id                :bigint           not null, primary key
-#  confidence        :integer          default("likely"), not null
-#  discarded_at      :datetime
-#  embed_allowed     :boolean          default(FALSE), not null
-#  ends_at_seconds   :integer
-#  is_active         :boolean          default(TRUE), not null
-#  language          :string
-#  last_checked_at   :datetime
-#  linkable_type     :string           not null
-#  source            :integer          not null
-#  starts_at_seconds :integer
-#  url               :string           not null
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null
-#  linkable_id       :bigint           not null
+#  id                     :bigint           not null, primary key
+#  confidence             :integer          default("likely"), not null
+#  discarded_at           :datetime
+#  embed_allowed          :boolean          default(FALSE), not null
+#  ends_at_seconds        :integer
+#  is_active              :boolean          default(TRUE), not null
+#  language               :string
+#  last_checked_at        :datetime
+#  linkable_type          :string           not null
+#  source                 :integer          not null
+#  starts_at_seconds      :integer
+#  url                    :string           not null
+#  video_duration_seconds :integer
+#  created_at             :datetime         not null
+#  updated_at             :datetime         not null
+#  linkable_id            :bigint           not null
 #
 # Indexes
 #
