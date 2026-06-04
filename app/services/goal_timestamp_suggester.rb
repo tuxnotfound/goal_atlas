@@ -30,11 +30,14 @@ class GoalTimestampSuggester
 
   # For every active YouTube link on every goal in the match, returns a
   # suggested starts_at_seconds (only when the link currently has no value).
+  # Goals with any admin-validated timestamp are skipped entirely — we don't
+  # want to suggest over manual work even on a goal's other links.
   #
   # { video_link_id => suggested_seconds }
   def suggestions_by_link
     out = {}
     @match.goals.kept.ordered_within_match.each do |goal|
+      next if goal_has_validated_timestamp?(goal)
       goal.video_links.kept.active.each do |link|
         next unless link.starts_at_seconds.nil?
         seconds = suggest(goal, link)
@@ -65,6 +68,10 @@ class GoalTimestampSuggester
   end
 
   private
+
+  def goal_has_validated_timestamp?(goal)
+    goal.video_links.kept.active.any? { |l| l.timestamp_validated_at.present? }
+  end
 
   # Tries to find a chapter in the link's description whose title contains
   # the goal scorer's name. Returns the chapter's start seconds, or nil.

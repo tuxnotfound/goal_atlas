@@ -59,6 +59,14 @@ class VideoLinkScout
   # Free, no quota, no auth.
   OEMBED_ENDPOINT = "https://www.youtube.com/oembed"
 
+  # World Cup tournament years used by the year-conflict guard. When the
+  # title of a candidate video mentions a different WC year than the target
+  # match/goal's year, we reject it — this prevents the recurring pattern
+  # of a same-teams newer-tournament video being attached to an older match.
+  WC_YEARS = [1930, 1934, 1938, 1950, 1954, 1958, 1962, 1966, 1970, 1974,
+              1978, 1982, 1986, 1990, 1994, 1998, 2002, 2006, 2010, 2014,
+              2018, 2022, 2026].freeze
+
   class ApiKeyMissing < StandardError; end
   class ApiError < StandardError; end
   class RateLimited < ApiError; end
@@ -101,6 +109,48 @@ class VideoLinkScout
     nil
   end
 
+  # Finds a short (<4 min) match-highlight video using a tighter query
+  # ("Home Away YEAR World Cup"). Targets FIFA's ~2-minute short highlights
+  # which are cheap for Gemini to process and ideal for human scrubbing.
+  def find_best_short_match_video(match, channels: DEFAULT_CHANNEL_PRIORITY, max_results: 10)
+    query = short_match_query(match)
+    channels.each do |channel|
+      results = search(query, max_results: max_results, channel: channel, video_duration: "short")
+      hit = results.find { |r| relevant_to_match?(r, match) }
+      next unless hit
+      return decorate_with_source_and_embed(hit, channel)
+    end
+    nil
+  end
+
+  # Same idea as find_best_short_match_video but with a fallback chain. When
+  # the strict short + staged query returns nothing (common for knockout
+  # matches whose stage label doesn't appear in titles), tries: (2) short
+  # without stage, (3) medium with stage, (4) medium without stage.
+  # Falling back to medium widens coverage at the cost of longer clips.
+  #
+  # NOTE: defaults to FIFA channel ONLY — multiplying the fallback chain
+  # across all 6 broadcaster channels blows past YouTube's 10K daily quota
+  # (4 attempts × 6 channels × 100 units × ~50 matches = 120K quota).
+  # Callers can opt into broader channel coverage when needed.
+  def find_best_short_match_video_with_fallback(match, channels: [:fifa], max_results: 10)
+    queries_in_priority = [
+      { query: short_match_query(match),                   video_duration: "short" },
+      { query: short_match_query_without_stage(match),     video_duration: "short" },
+      { query: short_match_query(match),                   video_duration: "medium" },
+      { query: short_match_query_without_stage(match),     video_duration: "medium" },
+    ]
+    queries_in_priority.each do |q|
+      channels.each do |channel|
+        results = search(q[:query], max_results: max_results, channel: channel, video_duration: q[:video_duration])
+        hit = results.find { |r| relevant_to_match?(r, match) }
+        next unless hit
+        return decorate_with_source_and_embed(hit, channel)
+      end
+    end
+    nil
+  end
+
   # Probes YouTube's oEmbed endpoint for `url` and returns true iff the
   # video allows third-party embedding (HTTP 200). FIFA's channel returns
   # 401 here, so this is how autofetch decides VideoLink#embed_allowed
@@ -124,7 +174,8 @@ class VideoLinkScout
   end
 
   # channel: a symbol from CHANNELS, or nil for unrestricted search.
-  def search(query, max_results: 5, channel: nil)
+  # video_duration: "short" (<4min), "medium" (4-20min), "long" (>20min), or nil.
+  def search(query, max_results: 5, channel: nil, video_duration: nil)
     raise ApiKeyMissing, "Set YOUTUBE_API_KEY env var (see VideoLinkScout docs)" if @api_key.blank?
 
     params = {
@@ -135,6 +186,7 @@ class VideoLinkScout
       maxResults: max_results
     }
     params[:channelId] = CHANNELS.fetch(channel) if channel
+    params[:videoDuration] = video_duration if video_duration
 
     uri = URI(API_BASE)
     uri.query = URI.encode_www_form(params)
@@ -191,6 +243,20 @@ class VideoLinkScout
     bits.compact.reject(&:blank?).join(" ")
   end
 
+  # Tighter query for find_best_short_match_video: "Home Away YEAR World Cup
+  # <stage>". Stage is always included — group stage included as well, since
+  # without it a group match between teams that also met later in a knockout
+  # round always collides on the more-popular knockout clip.
+  def short_match_query(match)
+    "#{match.home_team.name} #{match.away_team.name} #{match.tournament.year} World Cup #{stage_query_term(match.stage)}"
+  end
+
+  # Same as short_match_query but without the stage word — used as a fallback
+  # when the staged variant comes up empty.
+  def short_match_query_without_stage(match)
+    "#{match.home_team.name} #{match.away_team.name} #{match.tournament.year} World Cup"
+  end
+
   def stage_query_term(stage)
     case stage.to_s
     when "final"               then "final"
@@ -218,6 +284,7 @@ class VideoLinkScout
   def relevant_to_goal?(result, goal)
     title = result[:title].to_s.downcase
     return false if title.empty?
+    return false if title_mentions_other_wc_year?(title, goal.match.tournament.year)
 
     keywords = [
       goal.player.name,
@@ -237,10 +304,18 @@ class VideoLinkScout
   def relevant_to_match?(result, match)
     title = result[:title].to_s.downcase
     return false if title.empty?
+    return false if title_mentions_other_wc_year?(title, match.tournament.year)
 
     home_keys = [match.home_team.name, match.home_team.fifa_code].compact.map(&:downcase)
     away_keys = [match.away_team.name, match.away_team.fifa_code].compact.map(&:downcase)
 
     home_keys.any? { |k| title.include?(k) } && away_keys.any? { |k| title.include?(k) }
+  end
+
+  # True iff the title contains any WC year other than `expected_year`. A
+  # title without any explicit year passes (we don't want to over-reject).
+  # \b boundaries avoid matching "20100" or "12018".
+  def title_mentions_other_wc_year?(title, expected_year)
+    WC_YEARS.any? { |y| y != expected_year && title.match?(/\b#{y}\b/) }
   end
 end

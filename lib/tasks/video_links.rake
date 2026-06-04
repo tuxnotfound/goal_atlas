@@ -64,6 +64,11 @@ namespace :video_links do
   # us comfortably under that ceiling without burning user wall-time.
   AUTOFETCH_SLEEP_SECONDS = 7
 
+  # rescout_short_highlights makes up to 4 fallback searches per match,
+  # which can burst close to the per-minute ceiling. 10s sleep gives more
+  # headroom and was empirically needed during the WC2018 run.
+  RESCOUT_SLEEP_SECONDS = 10
+
   desc "Auto-attach FIFA/broadcaster YouTube highlight reels to MATCHES in a tournament that lack any video link. Usage: rake video_links:autofetch_matches[<year>,<limit>]"
   task :autofetch_matches, [:year, :limit] => :environment do |_t, args|
     abort "Usage: rake video_links:autofetch_matches[<year>,<limit?>]" unless args[:year]
@@ -204,6 +209,438 @@ namespace :video_links do
 
     puts ""
     puts "Applied: #{applied} timestamp(s) across #{matches_touched} match(es). Matches skipped (no candidates): #{skipped}."
+  end
+
+  desc "Use Gemini multimodal model to identify goal timestamps for a tournament's unvalidated YouTube links. Usage: rake video_links:gemini_apply_timestamps[<year>,<mode=dry|apply>,<limit>]"
+  task :gemini_apply_timestamps, [:year, :mode, :limit] => :environment do |_t, args|
+    abort "Usage: rake video_links:gemini_apply_timestamps[<year>,<mode=dry|apply>,<limit?>]" unless args[:year]
+    mode  = (args[:mode] || "dry").downcase
+    abort "mode must be 'dry' or 'apply'" unless %w[dry apply].include?(mode)
+    limit = args[:limit].to_i
+    limit = nil if limit.zero?
+
+    tournament = Tournament.find_by!(year: args[:year].to_i)
+
+    # Goals to scout: in this tournament, not discarded, and without ANY validated link.
+    validated_goal_ids = Goal.kept.joins(:match, :video_links)
+                             .where(matches: { tournament_id: tournament.id })
+                             .where.not(video_links: { timestamp_validated_at: nil, discarded_at: nil })
+                             .pluck(:id).uniq
+
+    goals_scope = Goal.kept.joins(:match)
+                      .where(matches: { tournament_id: tournament.id })
+                      .where.not(id: validated_goal_ids)
+                      .includes(:player, :scoring_team, match: [:home_team, :away_team, :tournament], video_links: [])
+                      .order("matches.match_number, goals.minute")
+    goals_scope = goals_scope.limit(limit) if limit
+
+    goals = goals_scope.to_a
+    puts "Tournament: #{tournament.year} #{tournament.name}"
+    puts "Mode: #{mode.upcase}  Limit: #{limit || "none"}"
+    puts "Goals to scout: #{goals.size} (skipping #{validated_goal_ids.size} with validated links)"
+    puts ""
+
+    scout = GeminiTimestampScout.new
+    examined = 0
+    written  = 0
+    skipped  = 0
+    failed   = 0
+    mismatches = []
+
+    goals.each do |goal|
+      links = goal.video_links.select { |l| l.kept? && l.is_active && l.url.to_s.match?(%r{youtu\.?be}) }
+      if links.empty?
+        skipped += 1
+        next
+      end
+
+      links.each do |link|
+        # Skip goals that already have a timestamp — re-runs after a rescout
+        # would otherwise re-pay Gemini for goals whose URLs didn't change.
+        # Rescout NULLs starts_at_seconds on links it replaces, so only
+        # those (and never-Gemini'd goals) will be processed here.
+        next if link.starts_at_seconds.present?
+        examined += 1
+        label = "M#{goal.match.match_number} #{goal.minute}' #{goal.player.name}"
+        result = scout.suggest(goal, link)
+        if result.nil?
+          puts "  #{label}: FAILED (no response)"
+          failed += 1
+          next
+        end
+
+        before = link.starts_at_seconds
+        new_value = result[:timestamp_seconds]
+        # Gemini returns timestamp_seconds=-1 (or 0 with confidence=low) when
+        # the goal isn't in the clip — typically a mis-attached link. Don't
+        # write those; collect them for a follow-up reattribution pass.
+        skip_write = result[:confidence] == "low" || new_value.negative?
+        delta = before ? new_value - before : nil
+        line = "  #{label}: Gemini=#{new_value}s (conf=#{result[:confidence]})"
+        line << " | was=#{before}s (Δ=#{delta&.positive? ? "+#{delta}" : delta}s)" if before
+        line << " [MISMATCH — recorded]" if skip_write
+        line << " | #{result[:notes].to_s.slice(0, 60)}" if result[:notes].present?
+        puts line
+
+        if skip_write
+          mismatches << {
+            video_link_id: link.id,
+            match_number:  goal.match.match_number,
+            match_label:   "#{goal.match.home_team.fifa_code} v #{goal.match.away_team.fifa_code}",
+            goal_minute:   goal.minute,
+            goal_player:   goal.player.name,
+            scoring_team:  goal.scoring_team.fifa_code,
+            current_url:   link.url,
+            gemini_notes:  result[:notes],
+          }
+        elsif mode == "apply"
+          link.update_column(:starts_at_seconds, new_value)
+          written += 1
+        end
+      rescue GeminiTimestampScout::Error => e
+        puts "  #{label}: ERROR #{e.message}"
+        failed += 1
+      end
+      sleep 1 # gentle throttle
+    end
+
+    puts ""
+    puts "Examined: #{examined} link(s) | Written: #{written} | Failed: #{failed} | Mismatches: #{mismatches.size} | Goals skipped (no eligible link): #{skipped}"
+    puts "(Dry run — nothing written. Re-run with mode=apply to commit.)" if mode == "dry"
+
+    if mismatches.any?
+      require "json"
+      path = Rails.root.join("tmp/mismatched_videos_#{tournament.year}_#{Time.current.strftime("%Y%m%d_%H%M%S")}.json")
+      File.write(path, JSON.pretty_generate(mismatches))
+      puts "Mismatches written to #{path}"
+    end
+  end
+
+  desc "Read a mismatches JSON file and ask Gemini what match each mis-attached video actually shows. Writes a proposal report — never modifies the DB. Usage: rake video_links:resolve_mismatches[<path>]"
+  task :resolve_mismatches, [:path] => :environment do |_t, args|
+    require "json"
+    path = args[:path] || Dir.glob(Rails.root.join("tmp/mismatched_videos_*.json")).max_by { |f| File.mtime(f) }
+    abort "Usage: rake video_links:resolve_mismatches[<path>] (no file found and none given)" unless path && File.exist?(path)
+
+    mismatches = JSON.parse(File.read(path))
+    puts "Source file: #{path}"
+    puts "Mismatches to resolve: #{mismatches.size}"
+    puts ""
+
+    scout = GeminiTimestampScout.new
+    alias_map = build_team_alias_map
+
+    proposals = []
+    mismatches.each do |m|
+      label = "M#{m["match_number"]} #{m["match_label"]} | #{m["goal_minute"]}' #{m["goal_player"]}"
+      puts "Resolving: #{label}"
+      puts "  URL: #{m["current_url"]}"
+      result = scout.identify_match(m["current_url"])
+      if result.nil?
+        puts "  → Gemini returned no response"
+        proposals << m.merge("resolution" => "no_response")
+        next
+      end
+
+      puts "  → Gemini says: #{result[:year]} #{result[:competition]} | #{result[:home_team]} vs #{result[:away_team]} (conf=#{result[:confidence]})"
+      puts "  → Notes: #{result[:notes].slice(0, 120)}" if result[:notes].present?
+
+      team_a = lookup_team_by_name(result[:home_team], alias_map)
+      team_b = lookup_team_by_name(result[:away_team], alias_map)
+      year   = result[:year]
+
+      proposal = m.merge(
+        "gemini_year"      => year,
+        "gemini_home"      => result[:home_team],
+        "gemini_away"      => result[:away_team],
+        "gemini_conf"      => result[:confidence],
+        "gemini_extra"     => result[:notes]
+      )
+
+      if team_a.nil? || team_b.nil? || year.nil?
+        puts "  → COULDN'T RESOLVE teams/year in DB"
+        proposal["resolution"] = "unresolved"
+      else
+        proposed_match = Match.joins(:tournament).where(tournaments: { year: year })
+                              .where("(home_team_id = ? AND away_team_id = ?) OR (home_team_id = ? AND away_team_id = ?)",
+                                     team_a.id, team_b.id, team_b.id, team_a.id)
+                              .first
+        current_link = VideoLink.find_by(id: m["video_link_id"])
+        current_match = nil
+        if current_link
+          current_match = current_link.linkable.is_a?(Match) ? current_link.linkable : current_link.linkable&.match
+        end
+
+        if proposed_match.nil?
+          puts "  → MATCH NOT IN DB (#{year} #{team_a.fifa_code} v #{team_b.fifa_code})"
+          proposal["resolution"] = "match_not_in_db"
+        elsif current_match && proposed_match.id == current_match.id
+          puts "  → SAME MATCH as currently attached — Gemini's timestamp mismatch was likely a model error, not a wrong URL"
+          proposal["resolution"] = "gemini_was_wrong"
+          proposal["matched_match_id"] = proposed_match.id
+        else
+          puts "  → SUGGEST RE-ATTACH to M#{proposed_match.match_number} #{proposed_match.home_team.fifa_code} v #{proposed_match.away_team.fifa_code} (#{proposed_match.date})"
+          proposal["resolution"] = "reattach_proposed"
+          proposal["matched_match_id"] = proposed_match.id
+          proposal["matched_match_label"] = "M#{proposed_match.match_number} #{proposed_match.home_team.fifa_code} v #{proposed_match.away_team.fifa_code}"
+          proposal["matched_match_slug"] = proposed_match.slug
+        end
+      end
+      proposals << proposal
+      puts ""
+      sleep 1
+    end
+
+    out_path = Rails.root.join("tmp/mismatch_resolutions_#{Time.current.strftime("%Y%m%d_%H%M%S")}.json")
+    File.write(out_path, JSON.pretty_generate(proposals))
+    puts "Resolution proposals written to #{out_path}"
+    puts ""
+    by_resolution = proposals.group_by { |p| p["resolution"] }
+    by_resolution.each { |k, v| puts "  #{k}: #{v.size}" }
+  end
+
+  def lookup_team_by_name(name, alias_map)
+    return nil if name.blank?
+    alias_map[name.downcase] || alias_map[name.downcase.strip]
+  end
+
+  # YouTube URLs only — Gemini can only process those, and a parallel
+  # non-YouTube link wouldn't help the auto-timestamp flow.
+  YOUTUBE_URL_LIKE = ["%youtube.com%", "%youtu.be%"].freeze
+
+  desc "For each goal in a tournament whose match has a YouTube video_link, attach that same video to the goal (if the goal lacks a YouTube link). Idempotent. Usage: rake video_links:propagate_match_videos_to_goals[<year>,<mode=dry|apply>]"
+  task :propagate_match_videos_to_goals, [:year, :mode] => :environment do |_t, args|
+    abort "Usage: rake video_links:propagate_match_videos_to_goals[<year>,<mode=dry|apply>]" unless args[:year]
+    mode = (args[:mode] || "dry").downcase
+    abort "mode must be 'dry' or 'apply'" unless %w[dry apply].include?(mode)
+
+    tournament = Tournament.find_by!(year: args[:year].to_i)
+    puts "Tournament: #{tournament.year} #{tournament.name}  |  Mode: #{mode.upcase}"
+    puts ""
+
+    matches_with_yt = tournament.matches.kept
+                                .joins(:video_links)
+                                .where(video_links: { discarded_at: nil, is_active: true })
+                                .where("video_links.url LIKE ? OR video_links.url LIKE ?", *YOUTUBE_URL_LIKE)
+                                .distinct
+                                .includes(:video_links, goals: :video_links)
+    puts "Matches with at least one active YouTube link: #{matches_with_yt.size}"
+
+    propagated = 0
+    skipped    = 0
+    matches_touched = 0
+
+    matches_with_yt.each do |match|
+      yt_match_links = match.video_links.select do |vl|
+        vl.kept? && vl.is_active && vl.url.match?(%r{youtu\.?be})
+      end
+      next if yt_match_links.empty?
+
+      # Prefer youtube_official > broadcaster > others (most likely to be a full reel)
+      source_link = yt_match_links.min_by do |vl|
+        case vl.source
+        when "youtube_official" then 0
+        when "broadcaster"      then 1
+        else                          2
+        end
+      end
+
+      match_label = "M#{match.match_number} #{match.home_team.fifa_code} v #{match.away_team.fifa_code}"
+      touched_in_match = 0
+
+      match.goals.kept.each do |goal|
+        if goal.video_links.any? { |vl| vl.kept? && vl.is_active && vl.url.match?(%r{youtu\.?be}) }
+          skipped += 1
+          next
+        end
+
+        if mode == "apply"
+          goal.video_links.create!(
+            url:               source_link.url,
+            source:            source_link.source,
+            confidence:        :unverified,
+            language:          source_link.language || "en",
+            is_active:         true,
+            embed_allowed:     source_link.embed_allowed,
+            starts_at_seconds: nil,
+          )
+        end
+
+        propagated += 1
+        touched_in_match += 1
+      end
+
+      if touched_in_match.positive?
+        matches_touched += 1
+        puts "  #{match_label}: +#{touched_in_match} goal-level link(s) from #{source_link.url.slice(-22, 22)} (#{source_link.source})"
+      end
+    end
+
+    puts ""
+    puts "Propagated: #{propagated} new goal-level link(s) across #{matches_touched} match(es). Skipped (goal already has YouTube link): #{skipped}."
+    puts "(Dry run — no DB changes. Re-run with mode=apply to commit.)" if mode == "dry"
+  end
+
+  desc "Re-scout each match in a tournament for a short (<4min) YouTube highlight ('Home Away YEAR World Cup' query); replace existing YouTube links at both match- and goal-level, then propagate. Skips matches that have any admin-validated link. Usage: rake video_links:rescout_short_highlights[<year>,<mode=dry|apply>]"
+  task :rescout_short_highlights, [:year, :mode] => :environment do |_t, args|
+    abort "Usage: rake video_links:rescout_short_highlights[<year>,<mode>]" unless args[:year]
+    mode = (args[:mode] || "dry").downcase
+    abort "mode must be 'dry' or 'apply'" unless %w[dry apply].include?(mode)
+
+    tournament = Tournament.find_by!(year: args[:year].to_i)
+    matches = tournament.matches.kept.order(:match_number).to_a
+    puts "Tournament: #{tournament.year} #{tournament.name}  |  Mode: #{mode.upcase}"
+    puts "Matches in tournament: #{matches.size}"
+    puts ""
+
+    scout = VideoLinkScout.new
+    rescouted        = 0
+    skipped_validated = 0
+    not_found        = 0
+    unchanged        = 0
+
+    matches.each_with_index do |match, idx|
+      label = "M#{match.match_number} #{match.home_team.fifa_code} v #{match.away_team.fifa_code}"
+
+      # Skip if any link on this match or its goals is admin-validated.
+      validated = match.video_links.kept.where.not(timestamp_validated_at: nil).exists? ||
+                  Goal.kept.where(match_id: match.id).joins(:video_links)
+                      .where(video_links: { discarded_at: nil })
+                      .where.not(video_links: { timestamp_validated_at: nil }).exists?
+      if validated
+        puts "#{label}: SKIPPED (has admin-validated link)"
+        skipped_validated += 1
+        next
+      end
+
+      result = with_rate_limit_retry { scout.find_best_short_match_video_with_fallback(match) }
+      if result.nil?
+        puts "#{label}: no highlight found (tried short and medium)"
+        not_found += 1
+        sleep RESCOUT_SLEEP_SECONDS unless idx == matches.size - 1
+        next
+      end
+
+      new_url = result[:url]
+
+      # If the SAME URL is already attached at match level, nothing to do.
+      current_match_yt = match.video_links.kept.active
+                              .where("url LIKE ? OR url LIKE ?", "%youtube.com%", "%youtu.be%")
+                              .pluck(:url)
+      if current_match_yt == [new_url]
+        puts "#{label}: already on #{new_url.slice(-22, 22)} — no change"
+        unchanged += 1
+        sleep RESCOUT_SLEEP_SECONDS unless idx == matches.size - 1
+        next
+      end
+
+      puts "#{label}: → #{new_url} (replacing #{current_match_yt.size} existing match-level YT link(s))"
+
+      if mode == "apply"
+        ActiveRecord::Base.transaction do
+          # Soft-delete every kept YouTube link on this match or its goals
+          match.video_links.kept
+               .where("url LIKE ? OR url LIKE ?", "%youtube.com%", "%youtu.be%")
+               .each { |vl| vl.update!(is_active: false, discarded_at: Time.current) }
+          Goal.kept.where(match_id: match.id).each do |goal|
+            goal.video_links.kept
+                .where("url LIKE ? OR url LIKE ?", "%youtube.com%", "%youtu.be%")
+                .each { |vl| vl.update!(is_active: false, discarded_at: Time.current) }
+          end
+
+          # Attach the new short URL at match level
+          match.video_links.create!(
+            url:           new_url,
+            source:        result[:source],
+            confidence:    :unverified,
+            language:      "en",
+            is_active:     true,
+            embed_allowed: result.fetch(:embed_allowed, false),
+          )
+
+          # Propagate to every goal in the match
+          Goal.kept.where(match_id: match.id).each do |goal|
+            goal.video_links.create!(
+              url:               new_url,
+              source:            result[:source],
+              confidence:        :unverified,
+              language:          "en",
+              is_active:         true,
+              embed_allowed:     result.fetch(:embed_allowed, false),
+              starts_at_seconds: nil,
+            )
+          end
+        end
+      end
+
+      rescouted += 1
+      sleep RESCOUT_SLEEP_SECONDS unless idx == matches.size - 1
+    end
+
+    puts ""
+    puts "Rescouted: #{rescouted} | Already on the right URL: #{unchanged} | No short highlight found: #{not_found} | Validated-skipped: #{skipped_validated}"
+    puts "(Dry run — no DB changes. Re-run with mode=apply to commit.)" if mode == "dry"
+  end
+
+  desc "Apply re-attachment proposals from a resolution JSON. Moves video_links to the matched Match (match-level), clears starts_at_seconds, sets confidence: unverified. Usage: rake video_links:apply_mismatch_resolutions[<path>,<mode=dry|apply>]"
+  task :apply_mismatch_resolutions, [:path, :mode] => :environment do |_t, args|
+    require "json"
+    path = args[:path] || Dir.glob(Rails.root.join("tmp/mismatch_resolutions_*.json")).max_by { |f| File.mtime(f) }
+    abort "Usage: rake video_links:apply_mismatch_resolutions[<path>,<mode>] (no resolutions file found and none given)" unless path && File.exist?(path)
+    mode = (args[:mode] || "dry").downcase
+    abort "mode must be 'dry' or 'apply'" unless %w[dry apply].include?(mode)
+
+    proposals = JSON.parse(File.read(path))
+    reattach = proposals.select { |p| p["resolution"] == "reattach_proposed" }
+    puts "Source: #{path}"
+    puts "Mode: #{mode.upcase}  |  re-attach proposals: #{reattach.size}"
+    puts ""
+
+    applied = 0
+    skipped = 0
+
+    reattach.each do |p|
+      link  = VideoLink.find_by(id: p["video_link_id"])
+      match = Match.find_by(id: p["matched_match_id"])
+      original_label = "#{p["match_label"]} #{p["goal_minute"]}' #{p["goal_player"]}"
+      target_label   = p["matched_match_label"]
+      if link.nil?
+        puts "  link_id=#{p["video_link_id"]}: NOT FOUND in DB — skipping"
+        skipped += 1; next
+      end
+      if match.nil?
+        puts "  link_id=#{p["video_link_id"]}: target match_id=#{p["matched_match_id"]} NOT FOUND — skipping"
+        skipped += 1; next
+      end
+      # Safety: don't clobber admin edits made since the mismatch was recorded.
+      if link.url != p["current_url"]
+        puts "  ⚠ #{original_label}: URL CHANGED since mismatch (recorded=#{p["current_url"].slice(-22, 22)} current=#{link.url.slice(-22, 22)}) — skipping"
+        skipped += 1; next
+      end
+      if link.timestamp_validated_at.present?
+        puts "  ⚠ #{original_label}: timestamp_validated_at set — admin has validated this link, skipping"
+        skipped += 1; next
+      end
+
+      action = "#{original_label} → #{target_label} | url=#{link.url.slice(-22, 22)}"
+      if mode == "apply"
+        link.update!(
+          linkable_type:          "Match",
+          linkable_id:            match.id,
+          starts_at_seconds:      nil,
+          confidence:             :unverified,
+          timestamp_validated_at: nil
+        )
+        puts "  ✓ MOVED: #{action}"
+        applied += 1
+      else
+        puts "  WOULD MOVE: #{action}"
+      end
+    end
+
+    puts ""
+    puts "Applied: #{applied}  |  Skipped: #{skipped}  |  Not re-attachable (other resolutions): #{proposals.size - reattach.size}"
+    puts "(Dry run — no DB changes. Re-run with mode=apply to commit.)" if mode == "dry"
   end
 
   desc "Scout British Pathé YouTube channel for pre-1970 World Cup videos and attach to identifiable matches. No args."
