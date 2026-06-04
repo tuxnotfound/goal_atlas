@@ -112,6 +112,7 @@ end
 #  slug                        :string           not null
 #  source_notes                :text
 #  stage                       :integer          not null
+#  video_scout_failed_at       :datetime
 #  created_at                  :datetime         not null
 #  updated_at                  :datetime         not null
 #  away_team_id                :bigint           not null

@@ -71,15 +71,19 @@ namespace :video_links do
     limit = nil if limit.zero?
 
     tournament = Tournament.find_by!(year: args[:year].to_i)
+    # Skip matches that already failed all channels in a previous run — they'd
+    # burn ~600 quota units (6 channels × 100u) and still come up empty.
+    # Admin can clear video_scout_failed_at to force a retry.
     scope = tournament.matches.left_outer_joins(:video_links)
                        .where(video_links: { id: nil })
+                       .where(video_scout_failed_at: nil)
                        .order(:match_number)
     scope = scope.limit(limit) if limit
     matches = scope.to_a
 
     puts "Tournament: #{tournament.year} #{tournament.name}"
-    puts "Matches without any video_link: #{matches.size}#{limit ? " (limited)" : ""}"
-    puts "Estimated YouTube quota: #{matches.size * 100}-#{matches.size * 200} units"
+    puts "Matches to scout: #{matches.size}#{limit ? " (limited)" : ""}"
+    puts "Estimated YouTube quota: #{matches.size * 100}-#{matches.size * 600} units"
     puts "Throttling: #{AUTOFETCH_SLEEP_SECONDS}s between API calls (~#{matches.size * AUTOFETCH_SLEEP_SECONDS}s minimum)"
     puts ""
 
@@ -91,7 +95,8 @@ namespace :video_links do
       label = "M#{m.match_number} #{m.home_team.fifa_code} v #{m.away_team.fifa_code}"
       result = with_rate_limit_retry { scout.find_best_for_match(m) }
       if result.nil?
-        puts "#{label}: no relevant result"
+        m.update_column(:video_scout_failed_at, Time.current)
+        puts "#{label}: no relevant result (marked failed; will be skipped next run)"
         skipped += 1
       else
         link = m.video_links.find_or_initialize_by(url: result[:url])
