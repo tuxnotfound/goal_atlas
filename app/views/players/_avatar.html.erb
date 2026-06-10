@@ -21,6 +21,7 @@
   client-side (broken URL, 404, network error).
 %>
 <% size            ||= 40 %>
+<% height          = local_assigns.fetch(:height, size) %>
 <% tournament      ||= nil %>
 <% rounded          = local_assigns.fetch(:rounded, true) %>
 <% radius_override  = local_assigns[:radius] %>
@@ -31,7 +32,7 @@
 <% effective_radius = stylized&.file_exists? ? stylized_radius : radius %>
 <% container_style  = "display: inline-flex; align-items: center; justify-content: center; " \
                       "position: relative; overflow: hidden; " \
-                      "width: #{size}px; height: #{size}px; border-radius: #{effective_radius}; " \
+                      "width: #{size}px; height: #{height}px; border-radius: #{effective_radius}; " \
                       "background: #f5e7b8; color: #c89942; " \
                       "font-weight: 700; font-size: #{(size * 0.38).round}px; " \
                       "letter-spacing: 0.02em; user-select: none; flex-shrink: 0;" %>
