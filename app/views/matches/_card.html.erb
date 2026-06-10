@@ -31,10 +31,10 @@
       <span class="text-lg leading-none shrink-0"><%= match.away_team.flag_emoji %></span>
     </div>
 
-    <%# Result-type stamp slot — always rendered so the card height matches
-        whether the label is present or not (nbsp keeps the line height). %>
-    <div class="text-[9px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mt-1 text-center min-h-[1em]">
-      <%= result_type_short(match) || "&nbsp;".html_safe %>
+    <%# Result-type stamp slot — fixed height + line-height so the card has
+        the same total height whether AET/Pens is present or not. %>
+    <div class="text-[9px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mt-1 text-center h-3 leading-3">
+      <%= result_type_short(match) %>
     </div>
   </div>
 <% end %>
