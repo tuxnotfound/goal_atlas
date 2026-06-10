@@ -22,14 +22,24 @@ class GoalsController < ApplicationController
       scope = scope.joins(:goal_taggings).where(goal_taggings: { goal_tag_id: tag.id }) if tag
     end
 
-    scope = scope.joins(:match).references(:match).order("matches.date ASC, goals.minute ASC")
+    scope = scope.joins(:match).references(:match).order("matches.date DESC, goals.minute ASC")
     @goal_count = scope.size
     @pagy, @goals = pagy(scope, limit: 50)
 
     @goal_types  = Goal.goal_types.keys
-    @stages      = Match.stages.keys.reverse
     @tags        = GoalTag.order(:name)
     @tournaments = Tournament.kept.order(year: :desc)
+
+    # Stage filter is contextual to a tournament — without a selected tournament
+    # we'd be offering knockout rounds that don't even exist for some years.
+    # When a tournament is selected we only surface the stages it actually had.
+    @selected_tournament = Tournament.kept.find_by(year: params[:tournament]) if params[:tournament].present?
+    @stages = if @selected_tournament
+                stage_order = Match.stages.keys
+                @selected_tournament.matches.kept.distinct.pluck(:stage).sort_by { |s| stage_order.index(s) || 99 }.reverse
+              else
+                []
+              end
   end
 
   def show

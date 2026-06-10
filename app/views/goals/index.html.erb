@@ -13,21 +13,11 @@
     <% end %>
   </div>
 
-  <%# === Filter rows — parchment chips for Stage and Tournament. Each chip
-       is a real link so filters persist into pagination URLs. === %>
+  <%# === Filter rows — parchment chips for Tournament (always shown) and
+       Stage (only when a tournament is selected, and only that tournament's
+       actual stages). Each chip is a real link so filters persist into
+       pagination URLs. === %>
   <section class="space-y-4 mb-8">
-    <div>
-      <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mb-2 text-center">
-        Stage
-      </div>
-      <div class="flex flex-wrap justify-center gap-2">
-        <% @stages.each do |s| %>
-          <%= link_to s.humanize, goal_filter_url(:stage, s),
-                      class: goal_filter_chip_class(goal_filter_active?(:stage, s)) %>
-        <% end %>
-      </div>
-    </div>
-
     <% if @tournaments.size > 1 %>
       <div>
         <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mb-2 text-center">
@@ -37,6 +27,20 @@
           <% @tournaments.each do |t| %>
             <%= link_to t.year, goal_filter_url(:tournament, t.year),
                         class: goal_filter_chip_class(goal_filter_active?(:tournament, t.year)) %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @selected_tournament && @stages.any? %>
+      <div>
+        <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mb-2 text-center">
+          Stage
+        </div>
+        <div class="flex flex-wrap justify-center gap-2">
+          <% @stages.each do |s| %>
+            <%= link_to s.humanize, goal_filter_url(:stage, s),
+                        class: goal_filter_chip_class(goal_filter_active?(:stage, s)) %>
           <% end %>
         </div>
       </div>
