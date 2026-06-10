@@ -1,6 +1,8 @@
 class MatchesController < ApplicationController
   def index
-    @matches = Match.kept.includes(:home_team, :away_team, :tournament, :stadium).ordered_by_date
+    @matches = Match.kept
+                    .includes(:home_team, :away_team, :tournament, :stadium)
+                    .order(date: :desc, id: :desc)
   end
 
   def show
