@@ -1,0 +1,44 @@
+<%# Panini-sticker style player card — single sticker with the portrait at the
+    top and an attached name plate at the bottom, all wrapped by one outer
+    gold border. Portrait is rendered with squared corners (radius: "0") so
+    it sits flush against the plate; the outer container handles rounding.
+
+    Locals:
+      player:     Player (required)
+      tournament: Tournament|nil (optional) — picks tournament-tagged portrait
+      size:       Integer (default 88) — portrait size in px
+%>
+<% size       = local_assigns.fetch(:size, 88) %>
+<% tournament = local_assigns.fetch(:tournament, nil) %>
+
+<%# Fall back to last-name only when the full name won't fit the card width.
+    Rough heuristic: card_px / 9 ≈ characters that fit in the plate given the
+    flag + padding budget. Single-word names are unaffected. Full name lives on
+    the title attribute so it's still discoverable on hover. %>
+<% raw_name     = player.name.to_s %>
+<% capacity     = (size / 9.0).round %>
+<% display_name = raw_name.length > capacity ? raw_name.split.last : raw_name %>
+
+<%= link_to player_path(player),
+            title: raw_name,
+            class: "inline-block transition duration-200 hover:-translate-y-0.5" do %>
+  <div class="ring-4 ring-[#c89942]/75 rounded-md overflow-hidden shadow-md shadow-black/25"
+       style="width: <%= size %>px;">
+
+    <%# Portrait — squared corners so it meets the plate flush. %>
+    <%= render "players/avatar", player: player, tournament: tournament, size: size, radius: "0" %>
+
+    <%# Name plate — flag + name on a warmer parchment band. %>
+    <div class="px-1.5 py-1.5 border-t border-[#c89942]/60 text-center"
+         style="background: linear-gradient(180deg, #f5e7b8, #ebd99e);">
+      <div class="flex items-center justify-center gap-1.5 min-w-0">
+        <% if player.nationality_team %>
+          <span class="text-sm leading-none shrink-0"><%= player.nationality_team.flag_emoji %></span>
+        <% end %>
+        <span class="font-serif text-[10px] font-bold text-[#0a3520] truncate">
+          <%= display_name %>
+        </span>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -10,33 +10,49 @@
     tournament: Tournament|nil (optional)
     size:       Integer pixels (default 40)
     rounded:    Boolean (default true — render as circle)
-%>
-<% size       ||= 40 %>
-<% tournament ||= nil %>
-<% rounded     = local_assigns.fetch(:rounded, true) %>
-<% radius      = rounded ? "9999px" : "6px" %>
-<% stylized    = player.selected_stylized_portrait %>
-<% image       = player.image_for(tournament) unless stylized&.file_exists? %>
+    radius:     String|nil (optional) — override the border-radius entirely
+                 (e.g. "0" for square corners inside a player_card).
 
-<% if stylized&.file_exists? %>
-  <%= image_tag stylized.public_url,
-        alt: player.name,
-        loading: "lazy",
-        style: "width: #{size}px; height: #{size}px; object-fit: cover; object-position: top; border-radius: #{radius}; background: #fff;" %>
-<% elsif image %>
-  <%= image_tag image.thumbnail(width: size * 2),
-        alt: player.name,
-        loading: "lazy",
-        title: image.attribution_line,
-        style: "width: #{size}px; height: #{size}px; object-fit: cover; border-radius: #{radius}; background: #f5f5f4;" %>
-<% else %>
-  <span
-    aria-label="<%= player.name %>"
-    style="display: inline-flex; align-items: center; justify-content: center;
-           width: #{size}px; height: #{size}px; border-radius: #{radius};
-           background: #e7e5e4; color: #57534e;
-           font-weight: 600; font-size: #{(size * 0.38).round}px;
-           letter-spacing: 0.01em; user-select: none;">
-    <%= avatar_initials(player.name) %>
-  </span>
-<% end %>
+  Structure: A single container with the initials already painted as a
+  background. When a portrait/image is available it's overlaid on top —
+  if the URL ever fails to load (`onerror`), the image hides itself and
+  the initials show through automatically. So every avatar has a graceful
+  fallback whether the failure happens server-side (no file on disk) or
+  client-side (broken URL, 404, network error).
+%>
+<% size            ||= 40 %>
+<% tournament      ||= nil %>
+<% rounded          = local_assigns.fetch(:rounded, true) %>
+<% radius_override  = local_assigns[:radius] %>
+<% radius           = radius_override || (rounded ? "9999px" : "6px") %>
+<% stylized_radius  = radius_override || "6px" %>
+<% stylized         = player.selected_stylized_portrait %>
+<% image            = player.image_for(tournament) unless stylized&.file_exists? %>
+<% effective_radius = stylized&.file_exists? ? stylized_radius : radius %>
+<% container_style  = "display: inline-flex; align-items: center; justify-content: center; " \
+                      "position: relative; overflow: hidden; " \
+                      "width: #{size}px; height: #{size}px; border-radius: #{effective_radius}; " \
+                      "background: #f5e7b8; color: #c89942; " \
+                      "font-weight: 700; font-size: #{(size * 0.38).round}px; " \
+                      "letter-spacing: 0.02em; user-select: none; flex-shrink: 0;" %>
+
+<span aria-label="<%= player.name %>" style="<%= container_style %>">
+
+  <%# Initials underlay — always present, visible when no image overlays it. %>
+  <%= avatar_initials(player.name) %>
+
+  <% if stylized&.file_exists? %>
+    <%= image_tag stylized.public_url,
+          alt: player.name,
+          loading: "lazy",
+          onerror: "this.style.display='none'",
+          style: "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; background: #fff;" %>
+  <% elsif image %>
+    <%= image_tag image.thumbnail(width: size * 2),
+          alt: player.name,
+          loading: "lazy",
+          title: image.attribution_line,
+          onerror: "this.style.display='none'",
+          style: "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #f5f5f4;" %>
+  <% end %>
+</span>
