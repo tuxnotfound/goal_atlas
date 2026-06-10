@@ -1,50 +1,52 @@
 <% content_for :title, "Matches — The Goal Atlas" %>
 
-<div class="mb-8">
-  <h1 class="text-3xl font-bold tracking-tight">Matches</h1>
-  <p class="text-stone-500 mt-1">Knockout stage of the 2022 World Cup. More tournaments coming soon.</p>
-</div>
+<div class="max-w-6xl mx-auto" data-controller="goal-filter">
 
-<ul class="divide-y divide-stone-200 border border-stone-200 rounded-md bg-white">
-  <% @matches.each do |match| %>
-    <li>
-      <%= link_to match_path(match), class: "block p-4 hover:bg-stone-50 transition" do %>
-        <div class="flex items-baseline justify-between mb-2">
-          <span class="text-xs uppercase tracking-wide text-emerald-700 font-semibold">
-            <%= stage_label(match) %>
-          </span>
-          <span class="text-xs text-stone-400">
-            <%= match.date.strftime("%b %-d, %Y") %>
-          </span>
-        </div>
+  <div class="mb-8 text-center">
+    <h1 class="font-serif text-4xl font-bold text-[#f0c870]">Matches</h1>
+    <p class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mt-2">
+      <%= pluralize(@matches.size, "match") %> across <%= pluralize(@matches.map { |m| m.tournament_id }.uniq.size, "tournament") %>
+    </p>
+  </div>
 
-        <div class="flex items-center justify-between gap-4">
-          <div class="flex items-center gap-2 flex-1 min-w-0">
-            <span class="text-2xl shrink-0"><%= match.home_team.flag_emoji %></span>
-            <span class="font-medium truncate"><%= match.home_team.name %></span>
-          </div>
+  <% if @matches.any? %>
+    <% match_years = @matches.map { |m| m.tournament.year }.uniq.sort.reverse %>
 
-          <div class="font-mono text-lg font-semibold tabular-nums">
-            <% if match.home_score_after_extra_time %>
-              <%= match.home_score_after_extra_time %>&ndash;<%= match.away_score_after_extra_time %>
-            <% else %>
-              <%= match.home_score %>&ndash;<%= match.away_score %>
-            <% end %>
-            <% if (label = result_type_short(match)) %>
-              <span class="text-xs text-stone-500 ml-1 font-sans"><%= label %></span>
-            <% end %>
-          </div>
+    <% if match_years.size > 1 %>
+      <%# Hanging-indent year filter — matches the player/team page style. %>
+      <div class="flex flex-wrap justify-start gap-2 mb-8 pl-20">
+        <% [["All", "all"], *match_years.map { |y| [y, y.to_s] }].each_with_index do |(label, value), idx| %>
+          <button type="button"
+                  data-goal-filter-target="pill"
+                  data-year="<%= value %>"
+                  data-active="<%= idx == 0 ? "true" : "false" %>"
+                  data-action="click->goal-filter#select"
+                  class="shrink-0 px-3.5 py-1.5 rounded-full border font-mono text-[11px] tracking-[0.2em] uppercase font-semibold transition cursor-pointer
+                         border-[#c89942]/45 text-[#c89942] hover:border-[#f0c870]
+                         data-[active=true]:bg-[#f0c870] data-[active=true]:text-[#fef0c8]! data-[active=true]:border-[#f0c870] data-[active=true]:shadow-md data-[active=true]:shadow-black/30 data-[active=true]:font-bold
+                         <%= "-ml-20" if idx.zero? %>"
+                  style="background:rgba(253,246,220,0.06);">
+            <%= label %>
+          </button>
+        <% end %>
+      </div>
+    <% end %>
 
-          <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
-            <span class="font-medium truncate text-right"><%= match.away_team.name %></span>
-            <span class="text-2xl shrink-0"><%= match.away_team.flag_emoji %></span>
-          </div>
-        </div>
-
-        <div class="text-xs text-stone-400 mt-2">
-          <%= match.stadium.name %>, <%= match.stadium.city %>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <% @matches.each do |match| %>
+        <div data-goal-filter-target="entry" data-year="<%= match.tournament.year %>">
+          <%= render "matches/card", match: match %>
         </div>
       <% end %>
-    </li>
+    </div>
+
+    <p data-goal-filter-target="empty"
+       class="hidden text-sm text-[#c89942] text-center mt-4 uppercase tracking-[0.25em] font-semibold">
+      No matches in this tournament
+    </p>
+  <% else %>
+    <p class="text-sm text-[#c89942] text-center uppercase tracking-[0.25em] font-semibold">
+      No matches in our dataset yet
+    </p>
   <% end %>
-</ul>
+</div>

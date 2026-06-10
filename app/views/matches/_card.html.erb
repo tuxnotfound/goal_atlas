@@ -1,0 +1,40 @@
+<%# Compact parchment card used in match lanes (team page, matches index).
+    Card height is stable whether the match has an AET/Pens stamp or not —
+    the stamp slot always renders so cards in a grid line up.
+    Locals: match (Match) %>
+<% home_winner = match.winner_team_id == match.home_team_id %>
+<% away_winner = match.winner_team_id == match.away_team_id %>
+<% score = match.home_score_after_extra_time ?
+             "#{match.home_score_after_extra_time}–#{match.away_score_after_extra_time}" :
+             "#{match.home_score}–#{match.away_score}" %>
+
+<%= link_to match_path(match),
+            class: "block rounded border border-[#c89942]/60 shadow-md shadow-black/15 hover:border-[#f0c870] hover:shadow-lg transition overflow-hidden",
+            style: "background:#fdf6dc;" do %>
+  <div class="px-3 py-2.5">
+    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.25em] text-[#c89942] font-semibold mb-2">
+      <span><%= stage_label(match) %></span>
+      <span class="text-[#c89942]/75"><%= match.tournament.year %></span>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <span class="text-lg leading-none shrink-0"><%= match.home_team.flag_emoji %></span>
+      <span class="font-serif font-bold truncate flex-1 <%= home_winner ? "text-[#0a3520]" : "text-[#6e7d6e]" %>">
+        <%= match.home_team.name %>
+      </span>
+      <span class="font-serif font-bold tabular-nums text-[#0a3520] text-base shrink-0">
+        <%= score %>
+      </span>
+      <span class="font-serif font-bold truncate flex-1 text-right <%= away_winner ? "text-[#0a3520]" : "text-[#6e7d6e]" %>">
+        <%= match.away_team.name %>
+      </span>
+      <span class="text-lg leading-none shrink-0"><%= match.away_team.flag_emoji %></span>
+    </div>
+
+    <%# Result-type stamp slot — always rendered so the card height matches
+        whether the label is present or not (nbsp keeps the line height). %>
+    <div class="text-[9px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mt-1 text-center min-h-[1em]">
+      <%= result_type_short(match) || "&nbsp;".html_safe %>
+    </div>
+  </div>
+<% end %>
