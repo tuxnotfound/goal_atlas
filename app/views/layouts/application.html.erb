@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "Goal Atlas" %></title>
+    <title><%= content_for(:title) || "The Goal Atlas" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Goal Atlas">
+    <meta name="application-name" content="The Goal Atlas">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -19,40 +19,40 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="bg-stone-50 text-stone-900 min-h-screen flex flex-col">
-    <header class="bg-emerald-900 text-emerald-50 border-b border-emerald-800">
-      <div class="max-w-5xl mx-auto px-5 py-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-        <%= link_to root_path, class: "font-bold text-xl tracking-tight hover:text-white transition shrink-0" do %>
-          Goal Atlas
+  <body class="bg-[#0a3520] text-[#e8d99c] min-h-screen flex flex-col">
+    <header class="bg-[#082619] text-[#e8d99c] border-b border-[#c89942]/30">
+      <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <%= link_to root_path, class: "font-bold text-xl tracking-tight text-[#f0c870] hover:text-[#fef0c8] transition shrink-0" do %>
+          The Goal Atlas
         <% end %>
 
         <%= form_with url: search_path, method: :get, local: true,
                       class: "order-3 sm:order-2 w-full sm:w-auto sm:flex-1 sm:max-w-md" do |f| %>
           <%= f.search_field :q, value: params[:q],
                 placeholder: "Search teams, players, tournaments…",
-                class: "w-full px-3 py-1.5 rounded-md bg-emerald-950/60 placeholder-emerald-300/70 border border-emerald-800 focus:border-emerald-400 focus:outline-none text-sm",
+                class: "w-full px-3 py-1.5 rounded-md bg-[#051a0f] placeholder-[#8aa898] border border-[#c89942]/30 focus:border-[#c89942] focus:outline-none text-sm text-[#e8d99c]",
                 autocomplete: "off" %>
         <% end %>
 
         <nav class="order-2 sm:order-3 flex items-center gap-5 text-sm">
-          <%= link_to "World Cups", tournaments_path, class: "hover:text-white transition" %>
-          <%= link_to "Matches",    matches_path,     class: "hover:text-white transition" %>
-          <%= link_to "Goals",      goals_path,       class: "hover:text-white transition" %>
+          <%= link_to "World Cups", tournaments_path, class: "hover:text-[#f0c870] transition" %>
+          <%= link_to "Matches",    matches_path,     class: "hover:text-[#f0c870] transition" %>
+          <%= link_to "Goals",      goals_path,       class: "hover:text-[#f0c870] transition" %>
           <% if request.path.start_with?("/admin") %>
-            <span class="text-emerald-700">·</span>
+            <span class="text-[#c89942]/50">·</span>
             <%= link_to "Suggest videos", admin_video_link_suggestions_path,
-                        class: "hover:text-white transition text-amber-300" %>
+                        class: "hover:text-[#fef0c8] transition text-[#f0c870]" %>
           <% end %>
         </nav>
       </div>
     </header>
 
-    <main class="grow max-w-5xl w-full mx-auto px-5 py-8">
+    <main class="grow max-w-7xl w-full mx-auto px-6 py-8">
       <%= yield %>
     </main>
 
-    <footer class="bg-stone-100 border-t border-stone-200 text-xs text-stone-500">
-      <div class="max-w-5xl mx-auto px-5 py-6 leading-relaxed">
+    <footer class="bg-[#082619] border-t border-[#c89942]/20 text-xs text-[#8aa898]">
+      <div class="max-w-7xl mx-auto px-6 py-6 leading-relaxed">
         This is an independent football history project. Videos are linked or embedded
         from official/public sources where available. All trademarks, footage, and media
         belong to their respective owners. Not affiliated with FIFA.
