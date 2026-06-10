@@ -167,12 +167,12 @@
         </div>
         <ol>
           <% @shootout_kicks.each do |kick| %>
-            <li class="flex items-center gap-3 px-6 sm:px-10 py-2 border-t border-[#c89942]/15 first:border-t-0">
+            <li class="flex items-center gap-3 px-14 sm:px-24 py-2 border-t border-[#c89942]/15 first:border-t-0">
               <span class="font-mono text-[11px] tabular-nums w-8 text-right text-[#c89942] shrink-0">
                 <%= kick.kick_order %>
               </span>
               <span class="text-lg leading-none shrink-0"><%= kick.team.flag_emoji %></span>
-              <span class="min-w-0">
+              <span class="flex-1 min-w-0">
                 <span class="block font-serif font-bold text-[#0a3520] text-sm truncate leading-tight">
                   <%= kick.player.name %>
                 </span>
@@ -182,7 +182,7 @@
                   </span>
                 <% end %>
               </span>
-              <span class="font-mono text-[10px] uppercase tracking-[0.25em] shrink-0 font-bold <%= kick.was_scored ? "text-[#1c5c3f]" : "text-[#6e7d6e]" %>">
+              <span class="font-mono text-[10px] uppercase tracking-[0.25em] shrink-0 font-bold <%= kick.was_scored ? "text-[#1c5c3f]" : "text-[#b91c1c]" %>">
                 <%= kick.was_scored ? "Goal" : "Miss" %>
               </span>
             </li>
