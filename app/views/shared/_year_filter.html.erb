@@ -1,0 +1,33 @@
+<%# Year filter pill row used inside goal-filter Stimulus sections.
+    The "All" pill is a sibling of a wrap-only flex group, so the year pills
+    wrap inside their own subcontainer and the second line aligns with the
+    first year pill instead of indenting under "All".
+    Locals: years (Array<Integer|String>) — sorted desc. %>
+<div class="flex items-start gap-2 mb-5 flex-wrap">
+  <button type="button"
+          data-goal-filter-target="pill"
+          data-year="all"
+          data-active="true"
+          data-action="click->goal-filter#select"
+          class="shrink-0 px-3.5 py-1.5 rounded-full border font-mono text-[11px] tracking-[0.2em] uppercase font-semibold transition cursor-pointer
+                 border-[#c89942]/45 text-[#c89942] hover:border-[#f0c870]
+                 data-[active=true]:bg-[#f0c870] data-[active=true]:text-[#fef0c8]! data-[active=true]:border-[#f0c870] data-[active=true]:shadow-md data-[active=true]:shadow-black/30 data-[active=true]:font-bold"
+          style="background:rgba(253,246,220,0.06);">
+    All
+  </button>
+  <div class="flex flex-wrap gap-2 flex-1 min-w-0">
+    <% years.each do |year| %>
+      <button type="button"
+              data-goal-filter-target="pill"
+              data-year="<%= year %>"
+              data-active="false"
+              data-action="click->goal-filter#select"
+              class="shrink-0 px-3.5 py-1.5 rounded-full border font-mono text-[11px] tracking-[0.2em] uppercase font-semibold transition cursor-pointer
+                     border-[#c89942]/45 text-[#c89942] hover:border-[#f0c870]
+                     data-[active=true]:bg-[#f0c870] data-[active=true]:text-[#fef0c8]! data-[active=true]:border-[#f0c870] data-[active=true]:shadow-md data-[active=true]:shadow-black/30 data-[active=true]:font-bold"
+              style="background:rgba(253,246,220,0.06);">
+        <%= year %>
+      </button>
+    <% end %>
+  </div>
+</div>

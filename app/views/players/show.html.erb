@@ -5,7 +5,19 @@
 <%# === Player hero — parchment card matching the match/goal heroes. Portrait
        on the left anchors the visual; name + nationality + role sit on the
        right. Career-total stats line the bottom as the trailer. === %>
-<% map_asset = Rails.public_path.join("hero_world_map.png") %>
+<%
+  map_asset      = Rails.public_path.join("hero_world_map.png")
+  trophy_asset   = Rails.public_path.join("hero_trophy.png")
+  # A player counts as a champion in a tournament if their nationality team
+  # was the winner that year and they have at least one record (goal, assist,
+  # kick or award) in our dataset for that tournament — we don't track squads,
+  # so "has any contribution" is the closest proxy to "was on the winning team".
+  champion_count = if @player.nationality_team_id
+                     @tournament_records.count { |r| r.tournament.winner_team_id == @player.nationality_team_id }
+                   else
+                     0
+                   end
+%>
 
 <section class="relative overflow-hidden rounded-lg border-2 border-[#c89942]/70 shadow-xl shadow-black/30 mb-10"
          style="background:#f5e7b8;">
@@ -28,6 +40,13 @@
 
   <%# Decorative double-rule frame %>
   <div class="absolute inset-3 border border-[#c89942]/40 rounded pointer-events-none"></div>
+
+  <%# Trophy — anchored top-right, only WC-winning players get one (mirrors
+      the team page treatment). %>
+  <% if champion_count.positive? && File.exist?(trophy_asset) %>
+    <%= image_tag "/hero_trophy.png", alt: "FIFA World Cup trophy",
+          class: "absolute -top-4 right-0 sm:right-4 h-[480px] w-auto pointer-events-none drop-shadow-2xl select-none" %>
+  <% end %>
 
   <div class="relative p-6 md:p-10">
 
@@ -58,10 +77,23 @@
       </div>
 
       <div class="flex-1 min-w-0 text-center sm:text-left">
-        <h1 class="font-serif font-bold text-[#0a3520] leading-none mb-4"
-            style="font-size:clamp(2.25rem, 5.5vw, 3.75rem); letter-spacing:-0.02em;">
-          <%= @player.name %>
-        </h1>
+        <%# Champion star crown + name share an inline-block wrapper so the
+            stars row centers above the player-name text (same trick as the
+            team hero). %>
+        <div class="inline-block mb-4">
+          <% if champion_count.positive? %>
+            <div class="flex justify-center gap-1 mb-2 text-[#c89942] leading-none"
+                 style="font-size:clamp(1rem, 1.5vw, 1.25rem);"
+                 title="<%= pluralize(champion_count, "World Cup") %> won">
+              <% champion_count.times do %><span>★</span><% end %>
+            </div>
+          <% end %>
+
+          <h1 class="font-serif font-bold text-[#0a3520] leading-none"
+              style="font-size:clamp(2.25rem, 5.5vw, 3.75rem); letter-spacing:-0.02em;">
+            <%= @player.name %>
+          </h1>
+        </div>
 
         <% if @player.nationality_team %>
           <div class="flex items-center justify-center sm:justify-start gap-3 mb-4">
@@ -184,24 +216,7 @@
     <% years_with_goals = @goals.map { |g| g.match.tournament.year }.uniq.sort.reverse %>
 
     <% if years_with_goals.size > 1 %>
-      <%# Hanging-indent: container has pl-20, first pill negates with -ml-20
-          so wrapped rows align under the second pill of the first row. %>
-      <div class="flex flex-wrap justify-start gap-2 mb-5 pl-20">
-        <% [["All", "all"], *years_with_goals.map { |y| [y, y.to_s] }].each_with_index do |(label, value), idx| %>
-          <button type="button"
-                  data-goal-filter-target="pill"
-                  data-year="<%= value %>"
-                  data-active="<%= idx == 0 ? "true" : "false" %>"
-                  data-action="click->goal-filter#select"
-                  class="shrink-0 px-3.5 py-1.5 rounded-full border font-mono text-[11px] tracking-[0.2em] uppercase font-semibold transition cursor-pointer
-                         border-[#c89942]/45 text-[#c89942] hover:border-[#f0c870]
-                         data-[active=true]:bg-[#f0c870] data-[active=true]:text-[#fef0c8]! data-[active=true]:border-[#f0c870] data-[active=true]:shadow-md data-[active=true]:shadow-black/30 data-[active=true]:font-bold
-                         <%= "-ml-20" if idx.zero? %>"
-                  style="background:rgba(253,246,220,0.06);">
-            <%= label %>
-          </button>
-        <% end %>
-      </div>
+      <%= render "shared/year_filter", years: years_with_goals %>
     <% end %>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">

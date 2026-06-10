@@ -13,23 +13,7 @@
     <% match_years = @matches.map { |m| m.tournament.year }.uniq.sort.reverse %>
 
     <% if match_years.size > 1 %>
-      <%# Hanging-indent year filter — matches the player/team page style. %>
-      <div class="flex flex-wrap justify-start gap-2 mb-8 pl-20">
-        <% [["All", "all"], *match_years.map { |y| [y, y.to_s] }].each_with_index do |(label, value), idx| %>
-          <button type="button"
-                  data-goal-filter-target="pill"
-                  data-year="<%= value %>"
-                  data-active="<%= idx == 0 ? "true" : "false" %>"
-                  data-action="click->goal-filter#select"
-                  class="shrink-0 px-3.5 py-1.5 rounded-full border font-mono text-[11px] tracking-[0.2em] uppercase font-semibold transition cursor-pointer
-                         border-[#c89942]/45 text-[#c89942] hover:border-[#f0c870]
-                         data-[active=true]:bg-[#f0c870] data-[active=true]:text-[#fef0c8]! data-[active=true]:border-[#f0c870] data-[active=true]:shadow-md data-[active=true]:shadow-black/30 data-[active=true]:font-bold
-                         <%= "-ml-20" if idx.zero? %>"
-                  style="background:rgba(253,246,220,0.06);">
-            <%= label %>
-          </button>
-        <% end %>
-      </div>
+      <%= render "shared/year_filter", years: match_years %>
     <% end %>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
