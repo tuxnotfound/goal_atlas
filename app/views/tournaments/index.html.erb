@@ -1,45 +1,94 @@
 <% content_for :title, "World Cups — The Goal Atlas" %>
 
-<div class="mb-8">
-  <h1 class="font-serif text-4xl font-bold text-[#f0c870]">World Cups</h1>
-  <p class="text-[#8aa898] mt-1">
-    <% if @tournaments.any? %>
-      <%= pluralize(@tournaments.size, "edition") %> in the archive.
-    <% else %>
-      No tournaments in the archive yet.
-    <% end %>
-  </p>
-</div>
+<div class="max-w-6xl mx-auto">
+  <div class="mb-8">
+    <h1 class="font-serif text-4xl font-bold text-[#f0c870]">World Cups</h1>
+    <p class="text-[#8aa898] mt-1">
+      <% if @tournaments.any? %>
+        <%= pluralize(@tournaments.size, "edition") %> in the archive.
+      <% else %>
+        No tournaments in the archive yet.
+      <% end %>
+    </p>
+  </div>
 
-<% if @tournaments.any? %>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    <% @tournaments.each do |tournament| %>
-      <%= link_to tournament_path(tournament),
-                  class: "block border border-[#c89942]/60 rounded-md p-5 shadow-md shadow-black/20 hover:border-[#f0c870] hover:shadow-lg transition",
-                  style: "background:#fdf6dc;" do %>
-        <div class="text-[10px] uppercase tracking-[0.25em] text-[#c89942] font-semibold mb-2">
-          <%= tournament.host_countries.join(", ") %>
-        </div>
-        <h2 class="font-serif text-3xl font-bold text-[#0a3520] tabular-nums mb-3"><%= tournament.year %></h2>
+  <% if @tournaments.any? %>
+    <%# Each card mirrors the hero card's vocabulary: cream parchment, gold
+        border, world map watermark behind the type, the painterly trophy
+        anchored top-right so only the top portion is visible inside the card. %>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <% map_asset    = Rails.public_path.join("hero_world_map.png") %>
+      <% trophy_asset = Rails.public_path.join("hero_trophy.png") %>
 
-        <% if tournament.winner_team %>
-          <div class="flex items-center gap-2 text-sm text-[#1c5c3f]">
-            <span class="text-2xl"><%= tournament.winner_team.flag_emoji %></span>
-            <span>
-              <strong class="text-[#0a3520] font-semibold"><%= tournament.winner_team.name %></strong> won
-            </span>
-          </div>
-        <% end %>
+      <% @tournaments.each do |tournament| %>
+        <%= link_to tournament_path(tournament),
+                    class: "relative block overflow-hidden rounded-md border-2 border-[#c89942]/60 shadow-md shadow-black/25 hover:border-[#f0c870] hover:shadow-lg hover:-translate-y-0.5 transition duration-200 min-h-44",
+                    style: "background:#f5e7b8;" do %>
 
-        <% if tournament.total_matches || tournament.total_goals %>
-          <div class="text-xs text-[#c89942] mt-3 tabular-nums">
-            <%= [
-              tournament.total_matches && "#{tournament.total_matches} matches",
-              tournament.total_goals && "#{tournament.total_goals} goals"
-            ].compact.join(" · ") %>
+          <%# World map watermark %>
+          <% if File.exist?(map_asset) %>
+            <div class="absolute inset-0 pointer-events-none opacity-20">
+              <%= image_tag "/hero_world_map.png", alt: "", class: "w-full h-full object-cover" %>
+            </div>
+          <% else %>
+            <div class="absolute inset-0 pointer-events-none text-[#1c5c3f] opacity-[0.1]">
+              <%= render "tournaments/world_map_svg" %>
+            </div>
+          <% end %>
+
+          <%# Soft paper texture overlay (cheaper than the full hero gradient) %>
+          <div class="absolute inset-0 pointer-events-none opacity-50"
+               style="background:
+                      radial-gradient(circle at 25% 15%, rgba(200,153,66,0.22), transparent 55%),
+                      radial-gradient(circle at 80% 80%, rgba(28,92,63,0.16), transparent 50%),
+                      radial-gradient(circle at 60% 40%, rgba(255,255,255,0.45), transparent 45%);"></div>
+
+          <%# Decorative inner frame %>
+          <div class="absolute inset-2 border border-[#c89942]/30 rounded pointer-events-none"></div>
+
+          <%# Trophy anchored top-right; only the globe + figures peek into the
+              card, the body extends below and is clipped by overflow-hidden. %>
+          <% if File.exist?(trophy_asset) %>
+            <%= image_tag "/hero_trophy.png", alt: "",
+                  class: "absolute top-2 -right-2 h-40 w-auto pointer-events-none drop-shadow-lg select-none" %>
+          <% end %>
+
+          <%# Content sits on top of the backdrops. %>
+          <div class="relative p-5">
+            <div class="text-[10px] uppercase tracking-[0.25em] text-[#c89942] font-semibold mb-1">
+              <%= tournament.host_countries.join(", ") %>
+            </div>
+
+            <h2 class="font-serif text-4xl font-bold text-[#0a3520] tabular-nums leading-none">
+              <%= tournament.year %>
+            </h2>
+
+            <% if tournament.winner_team %>
+              <div class="mt-3">
+                <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-bold mb-1 flex items-center gap-1.5">
+                  <span class="text-[#c89942]">★</span>
+                  <span>Champion</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl leading-none"><%= tournament.winner_team.flag_emoji %></span>
+                  <span class="font-serif text-lg font-bold text-[#0a3520] leading-tight">
+                    <%= tournament.winner_team.name %>
+                  </span>
+                </div>
+              </div>
+            <% end %>
+
+            <% if tournament.total_matches || tournament.total_goals %>
+              <div class="text-xs text-[#c89942] mt-4 tabular-nums tracking-wider">
+                <%= [
+                  tournament.total_matches && "<span class='font-bold text-[#0a3520]'>#{tournament.total_matches}</span> matches".html_safe,
+                  tournament.total_goals && "<span class='font-bold text-[#0a3520]'>#{tournament.total_goals}</span> goals".html_safe
+                ].compact.join(" · ").html_safe %>
+              </div>
+            <% end %>
           </div>
         <% end %>
       <% end %>
-    <% end %>
-  </div>
-<% end %>
+    </div>
+  <% end %>
+</div>
