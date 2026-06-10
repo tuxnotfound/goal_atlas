@@ -1,0 +1,52 @@
+<%# Group-stage final standings — one card per group, top 2 (advancing) highlighted. %>
+<% short_name = ->(team) { team.fifa_code.presence || team.country_code.to_s.upcase.presence || team.name[0..2].upcase } %>
+
+<section class="mb-10">
+  <div class="flex items-baseline justify-between mb-4">
+    <h2 class="font-serif text-2xl text-[#f0c870]">Group stage</h2>
+    <span class="text-[10px] uppercase tracking-[0.25em] text-[#c89942] font-semibold hidden sm:inline">
+      Top two advance
+    </span>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <% @group_standings.each do |letter, rows| %>
+      <div class="rounded border border-[#c89942]/70 shadow-md shadow-black/20 overflow-hidden"
+           style="background:#fdf6dc;">
+        <%# Group header %>
+        <div class="px-3 py-2 border-b border-[#c89942]/40 flex items-baseline justify-between"
+             style="background:#f5e7b8;">
+          <span class="font-serif text-base font-bold text-[#0a3520]">Group <%= letter %></span>
+          <span class="text-[9px] uppercase tracking-[0.25em] text-[#c89942] font-semibold">
+            P W D L GD Pts
+          </span>
+        </div>
+
+        <%# Team rows %>
+        <% rows.each_with_index do |row, i| %>
+          <% advances = i < 2 %>
+          <%= link_to team_path(row[:team]),
+                      class: "flex items-center gap-1.5 px-2 py-1.5 border-b border-[#c89942]/15 last:border-b-0 hover:bg-[#f5e7b8] transition #{advances ? "font-semibold text-[#0a3520]" : "text-[#6e7d6e]"}" do %>
+            <%# Position indicator: solid forest-green dot for advancing, hollow for eliminated %>
+            <span class="inline-block w-1.5 h-1.5 rounded-full shrink-0
+                         <%= advances ? "bg-[#1c5c3f]" : "border border-[#c89942]/60" %>"></span>
+            <span class="font-mono text-[10px] tabular-nums w-3 text-right shrink-0 text-[#c89942]"><%= i + 1 %></span>
+            <span class="text-sm shrink-0 leading-none"><%= row[:team].flag_emoji %></span>
+            <span class="font-mono text-[10px] tracking-wider truncate flex-1"><%= short_name.call(row[:team]) %></span>
+
+            <%# stat columns %>
+            <span class="font-mono text-[10px] tabular-nums w-3 text-right shrink-0"><%= row[:p] %></span>
+            <span class="font-mono text-[10px] tabular-nums w-3 text-right shrink-0"><%= row[:w] %></span>
+            <span class="font-mono text-[10px] tabular-nums w-3 text-right shrink-0"><%= row[:d] %></span>
+            <span class="font-mono text-[10px] tabular-nums w-3 text-right shrink-0"><%= row[:l] %></span>
+            <% gd = row[:gf] - row[:ga] %>
+            <span class="font-mono text-[10px] tabular-nums w-5 text-right shrink-0">
+              <%= gd > 0 ? "+#{gd}" : gd %>
+            </span>
+            <span class="font-mono text-[11px] tabular-nums w-4 text-right shrink-0 font-bold text-[#0a3520]"><%= row[:pts] %></span>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</section>

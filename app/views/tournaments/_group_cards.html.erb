@@ -1,0 +1,117 @@
+<%# Renders the group-standings cards (one per group), each clickable on the header
+    to expand and show every fixture played in that group.
+    Locals: standings (required), matches (optional — { letter => [match,…] }). %>
+<% short_name = ->(team) { team.fifa_code.presence || team.country_code.to_s.upcase.presence || team.name[0..2].upcase } %>
+<% matches ||= nil %>
+
+<%# Column widths re-used by both the header label cluster and each team row,
+    so labels (P W D L GD Pts) align perfectly above their numeric values. %>
+<% stat_cols = [
+     { key: :p,   w: "w-4",  label: "P"   },
+     { key: :w,   w: "w-4",  label: "W"   },
+     { key: :d,   w: "w-4",  label: "D"   },
+     { key: :l,   w: "w-4",  label: "L"   },
+     { key: :gd,  w: "w-6",  label: "GD"  },
+     { key: :pts, w: "w-5",  label: "Pts" }
+   ] %>
+
+<% standings.each do |letter, rows| %>
+  <% group_matches = matches&.fetch(letter, []) || [] %>
+  <% expandable    = group_matches.any? %>
+
+  <div data-controller="<%= "group-card" if expandable %>"
+       data-expanded="false"
+       class="group rounded border border-[#c89942]/70 shadow-md shadow-black/20 overflow-hidden w-full max-w-sm mx-auto mb-4 break-inside-avoid"
+       style="background:#fdf6dc;">
+
+    <%# Group header — clickable when expandable.
+        Right cluster mirrors the team-row stat column widths so the labels
+        sit directly above the numbers. %>
+    <% header_tag = expandable ? :button : :div %>
+    <%= content_tag(header_tag,
+                    type: (expandable ? "button" : nil),
+                    data: (expandable ? { action: "click->group-card#toggle" } : {}),
+                    class: "w-full px-3 py-2 border-b border-[#c89942]/40 flex items-center justify-between gap-2 #{expandable ? "hover:bg-[#f0c870]/40 transition cursor-pointer" : ""}",
+                    style: "background:#f5e7b8;") do %>
+      <span class="flex items-center gap-2">
+        <span class="font-serif text-base font-bold text-[#0a3520]">Group <%= letter %></span>
+        <% if expandable %>
+          <svg class="w-3 h-3 text-[#c89942] transition-transform duration-300 ease-out
+                      group-data-[expanded=true]:rotate-180"
+               viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M3 4.5 L6 8 L9 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        <% end %>
+      </span>
+
+      <span class="flex items-center gap-1.5 text-[9px] uppercase text-[#c89942] font-semibold">
+        <% stat_cols.each do |col| %>
+          <span class="font-mono <%= col[:w] %> text-right"><%= col[:label] %></span>
+        <% end %>
+      </span>
+    <% end %>
+
+    <%# Team rows %>
+    <% rows.each_with_index do |row, i| %>
+      <% advances = i < 2 %>
+      <%= link_to team_path(row[:team]),
+                  class: "flex items-center justify-between gap-2 px-3 py-1.5 border-b border-[#c89942]/15 last:border-b-0 hover:bg-[#f5e7b8] transition #{advances ? "font-semibold text-[#0a3520]" : "text-[#6e7d6e]"}" do %>
+        <span class="flex items-center gap-2 min-w-0">
+          <span class="inline-block w-1.5 h-1.5 rounded-full shrink-0
+                       <%= advances ? "bg-[#1c5c3f]" : "border border-[#c89942]/60" %>"></span>
+          <span class="font-mono text-[10px] tabular-nums w-3 text-right shrink-0 text-[#c89942]"><%= i + 1 %></span>
+          <span class="text-sm shrink-0 leading-none"><%= row[:team].flag_emoji %></span>
+          <span class="font-mono text-[10px] tracking-wider truncate"><%= short_name.call(row[:team]) %></span>
+        </span>
+
+        <span class="flex items-center gap-1.5">
+          <% gd = row[:gf] - row[:ga] %>
+          <% stat_cols.each do |col| %>
+            <span class="font-mono <%= col[:key] == :pts ? "text-[11px] font-bold text-[#0a3520]" : "text-[10px]" %> tabular-nums <%= col[:w] %> text-right">
+              <%= case col[:key]
+                  when :gd  then (gd > 0 ? "+#{gd}" : gd)
+                  when :pts then row[:pts]
+                  else           row[col[:key]]
+                  end %>
+            </span>
+          <% end %>
+        </span>
+      <% end %>
+    <% end %>
+
+    <%# Expandable fixtures list — uses the grid-template-rows 0fr→1fr trick so
+        the card height animates from 0 to its actual content height (rather than
+        from 0 to an arbitrary max), which means cards below reflow immediately as
+        the panel closes. %>
+    <% if expandable %>
+      <div class="grid grid-rows-[0fr] opacity-0
+                  group-data-[expanded=true]:grid-rows-[1fr] group-data-[expanded=true]:opacity-100"
+           style="background:#f9efce; transition: grid-template-rows 300ms ease-out, opacity 300ms ease-out;">
+        <div class="overflow-hidden min-h-0">
+        <div class="text-[9px] uppercase tracking-[0.25em] text-[#c89942] font-semibold px-3 pt-2 pb-1 border-t border-[#c89942]/30 text-center">
+          Fixtures
+        </div>
+        <% group_matches.each do |m| %>
+          <%= link_to match_path(m),
+                      class: "flex items-center justify-center gap-3 px-3 py-1.5 border-t border-[#c89942]/15 hover:bg-[#f5e7b8] transition text-[#0a3520] text-xs" do %>
+            <span class="font-mono text-[10px] text-[#c89942] tabular-nums shrink-0">
+              <%= m.date.strftime("%-d %b") %>
+            </span>
+            <span class="flex items-center gap-1.5 shrink-0">
+              <span class="text-sm leading-none"><%= m.home_team.flag_emoji %></span>
+              <span class="font-mono text-[10px] tracking-wider w-8 text-left"><%= short_name.call(m.home_team) %></span>
+            </span>
+            <span class="font-mono text-xs tabular-nums shrink-0 font-semibold w-12 text-center">
+              <%= m.home_score %>&ndash;<%= m.away_score %>
+            </span>
+            <span class="flex items-center gap-1.5 shrink-0">
+              <span class="font-mono text-[10px] tracking-wider w-8 text-right"><%= short_name.call(m.away_team) %></span>
+              <span class="text-sm leading-none"><%= m.away_team.flag_emoji %></span>
+            </span>
+          <% end %>
+        <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>

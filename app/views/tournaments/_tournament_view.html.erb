@@ -1,0 +1,308 @@
+<%# Tournament view — pill row + horizontally-sliding stages.
+    Each pill switches both:
+      * The outer stages wrapper (slides between GS / knockout panels)
+      * The inner bracket track (pans between R16 / QF / SF / F columns) %>
+<%
+  stage_meta = {
+    "group_stage"          => { abbr: "GS",  label: "Group stage" },
+    "second_group_stage"   => { abbr: "GS2", label: "Second group stage" },
+    "round_of_32"          => { abbr: "R32", label: "Round of 32" },
+    "round_of_16"          => { abbr: "R16", label: "Round of 16" },
+    "quarter_final"        => { abbr: "QF",  label: "Quarter-finals" },
+    "semi_final"           => { abbr: "SF",  label: "Semi-finals" },
+    "final"                => { abbr: "F",   label: "Final" }
+  }
+
+  available_stages = stage_meta.keys.select do |s|
+    case s
+    when "group_stage"        then @group_standings.present?
+    when "second_group_stage" then @matches_by_stage["second_group_stage"]&.any?
+    else                           @matches_by_stage[s]&.any?
+    end
+  end
+
+  # ===== Bracket geometry =====
+  card_w        = 240
+  card_h        = 64
+  final_w       = 280
+  final_h       = 150
+  third_w       = 220
+  inter_col_gap = 80
+  slot_h        = 84
+  total_h       = slot_h * 8
+  left_pad      = 24
+
+  x_r16   = 0
+  x_qf    = x_r16 + card_w + inter_col_gap
+  x_sf    = x_qf  + card_w + inter_col_gap
+  x_f     = x_sf  + card_w + inter_col_gap
+  track_w = x_f + final_w + 32
+  x_third = x_f + (final_w - third_w) / 2.0
+
+  r16_ys  = (0..7).map { |i| (i + 0.5) * slot_h }
+  qf_ys   = (0..3).map { |i| (2 * i + 1) * slot_h }
+  sf_ys   = (0..1).map { |i| (4 * i + 2) * slot_h }
+  final_y = 4 * slot_h
+
+  third_label_y = final_y + final_h / 2.0 + 22
+  third_card_y  = third_label_y + 14 + 10 + card_h / 2.0
+
+  offsets = {
+    "round_of_16"   => left_pad - x_r16,
+    "quarter_final" => left_pad - x_qf,
+    "semi_final"    => left_pad - x_sf,
+    "final"         => left_pad - x_f
+  }
+
+  connector = ->(from_x, from_y, to_x, to_y) {
+    mid_x = (from_x + to_x) / 2.0
+    "M #{from_x} #{from_y} H #{mid_x} V #{to_y} H #{to_x}"
+  }
+
+  # ===== Panel ordering for the outer slide =====
+  # Each panel occupies one slot in the stagesWrapper. R16/QF/SF/F all share
+  # the bracket panel's slot (inner pan handles which column is visible).
+  stage_indices = {}
+  panel_count   = 0
+
+  if @group_standings.present?
+    stage_indices["group_stage"] = panel_count
+    panel_count += 1
+  end
+
+  if @matches_by_stage["second_group_stage"]&.any?
+    stage_indices["second_group_stage"] = panel_count
+    panel_count += 1
+  end
+
+  if @matches_by_stage["round_of_32"]&.any? && !@bracket
+    stage_indices["round_of_32"] = panel_count
+    panel_count += 1
+  end
+
+  if @bracket
+    bracket_idx = panel_count
+    %w[round_of_16 quarter_final semi_final final].each do |s|
+      stage_indices[s] = bracket_idx
+    end
+    panel_count += 1
+  else
+    %w[round_of_16 quarter_final semi_final final].each do |s|
+      next unless @matches_by_stage[s]&.any?
+      stage_indices[s] = panel_count
+      panel_count += 1
+    end
+  end
+%>
+
+<% if available_stages.any? %>
+  <section class="mb-24" data-controller="stage-selector"
+           data-stage-selector-offsets-value="<%= offsets.to_json %>"
+           data-stage-selector-stage-indices-value="<%= stage_indices.to_json %>">
+
+    <%# === Stage pill row + progress indicator (grouped so the indicator
+         track only spans as wide as the actual pills, not the section). === %>
+    <div class="w-fit max-w-full mb-6">
+    <div class="flex gap-2 mb-2 overflow-x-auto pb-2 -mx-1 px-1">
+      <% available_stages.each_with_index do |stage, idx| %>
+        <% meta = stage_meta[stage] %>
+        <% is_final = stage == "final" %>
+        <button type="button"
+                data-stage-selector-target="pill"
+                data-stage="<%= stage %>"
+                data-active="<%= idx == 0 ? "true" : "false" %>"
+                data-action="mouseenter->stage-selector#select focus->stage-selector#select click->stage-selector#select"
+                class="group shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full border font-mono text-xs tracking-[0.2em] uppercase font-semibold transition
+                       border-[#c89942]/45 text-[#c89942] hover:border-[#f0c870]
+                       data-[active=true]:bg-[#f0c870] data-[active=true]:text-[#fef0c8]! data-[active=true]:border-[#f0c870] data-[active=true]:shadow-md data-[active=true]:shadow-black/30 data-[active=true]:font-bold"
+                style="background:rgba(253,246,220,0.06);">
+          <span><%= meta[:abbr] %></span>
+          <% if is_final %>
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M7 4h10v2h3v3a4 4 0 0 1-4 4h-.18A5 5 0 0 1 13 16.9V19h3v2H8v-2h3v-2.1A5 5 0 0 1 7.18 13H7a4 4 0 0 1-4-4V6h3V4h1zm0 4H5v1a2 2 0 0 0 2 2V8zm10 0v3a2 2 0 0 0 2-2V8h-2z"/>
+            </svg>
+          <% end %>
+        </button>
+      <% end %>
+    </div>
+
+    <%# Progress indicator track + dot, sized to the wrapper above. %>
+    <div class="relative h-px bg-[#c89942]/25 mx-1"
+         data-stage-selector-target="indicatorTrack">
+      <div class="absolute -top-1 w-2 h-2 -translate-x-1/2 rounded-full bg-[#f0c870] shadow shadow-black/40"
+           data-stage-selector-target="indicator"
+           style="left: 0; transition: left 500ms cubic-bezier(0.4, 0, 0.2, 1);"></div>
+    </div>
+    </div>
+
+    <%# === Horizontally-sliding stages === %>
+    <div class="overflow-x-hidden">
+      <div data-stage-selector-target="stagesWrapper"
+           class="flex transition-transform duration-500 ease-out"
+           style="transform: translateX(0%);">
+
+        <%# --- Group stage panel: CSS multi-column so cards in column 2 don't get
+             stranded under a tall expanded card in column 1. --- %>
+        <% if @group_standings.present? %>
+          <div class="shrink-0 w-full">
+            <div class="columns-1 sm:columns-2 gap-4 [column-fill:balance]">
+              <%= render "tournaments/group_cards", standings: @group_standings, matches: @group_matches %>
+            </div>
+          </div>
+        <% end %>
+
+        <%# --- Second group stage (rare) --- %>
+        <% if @matches_by_stage["second_group_stage"]&.any? %>
+          <div class="shrink-0 w-full">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <% @matches_by_stage["second_group_stage"].each do |m| %>
+                <%= render "tournaments/match_card_compact", match: m %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <%# --- R32 fallback (rare; only when no full bracket) --- %>
+        <% if @matches_by_stage["round_of_32"]&.any? && !@bracket %>
+          <div class="shrink-0 w-full">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <% @matches_by_stage["round_of_32"].each do |m| %>
+                <%= render "tournaments/match_card_compact", match: m %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <%# --- Bracket panel (R16 + QF + SF + F together, with internal pan) --- %>
+        <% if @bracket %>
+          <div class="shrink-0 w-full">
+            <div class="overflow-x-hidden rounded-md">
+              <div data-stage-selector-target="bracketTrack"
+                   class="relative transition-transform duration-500 ease-out"
+                   style="width:<%= track_w %>px; height:<%= total_h %>px; transform: translateX(<%= offsets["round_of_16"] %>px);">
+
+                <%# Connectors %>
+                <svg class="absolute inset-0 pointer-events-none"
+                     viewBox="0 0 <%= track_w %> <%= total_h %>"
+                     style="overflow:visible;">
+                  <% @bracket[:quarters].each_with_index do |qf, q_idx| %>
+                    <% [2 * q_idx, 2 * q_idx + 1].each do |r_idx| %>
+                      <% next unless @bracket[:round_of_16][r_idx] && qf %>
+                      <path d="<%= connector.call(x_r16 + card_w, r16_ys[r_idx], x_qf, qf_ys[q_idx]) %>"
+                            stroke="#c89942" stroke-width="1.2" fill="none" opacity="0.7"/>
+                    <% end %>
+                  <% end %>
+                  <% @bracket[:semis].each_with_index do |sf, s_idx| %>
+                    <% [2 * s_idx, 2 * s_idx + 1].each do |q_idx| %>
+                      <% next unless @bracket[:quarters][q_idx] && sf %>
+                      <path d="<%= connector.call(x_qf + card_w, qf_ys[q_idx], x_sf, sf_ys[s_idx]) %>"
+                            stroke="#c89942" stroke-width="1.2" fill="none" opacity="0.7"/>
+                    <% end %>
+                  <% end %>
+                  <% [0, 1].each do |s_idx| %>
+                    <% next unless @bracket[:semis][s_idx] %>
+                    <path d="<%= connector.call(x_sf + card_w, sf_ys[s_idx], x_f, final_y) %>"
+                          stroke="#f0c870" stroke-width="1.6" fill="none" opacity="0.95"/>
+                  <% end %>
+                  <% if @bracket[:third_place] %>
+                    <% sf_right = x_sf + card_w %>
+                    <% conv_y   = third_label_y - 10 %>
+                    <% center_x = x_third + third_w / 2.0 %>
+                    <path d="M <%= sf_right %> <%= sf_ys[0] + card_h / 2.0 %>
+                             V <%= conv_y %>
+                             H <%= center_x %>"
+                          stroke="#c89942" stroke-width="0.9" stroke-dasharray="3 3" fill="none" opacity="0.45"/>
+                    <path d="M <%= sf_right %> <%= sf_ys[1] + card_h / 2.0 %>
+                             V <%= conv_y %>"
+                          stroke="#c89942" stroke-width="0.9" stroke-dasharray="3 3" fill="none" opacity="0.45"/>
+                  <% end %>
+                </svg>
+
+                <%# R16 cards %>
+                <% @bracket[:round_of_16].each_with_index do |m, i| %>
+                  <% next unless m %>
+                  <div class="absolute transition-all duration-300 ease-out origin-center"
+                       data-stage="round_of_16"
+                       style="left:<%= x_r16 %>px; top:<%= r16_ys[i] - card_h / 2.0 %>px; width:<%= card_w %>px;">
+                    <%= render "tournaments/bracket_card", match: m %>
+                  </div>
+                <% end %>
+
+                <%# QF cards %>
+                <% @bracket[:quarters].each_with_index do |m, i| %>
+                  <% next unless m %>
+                  <div class="absolute transition-all duration-300 ease-out origin-center"
+                       data-stage="quarter_final"
+                       style="left:<%= x_qf %>px; top:<%= qf_ys[i] - card_h / 2.0 %>px; width:<%= card_w %>px;">
+                    <%= render "tournaments/bracket_card", match: m %>
+                  </div>
+                <% end %>
+
+                <%# SF cards %>
+                <% @bracket[:semis].each_with_index do |m, i| %>
+                  <% next unless m %>
+                  <div class="absolute transition-all duration-300 ease-out origin-center"
+                       data-stage="semi_final"
+                       style="left:<%= x_sf %>px; top:<%= sf_ys[i] - card_h / 2.0 %>px; width:<%= card_w %>px;">
+                    <%= render "tournaments/bracket_card", match: m %>
+                  </div>
+                <% end %>
+
+                <%# Final card %>
+                <div class="absolute transition-all duration-300 ease-out origin-center"
+                     data-stage="final"
+                     style="left:<%= x_f %>px; top:<%= final_y - final_h / 2.0 %>px; width:<%= final_w %>px;">
+                  <%= render "tournaments/final_card", match: @bracket[:final] %>
+                </div>
+
+                <%# Third place beneath the Final %>
+                <% if @bracket[:third_place] %>
+                  <div class="absolute transition-all duration-300 ease-out origin-center text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold text-center"
+                       data-stage="final"
+                       style="left:<%= x_third %>px; top:<%= third_label_y %>px; width:<%= third_w %>px;">
+                    Third place
+                  </div>
+                  <div class="absolute transition-all duration-300 ease-out origin-center"
+                       data-stage="final"
+                       style="left:<%= x_third %>px; top:<%= third_card_y - card_h / 2.0 %>px; width:<%= third_w %>px;">
+                    <%= render "tournaments/bracket_card", match: @bracket[:third_place] %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% else %>
+          <%# --- Standalone knockout panels (older tournaments without full bracket) --- %>
+          <% %w[round_of_16 quarter_final semi_final final].each do |stage| %>
+            <% next unless @matches_by_stage[stage]&.any? %>
+            <div class="shrink-0 w-full">
+              <% if stage == "final" %>
+                <% final_match = @matches_by_stage["final"].first %>
+                <% third_match = @matches_by_stage["third_place_playoff"]&.first %>
+                <div class="flex flex-col md:flex-row md:items-start gap-6">
+                  <div class="md:w-1/2 max-w-md mx-auto md:mx-0 w-full">
+                    <%= render "tournaments/final_card", match: final_match %>
+                  </div>
+                  <% if third_match %>
+                    <div class="md:w-1/2 max-w-md w-full">
+                      <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mb-2">
+                        Third place
+                      </div>
+                      <%= render "tournaments/match_card_compact", match: third_match %>
+                    </div>
+                  <% end %>
+                </div>
+              <% else %>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <% @matches_by_stage[stage].each do |m| %>
+                    <%= render "tournaments/match_card_compact", match: m %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </section>
+<% end %>
