@@ -1,0 +1,8 @@
+<%# Real world map silhouette, sourced from Wikimedia Commons
+    (File:World_map_-_low_resolution.svg, public domain).
+    Fill colours patched to currentColor so the parent element controls
+    the tint via text-[#...] / opacity-* classes. Injects responsive
+    sizing onto the root <svg> so it fills whichever container we drop it in. %>
+<% svg = File.read(Rails.public_path.join("world_map.svg"))
+              .sub("<svg", '<svg style="width:100%;height:100%;display:block" preserveAspectRatio="xMidYMid meet"') %>
+<%= svg.html_safe %>
