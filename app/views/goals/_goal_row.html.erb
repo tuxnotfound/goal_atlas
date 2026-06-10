@@ -1,14 +1,34 @@
-<%# Compact goal card used inside related-goal lanes.
+<%# Compact goal card used inside related-goal lanes. Parchment treatment so
+    it lives in the gold/forest palette next to the rest of the app.
     Locals: goal (Goal) %>
-<%= link_to goal_path(goal), class: "block border border-stone-200 rounded p-3 hover:bg-stone-50 transition" do %>
-  <div class="flex items-center gap-3 mb-1">
-    <%= render "players/avatar", player: goal.player, tournament: goal.match.tournament, size: 32 %>
-    <span class="font-mono text-xs text-stone-500 tabular-nums shrink-0"><%= goal_minute_label(goal) %></span>
-    <span class="text-lg shrink-0"><%= goal.scoring_team.flag_emoji %></span>
-    <span class="font-medium truncate"><%= goal.player.name %></span>
-  </div>
-  <div class="text-xs text-stone-500">
-    <%= goal.scoring_team.name %> vs <%= goal.opponent_team.name %>
-    · <%= stage_label(goal.match) %> · <%= goal.match.tournament.year %>
+<%= link_to goal_path(goal),
+            class: "block rounded border border-[#c89942]/60 shadow-md shadow-black/15 hover:border-[#f0c870] hover:shadow-lg transition overflow-hidden",
+            style: "background:#fdf6dc;" do %>
+  <div class="px-3 py-2.5 flex items-center gap-3">
+    <%= render "players/avatar", player: goal.player, tournament: goal.match.tournament, size: 40 %>
+
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="font-mono text-[11px] tabular-nums text-[#c89942] shrink-0">
+          <%= goal_minute_label(goal) %>
+        </span>
+        <span class="text-base leading-none shrink-0"><%= goal.scoring_team.flag_emoji %></span>
+        <span class="font-serif font-bold text-[#0a3520] truncate"><%= goal.player.name %></span>
+      </div>
+      <div class="text-[10px] uppercase tracking-[0.25em] text-[#c89942]/85 font-semibold truncate">
+        <%= goal.scoring_team.name %>
+        <span class="text-[#c89942]/60">vs</span>
+        <%= goal.opponent_team.name %>
+      </div>
+    </div>
+
+    <div class="text-right shrink-0">
+      <div class="font-serif font-bold text-[#0a3520] tabular-nums text-base leading-none">
+        <%= goal.match.tournament.year %>
+      </div>
+      <div class="text-[9px] uppercase tracking-[0.25em] text-[#c89942] font-semibold mt-1">
+        <%= stage_label(goal.match) %>
+      </div>
+    </div>
   </div>
 <% end %>
