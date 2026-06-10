@@ -1,5 +1,10 @@
 <% content_for :title, "#{@tournament.name} — The Goal Atlas" %>
 
+<%# Page width container — every tournament-page section aligns to these
+    horizontal edges. The hero's left/right edges define the "page border",
+    and only the hero's nav arrows are allowed to sit outside it. %>
+<div class="max-w-6xl mx-auto">
+
 <%= render "tournaments/hero" %>
 
 <%# === Tournament view (stage-by-stage) === %>
@@ -142,4 +147,7 @@
 
   </section>
 <% end %>
+
+</div>
+
 

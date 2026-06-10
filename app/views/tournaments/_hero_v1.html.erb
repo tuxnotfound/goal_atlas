@@ -1,0 +1,170 @@
+<%# Tournament hero — iteration 2: "Globe Rises" + integrated podium.
+    Trophy still huge and anchored top-right with globe/figures dominant.
+    Standings podium lives inside the left column under the goals stat;
+    keeps trophy lane on the right clean. No "in archive" stat. %>
+<section class="relative overflow-hidden rounded-lg mb-20 border-2 border-[#c89942]/70 shadow-xl shadow-black/30"
+         style="background:#f5e7b8;">
+
+  <%# World map watermark %>
+  <% map_asset = Rails.public_path.join("hero_world_map.png") %>
+  <div class="absolute inset-0 pointer-events-none <%= File.exist?(map_asset) ? "opacity-25" : "text-[#1c5c3f] opacity-[0.12]" %>">
+    <% if File.exist?(map_asset) %>
+      <%= image_tag "/hero_world_map.png", alt: "", class: "w-full h-full object-cover" %>
+    <% else %>
+      <%= render "tournaments/world_map_svg" %>
+    <% end %>
+  </div>
+
+  <%# Soft paper texture %>
+  <div class="absolute inset-0 pointer-events-none opacity-60"
+       style="background:
+              radial-gradient(circle at 25% 15%, rgba(200,153,66,0.22), transparent 55%),
+              radial-gradient(circle at 80% 80%, rgba(28,92,63,0.16), transparent 50%),
+              radial-gradient(circle at 60% 40%, rgba(255,255,255,0.45), transparent 45%);"></div>
+
+  <%# Decorative double-rule frame %>
+  <div class="absolute inset-3 border border-[#c89942]/40 rounded pointer-events-none"></div>
+
+  <%# Trophy — massive, anchored top-right; only the globe + figures portion
+      lands inside the hero. Bumped slightly to compensate for the new hero
+      height so the cropping ratio stays roughly the same as iteration 1. %>
+  <% trophy_asset = Rails.public_path.join("hero_trophy.png") %>
+  <% if File.exist?(trophy_asset) %>
+    <%= image_tag "/hero_trophy.png", alt: "FIFA World Cup trophy",
+          class: "absolute -top-8 right-0 sm:right-4 h-[900px] w-auto pointer-events-none drop-shadow-2xl select-none" %>
+  <% else %>
+    <div class="absolute top-4 right-4 pointer-events-none">
+      <%= render "tournaments/trophy_svg" %>
+    </div>
+  <% end %>
+
+  <%# Content — text + podium on the left, trophy lane (right) stays clean. %>
+  <div class="relative p-6 md:p-8 grid grid-cols-12 gap-4">
+
+    <div class="col-span-12 md:col-span-7 flex flex-col gap-5">
+
+      <div>
+        <div class="text-[11px] tracking-[0.4em] uppercase text-[#c89942] font-semibold">
+          FIFA World Cup
+        </div>
+
+        <div class="font-serif font-bold leading-none text-[#0a3520] tabular-nums mt-1"
+             style="font-size:clamp(3.5rem, 9vw, 5.5rem); letter-spacing:-0.02em;">
+          <%= @tournament.year %>
+        </div>
+
+        <% if @tournament.host_countries.any? %>
+          <div class="mt-2 flex items-center gap-3">
+            <span class="font-serif italic text-xl md:text-2xl text-[#1c5c3f]">
+              <%= @tournament.host_countries.join(" · ") %>
+            </span>
+          </div>
+        <% end %>
+
+        <% if @tournament.start_date && @tournament.end_date %>
+          <div class="text-xs text-[#c89942] mt-1 tracking-[0.2em] uppercase font-semibold">
+            <%= @tournament.start_date.strftime("%-d %b") %>
+            &mdash;
+            <%= @tournament.end_date.strftime("%-d %b %Y") %>
+          </div>
+        <% end %>
+      </div>
+
+      <%# Goals stat — total goals + matches played; no archived count. %>
+      <% if @tournament.total_goals %>
+        <div class="flex items-end gap-5">
+          <div>
+            <div class="font-serif font-bold text-[#0a3520] tabular-nums leading-none"
+                 style="font-size:clamp(2.25rem, 6.5vw, 4rem);">
+              <%= @tournament.total_goals %>
+            </div>
+            <div class="text-[10px] uppercase tracking-[0.4em] text-[#c89942] mt-1 font-bold">
+              Goals
+            </div>
+          </div>
+
+          <% if @tournament.total_matches %>
+            <div class="text-[11px] leading-relaxed text-[#1c5c3f] pb-1">
+              across
+              <span class="font-serif text-sm font-bold text-[#0a3520] tabular-nums"><%= @tournament.total_matches %></span>
+              matches
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%# Final standings — Olympic podium inside the left column. %>
+      <% w  = @tournament.winner_team %>
+      <% ru = @tournament.runner_up_team %>
+      <% th = @tournament.third_place_team %>
+      <% fo = @tournament.fourth_place_team %>
+      <% if w || ru || th %>
+        <div class="pt-4 border-t border-[#c89942]/40">
+          <div class="text-[10px] uppercase tracking-[0.35em] text-[#c89942] font-semibold mb-3">
+            Final Standings
+          </div>
+
+          <div class="flex items-end gap-3 sm:gap-4">
+
+            <%# 2nd — silver %>
+            <% if ru %>
+              <%= link_to team_path(ru), class: "flex flex-col items-center transition duration-200 ease-out hover:-translate-y-1" do %>
+                <div class="text-2xl mb-0.5 leading-none"><%= ru.flag_emoji %></div>
+                <div class="text-[10px] font-bold tracking-wider text-[#1c5c3f] uppercase max-w-20 truncate">
+                  <%= ru.name %>
+                </div>
+                <div class="w-16 sm:w-20 h-16 sm:h-20 mt-1.5 rounded-t-md flex flex-col items-center justify-start pt-1.5 border-2 border-b-0 border-[#7a6438] shadow-md shadow-black/20"
+                     style="background: linear-gradient(180deg, #e5d4a3, #b9a378);">
+                  <div class="font-serif text-2xl sm:text-3xl font-bold text-[#0a3520] leading-none">2</div>
+                  <div class="text-[7px] uppercase tracking-widest text-[#0a3520]/70 mt-1 font-semibold">Runner-up</div>
+                </div>
+              <% end %>
+            <% end %>
+
+            <%# 1st — gold, centre, tallest, with star %>
+            <% if w %>
+              <%= link_to team_path(w), class: "flex flex-col items-center transition duration-200 ease-out hover:-translate-y-1" do %>
+                <div class="text-lg mb-0.5 text-[#c89942] leading-none">★</div>
+                <div class="text-3xl sm:text-4xl mb-0.5 leading-none"><%= w.flag_emoji %></div>
+                <div class="text-[11px] font-bold tracking-wider text-[#0a3520] uppercase max-w-[100px] truncate">
+                  <%= w.name %>
+                </div>
+                <div class="w-20 sm:w-24 h-24 sm:h-28 mt-1.5 rounded-t-md flex flex-col items-center justify-start pt-2 border-2 border-b-0 border-[#7a4b1a] shadow-lg shadow-black/30"
+                     style="background: linear-gradient(180deg, #f0c870, #c89942);">
+                  <div class="font-serif text-3xl sm:text-4xl font-bold text-[#0a3520] leading-none">1</div>
+                  <div class="text-[8px] uppercase tracking-widest text-[#0a3520]/80 mt-1.5 font-bold">Champion</div>
+                </div>
+              <% end %>
+            <% end %>
+
+            <%# 3rd — bronze %>
+            <% if th %>
+              <%= link_to team_path(th), class: "flex flex-col items-center transition duration-200 ease-out hover:-translate-y-1" do %>
+                <div class="text-2xl mb-0.5 leading-none"><%= th.flag_emoji %></div>
+                <div class="text-[10px] font-bold tracking-wider text-[#1c5c3f] uppercase max-w-20 truncate">
+                  <%= th.name %>
+                </div>
+                <div class="w-16 sm:w-20 h-14 sm:h-16 mt-1.5 rounded-t-md flex flex-col items-center justify-start pt-1.5 border-2 border-b-0 border-[#5a3614] shadow-md shadow-black/20"
+                     style="background: linear-gradient(180deg, #cd8b4a, #8b4513);">
+                  <div class="font-serif text-2xl sm:text-3xl font-bold text-[#fef0c8] leading-none">3</div>
+                  <div class="text-[7px] uppercase tracking-widest text-[#fef0c8]/80 mt-1 font-semibold">Third</div>
+                </div>
+              <% end %>
+            <% end %>
+
+            <%# 4th — inline chip beside the bronze step %>
+            <% if fo %>
+              <%= link_to team_path(fo), class: "flex flex-col items-center justify-end pb-2 transition hover:-translate-y-0.5" do %>
+                <span class="text-base leading-none mb-0.5"><%= fo.flag_emoji %></span>
+                <span class="text-[9px] uppercase tracking-[0.2em] text-[#c89942] font-semibold">4th</span>
+                <span class="font-serif text-[10px] font-semibold text-[#1c5c3f] max-w-[70px] truncate">
+                  <%= fo.name %>
+                </span>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>
