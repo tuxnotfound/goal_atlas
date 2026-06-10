@@ -1,154 +1,145 @@
-<% content_for :title, "#{@tournament.name} — Goal Atlas" %>
+<% content_for :title, "#{@tournament.name} — The Goal Atlas" %>
 
-<%# === Tournament header === %>
-<section class="bg-white border border-stone-200 rounded-lg p-6 mb-6">
-  <h1 class="text-3xl font-bold tracking-tight"><%= @tournament.name %></h1>
-  <div class="text-stone-500 text-sm mt-1">
-    <% if @tournament.host_countries.any? %>
-      Host: <%= @tournament.host_countries.join(", ") %>
-    <% end %>
-    <% if @tournament.start_date && @tournament.end_date %>
-      ·
-      <%= @tournament.start_date.strftime("%b %-d") %>
-      – <%= @tournament.end_date.strftime("%b %-d, %Y") %>
-    <% end %>
-  </div>
+<%= render "tournaments/hero" %>
 
-  <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-    <% if @tournament.total_matches %>
-      <div>
-        <div class="text-stone-500 text-xs uppercase tracking-wide">Total matches</div>
-        <div class="font-semibold text-lg tabular-nums"><%= @tournament.total_matches %></div>
-      </div>
-    <% end %>
-    <% if @tournament.total_goals %>
-      <div>
-        <div class="text-stone-500 text-xs uppercase tracking-wide">Total goals</div>
-        <div class="font-semibold text-lg tabular-nums"><%= @tournament.total_goals %></div>
-      </div>
-    <% end %>
-    <div>
-      <div class="text-stone-500 text-xs uppercase tracking-wide">In our archive</div>
-      <div class="font-semibold text-lg tabular-nums">
-        <%= @matches_by_stage.values.flatten.size %> matches
-      </div>
-    </div>
-  </div>
-</section>
+<%# === Tournament view (stage-by-stage) === %>
+<%= render "tournaments/tournament_view" %>
 
-<%# === Podium === %>
-<% podium = [
-  ["Winner",       @tournament.winner_team,       "bg-amber-50 border-amber-200"],
-  ["Runner-up",    @tournament.runner_up_team,    "bg-stone-50 border-stone-300"],
-  ["Third place",  @tournament.third_place_team,  "bg-orange-50 border-orange-200"],
-  ["Fourth place", @tournament.fourth_place_team, "bg-stone-50 border-stone-200"]
-] %>
-<% if podium.any? { |_, team, _| team } %>
-  <section class="mb-8">
-    <h2 class="text-lg font-semibold mb-3">Final standings</h2>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <% podium.each do |label, team, classes| %>
-        <% next unless team %>
-        <%= link_to team_path(team), class: "block border rounded p-4 text-center hover:shadow-sm transition #{classes}" do %>
-          <div class="text-xs uppercase tracking-wide text-stone-600 font-semibold mb-2">
-            <%= label %>
-          </div>
-          <div class="text-4xl mb-1"><%= team.flag_emoji %></div>
-          <div class="font-medium"><%= team.name %></div>
-        <% end %>
-      <% end %>
-    </div>
-  </section>
-<% end %>
+<%# === Awards — boot-related awards filtered out (they're in the Golden boot
+       podium). Ball awards sit on one row: Golden centred and biggest, Silver
+       on the left and Bronze on the right at a smaller size, flexbox aligns
+       their bottoms. Remaining awards (Glove, Young Player, Fair Play, etc.)
+       sit on a row of their own below. === %>
+<% non_boot_awards = @awards.reject { |a| a.display_name.to_s.downcase.include?("boot") } %>
+<% golden_ball  = non_boot_awards.find { |a| a.display_name.to_s.downcase.include?("golden ball") } %>
+<% silver_ball  = non_boot_awards.find { |a| a.display_name.to_s.downcase.include?("silver ball") } %>
+<% bronze_ball  = non_boot_awards.find { |a| a.display_name.to_s.downcase.include?("bronze ball") } %>
+<% other_awards = non_boot_awards - [golden_ball, silver_ball, bronze_ball].compact %>
 
-<%# === Awards === %>
-<% if @awards.any? %>
-  <section class="mb-8">
-    <h2 class="text-lg font-semibold mb-3">Awards</h2>
-    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-      <% @awards.each do |award| %>
-        <li class="flex items-center gap-3 bg-white border border-stone-200 rounded p-3">
-          <%= render "players/avatar", player: award.player, tournament: @tournament, size: 44 %>
-          <div class="flex-1 min-w-0">
-            <div class="text-xs uppercase tracking-wider text-emerald-700 font-semibold">
-              <%= award.display_name %>
+<% if non_boot_awards.any? %>
+  <section class="mb-24">
+    <div class="max-w-5xl mx-auto">
+      <h2 class="font-serif text-2xl text-[#f0c870] mb-1 text-center">Awards</h2>
+      <p class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold text-center mb-8">
+        The tournament's standout performers
+      </p>
+
+      <%# Ball podium row — Silver | Golden (featured) | Bronze. Sizes tightened
+          so the three feel like a single trio rather than a giant + two minis. %>
+      <% if golden_ball || silver_ball || bronze_ball %>
+        <div class="flex items-end justify-center gap-6 sm:gap-10 mb-10 flex-wrap">
+
+          <%# Silver Ball %>
+          <% if silver_ball %>
+            <div class="flex flex-col items-center">
+              <div class="text-[10px] uppercase tracking-[0.35em] text-[#c89942] font-bold text-center mb-3">
+                <%= silver_ball.display_name %>
+              </div>
+              <%= render "players/card", player: silver_ball.player, tournament: @tournament, size: 130 %>
             </div>
-            <%= link_to award.player.name, player_path(award.player),
-                        class: "font-medium hover:text-emerald-700 transition truncate block" %>
-          </div>
-          <span class="text-lg shrink-0"><%= award.player.nationality_team&.flag_emoji %></span>
-        </li>
+          <% end %>
+
+          <%# Golden Ball — featured %>
+          <% if golden_ball %>
+            <div class="flex flex-col items-center">
+              <div class="flex items-center gap-3 text-[12px] uppercase tracking-[0.45em] text-[#f0c870] font-bold mb-1">
+                <span class="text-base">★</span>
+                <span><%= golden_ball.display_name %></span>
+                <span class="text-base">★</span>
+              </div>
+              <p class="text-[9px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mb-3">
+                Player of the tournament
+              </p>
+              <%= render "players/card", player: golden_ball.player, tournament: @tournament, size: 170 %>
+            </div>
+          <% end %>
+
+          <%# Bronze Ball %>
+          <% if bronze_ball %>
+            <div class="flex flex-col items-center">
+              <div class="text-[10px] uppercase tracking-[0.35em] text-[#c89942] font-bold text-center mb-3">
+                <%= bronze_ball.display_name %>
+              </div>
+              <%= render "players/card", player: bronze_ball.player, tournament: @tournament, size: 130 %>
+            </div>
+          <% end %>
+        </div>
       <% end %>
-    </ul>
+
+      <%# Other awards — flex-wrap with justify-center so the row stays centred
+          even when there are only 1 or 2 awards (was a 3-col grid that left
+          orphaned items hugging the left). %>
+      <% if other_awards.any? %>
+        <div class="flex flex-wrap justify-center gap-x-10 gap-y-6">
+          <% other_awards.each do |award| %>
+            <div class="flex flex-col items-center">
+              <div class="text-[10px] uppercase tracking-[0.35em] text-[#c89942] font-bold text-center leading-tight min-h-[2.4em] flex items-center px-1">
+                <%= award.display_name %>
+              </div>
+              <svg class="w-5 h-5 text-[#c89942] mt-1 mb-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M7 4h10v2h3v3a4 4 0 0 1-4 4h-.18A5 5 0 0 1 13 16.9V19h3v2H8v-2h3v-2.1A5 5 0 0 1 7.18 13H7a4 4 0 0 1-4-4V6h3V4h1zm0 4H5v1a2 2 0 0 0 2 2V8zm10 0v3a2 2 0 0 0 2-2V8h-2z"/>
+              </svg>
+              <%= render "players/card", player: award.player, tournament: @tournament, size: 130 %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
   </section>
 <% end %>
 
-<%# === Top scorers === %>
+<%# === Top scorers — Golden boot podium (top 3 emphasised, rest as a list) === %>
 <% if @top_scorers.any? %>
-  <section class="mb-8">
-    <h2 class="text-lg font-semibold mb-3">Top scorers</h2>
-    <ol class="border border-stone-200 rounded-md bg-white divide-y divide-stone-100">
-      <% @top_scorers.each_with_index do |scorer, idx| %>
-        <li>
-          <%= link_to player_path(scorer), class: "p-3 flex items-center gap-3 hover:bg-stone-50 transition" do %>
-            <span class="font-mono text-sm text-stone-400 tabular-nums w-6"><%= idx + 1 %></span>
-            <%= render "players/avatar", player: scorer, tournament: @tournament, size: 36 %>
-            <span class="text-lg shrink-0"><%= scorer.nationality_team&.flag_emoji %></span>
-            <span class="flex-1 font-medium truncate"><%= scorer.name %></span>
-            <span class="font-mono text-sm tabular-nums text-stone-600">
-              <%= scorer.goals_count %>
-              <span class="text-stone-400 ml-1"><%= scorer.goals_count == 1 ? "goal" : "goals" %></span>
-            </span>
+  <section class="mb-10">
+    <h2 class="font-serif text-2xl text-[#f0c870] mb-1 text-center">Golden boot</h2>
+    <p class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold text-center mb-8">
+      Tournament's top scorers
+    </p>
+
+    <%# Podium: top 3 — silver | gold | bronze. Card sizes match the Awards ball
+        trio: 170 for the winner, 130 for runner-ups. Step widths pixel-match
+        the cards so each player stands flush on their step. %>
+    <% podium_scorers = [
+         { rank: 2, scorer: @top_scorers[1], card_size: 130, step_w: "w-[130px]",
+           step_h: "h-32 sm:h-40", grad: "linear-gradient(180deg, #e5d4a3, #b9a378)",
+           border: "border-[#7a6438]", num_color: "text-[#0a3520]", label_color: "text-[#0a3520]/70",
+           num_size: "text-4xl sm:text-5xl" },
+         { rank: 1, scorer: @top_scorers[0], card_size: 170, step_w: "w-[170px]",
+           step_h: "h-44 sm:h-56", grad: "linear-gradient(180deg, #f0c870, #c89942)",
+           border: "border-[#7a4b1a]", num_color: "text-[#0a3520]", label_color: "text-[#0a3520]/80",
+           num_size: "text-5xl sm:text-6xl" },
+         { rank: 3, scorer: @top_scorers[2], card_size: 130, step_w: "w-[130px]",
+           step_h: "h-28 sm:h-32", grad: "linear-gradient(180deg, #cd8b4a, #8b4513)",
+           border: "border-[#5a3614]", num_color: "text-[#fef0c8]", label_color: "text-[#fef0c8]/80",
+           num_size: "text-4xl sm:text-5xl" }
+       ] %>
+
+    <div class="flex items-end justify-center gap-4 sm:gap-8 max-w-4xl mx-auto">
+      <% podium_scorers.each do |slot| %>
+        <% scorer = slot[:scorer] %>
+        <% next unless scorer %>
+        <% is_winner = slot[:rank] == 1 %>
+
+        <div class="flex flex-col items-center">
+          <% if is_winner %>
+            <div class="text-2xl mb-1 text-[#c89942] leading-none">★</div>
           <% end %>
-        </li>
+
+          <%= render "players/card", player: scorer, tournament: @tournament, size: slot[:card_size] %>
+
+          <div class="<%= slot[:step_w] %> <%= slot[:step_h] %> mt-2 rounded-t-md flex flex-col items-center justify-center border-2 border-b-0 <%= slot[:border] %> shadow-md shadow-black/25"
+               style="background: <%= slot[:grad] %>;">
+            <div class="font-serif <%= slot[:num_size] %> font-bold leading-none <%= slot[:num_color] %>">
+              <%= scorer.goals_count %>
+            </div>
+            <div class="text-[10px] uppercase tracking-widest mt-2 font-semibold <%= slot[:label_color] %>">
+              <%= scorer.goals_count == 1 ? "Goal" : "Goals" %>
+            </div>
+          </div>
+        </div>
       <% end %>
-    </ol>
+    </div>
+
   </section>
 <% end %>
 
-<%# === Matches grouped by stage (final → quarter-final → ...) === %>
-<% if @matches_by_stage.any? %>
-  <section class="mb-8">
-    <h2 class="text-lg font-semibold mb-3">Matches</h2>
-    <% Match.stages.keys.reverse.each do |stage| %>
-      <% matches = @matches_by_stage[stage] %>
-      <% next unless matches&.any? %>
-      <div class="mb-5">
-        <h3 class="text-xs uppercase tracking-wider text-emerald-700 font-semibold mb-2">
-          <%= stage.humanize %>
-        </h3>
-        <ul class="divide-y divide-stone-200 border border-stone-200 rounded-md bg-white">
-          <% matches.each do |match| %>
-            <li>
-              <%= link_to match_path(match), class: "block p-3 hover:bg-stone-50 transition" do %>
-                <div class="flex items-center justify-between gap-4">
-                  <div class="flex items-center gap-2 flex-1 min-w-0">
-                    <span class="text-xl shrink-0"><%= match.home_team.flag_emoji %></span>
-                    <span class="font-medium truncate"><%= match.home_team.name %></span>
-                  </div>
-                  <div class="font-mono text-sm tabular-nums">
-                    <% if match.home_score_after_extra_time %>
-                      <%= match.home_score_after_extra_time %>&ndash;<%= match.away_score_after_extra_time %>
-                    <% else %>
-                      <%= match.home_score %>&ndash;<%= match.away_score %>
-                    <% end %>
-                    <% if (label = result_type_short(match)) %>
-                      <span class="text-xs text-stone-500 ml-1 font-sans"><%= label %></span>
-                    <% end %>
-                  </div>
-                  <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
-                    <span class="font-medium truncate text-right"><%= match.away_team.name %></span>
-                    <span class="text-xl shrink-0"><%= match.away_team.flag_emoji %></span>
-                  </div>
-                </div>
-                <div class="text-xs text-stone-400 mt-1">
-                  <%= match.date.strftime("%b %-d") %> · <%= match.stadium&.name %>
-                </div>
-              <% end %>
-            </li>
-          <% end %>
-        </ul>
-      </div>
-    <% end %>
-  </section>
-<% end %>
