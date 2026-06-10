@@ -16,11 +16,11 @@ module GoalsHelper
   end
 
   def goal_filter_chip_class(active)
-    base = "inline-block px-3 py-1 text-xs rounded-full transition"
+    base = "shrink-0 inline-block px-3.5 py-1.5 rounded-full border font-mono text-[11px] tracking-[0.2em] uppercase font-semibold transition"
     if active
-      "#{base} bg-emerald-700 text-white hover:bg-emerald-800"
+      "#{base} bg-[#f0c870] text-[#fef0c8]! border-[#f0c870] shadow-md shadow-black/30 font-bold"
     else
-      "#{base} bg-stone-100 text-stone-700 hover:bg-stone-200"
+      "#{base} bg-[rgba(253,246,220,0.06)] border-[#c89942]/45 text-[#c89942] hover:border-[#f0c870]"
     end
   end
 

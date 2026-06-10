@@ -1,69 +1,83 @@
 <% content_for :title, "Goals — The Goal Atlas" %>
 
-<div class="mb-6">
-  <div class="flex items-baseline justify-between gap-4">
-    <h1 class="text-3xl font-bold tracking-tight">Goals</h1>
-    <span class="text-sm text-stone-500 tabular-nums"><%= pluralize(@goal_count, "goal") %></span>
-  </div>
-  <% if any_goal_filter_active? %>
-    <%= link_to "Clear filters", goals_path,
-                class: "inline-block mt-2 text-xs text-stone-500 hover:text-emerald-700 transition" %>
-  <% end %>
-</div>
+<div class="max-w-6xl mx-auto">
 
-<%# === Filter groups === %>
-<section class="space-y-4 mb-8">
-  <div>
-    <div class="text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">Stage</div>
-    <div class="flex flex-wrap gap-2">
-      <% @stages.each do |s| %>
-        <%= link_to s.humanize, goal_filter_url(:stage, s), class: goal_filter_chip_class(goal_filter_active?(:stage, s)) %>
-      <% end %>
-    </div>
-  </div>
-
-  <% if @tournaments.size > 1 %>
-    <div>
-      <div class="text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">Tournament</div>
-      <div class="flex flex-wrap gap-2">
-        <% @tournaments.each do |t| %>
-          <%= link_to t.year, goal_filter_url(:tournament, t.year), class: goal_filter_chip_class(goal_filter_active?(:tournament, t.year)) %>
-        <% end %>
-      </div>
-    </div>
-  <% end %>
-</section>
-
-<%# === Goals list === %>
-<% if @goals.any? %>
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-    <% @goals.each do |g| %>
-      <%= render "goals/goal_row", goal: g %>
+  <div class="mb-8 text-center">
+    <h1 class="font-serif text-4xl font-bold text-[#f0c870]">Goals</h1>
+    <p class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mt-2">
+      <%= pluralize(@goal_count, "goal") %> in the archive
+    </p>
+    <% if any_goal_filter_active? %>
+      <%= link_to "Clear filters", goals_path,
+                  class: "inline-block mt-3 text-[10px] uppercase tracking-[0.3em] text-[#c89942] hover:text-[#f0c870] font-semibold transition" %>
     <% end %>
   </div>
 
-  <% if @pagy.pages > 1 %>
-    <nav class="mt-8 flex items-center justify-between text-sm">
-      <div class="text-stone-500">
-        Showing
-        <strong class="tabular-nums"><%= @pagy.from %>–<%= @pagy.to %></strong>
-        of <strong class="tabular-nums"><%= @pagy.count %></strong>
+  <%# === Filter rows — parchment chips for Stage and Tournament. Each chip
+       is a real link so filters persist into pagination URLs. === %>
+  <section class="space-y-4 mb-8">
+    <div>
+      <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mb-2 text-center">
+        Stage
       </div>
-      <div class="flex items-center gap-1">
-        <% if @pagy.prev %>
-          <%= link_to "← Prev", url_for(request.query_parameters.merge(page: @pagy.prev)),
-                      class: "px-3 py-1 border border-stone-300 rounded hover:bg-stone-50 transition" %>
-        <% end %>
-        <span class="px-3 py-1 text-stone-500">
-          Page <%= @pagy.page %> of <%= @pagy.pages %>
-        </span>
-        <% if @pagy.next %>
-          <%= link_to "Next →", url_for(request.query_parameters.merge(page: @pagy.next)),
-                      class: "px-3 py-1 border border-stone-300 rounded hover:bg-stone-50 transition" %>
+      <div class="flex flex-wrap justify-center gap-2">
+        <% @stages.each do |s| %>
+          <%= link_to s.humanize, goal_filter_url(:stage, s),
+                      class: goal_filter_chip_class(goal_filter_active?(:stage, s)) %>
         <% end %>
       </div>
-    </nav>
+    </div>
+
+    <% if @tournaments.size > 1 %>
+      <div>
+        <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mb-2 text-center">
+          Tournament
+        </div>
+        <div class="flex flex-wrap justify-center gap-2">
+          <% @tournaments.each do |t| %>
+            <%= link_to t.year, goal_filter_url(:tournament, t.year),
+                        class: goal_filter_chip_class(goal_filter_active?(:tournament, t.year)) %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </section>
+
+  <% if @goals.any? %>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <% @goals.each do |g| %>
+        <%= render "goals/goal_row", goal: g %>
+      <% end %>
+    </div>
+
+    <% if @pagy.pages > 1 %>
+      <%# Parchment-styled pager. %>
+      <nav class="mt-10 flex items-center justify-between text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold">
+        <div>
+          Showing
+          <span class="font-mono text-[#0a3520] tabular-nums tracking-normal text-sm"><%= @pagy.from %>&ndash;<%= @pagy.to %></span>
+          of
+          <span class="font-mono text-[#0a3520] tabular-nums tracking-normal text-sm"><%= @pagy.count %></span>
+        </div>
+        <div class="flex items-center gap-3">
+          <% if @pagy.prev %>
+            <%= link_to "← Prev", url_for(request.query_parameters.merge(page: @pagy.prev)),
+                        class: "px-3 py-1.5 rounded-full border border-[#c89942]/45 hover:border-[#f0c870] hover:text-[#f0c870] transition" %>
+          <% end %>
+          <span class="text-[#c89942]/75 tracking-normal normal-case">
+            Page <span class="font-mono text-[#0a3520] tabular-nums text-sm"><%= @pagy.page %></span>
+            of <span class="font-mono text-[#0a3520] tabular-nums text-sm"><%= @pagy.pages %></span>
+          </span>
+          <% if @pagy.next %>
+            <%= link_to "Next →", url_for(request.query_parameters.merge(page: @pagy.next)),
+                        class: "px-3 py-1.5 rounded-full border border-[#c89942]/45 hover:border-[#f0c870] hover:text-[#f0c870] transition" %>
+          <% end %>
+        </div>
+      </nav>
+    <% end %>
+  <% else %>
+    <p class="text-sm text-[#c89942] text-center uppercase tracking-[0.25em] font-semibold py-8">
+      No goals match these filters
+    </p>
   <% end %>
-<% else %>
-  <p class="text-sm text-stone-500 py-8 text-center">No goals match these filters.</p>
-<% end %>
+</div>
