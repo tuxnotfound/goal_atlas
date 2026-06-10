@@ -1,146 +1,224 @@
 <% content_for :title, "#{@player.name} — The Goal Atlas" %>
 
-<%# === Player header === %>
-<section class="bg-white border border-stone-200 rounded-lg p-6 mb-6">
-  <div class="flex items-start gap-5">
-    <%= render "players/avatar", player: @player, size: 120 %>
+<div class="max-w-6xl mx-auto">
 
-    <div class="flex-1">
-      <h1 class="text-3xl font-bold tracking-tight mb-2"><%= @player.name %></h1>
+<%# === Player hero — parchment card matching the match/goal heroes. Portrait
+       on the left anchors the visual; name + nationality + role sit on the
+       right. Career-total stats line the bottom as the trailer. === %>
+<% map_asset = Rails.public_path.join("hero_world_map.png") %>
 
-      <div class="text-stone-500 text-sm space-y-1">
-        <% if @player.nationality_team %>
-          <div>
-            <%= @player.nationality_team.flag_emoji %>
-            <%= link_to @player.nationality_team.name, team_path(@player.nationality_team),
-                        class: "hover:text-emerald-700 transition" %>
-          </div>
-        <% end %>
+<section class="relative overflow-hidden rounded-lg border-2 border-[#c89942]/70 shadow-xl shadow-black/30 mb-10"
+         style="background:#f5e7b8;">
+
+  <%# World map watermark %>
+  <div class="absolute inset-0 pointer-events-none <%= File.exist?(map_asset) ? "opacity-20" : "text-[#1c5c3f] opacity-[0.1]" %>">
+    <% if File.exist?(map_asset) %>
+      <%= image_tag "/hero_world_map.png", alt: "", class: "w-full h-full object-cover" %>
+    <% else %>
+      <%= render "tournaments/world_map_svg" %>
+    <% end %>
+  </div>
+
+  <%# Soft paper texture %>
+  <div class="absolute inset-0 pointer-events-none opacity-60"
+       style="background:
+              radial-gradient(circle at 25% 15%, rgba(200,153,66,0.22), transparent 55%),
+              radial-gradient(circle at 80% 80%, rgba(28,92,63,0.16), transparent 50%),
+              radial-gradient(circle at 60% 40%, rgba(255,255,255,0.45), transparent 45%);"></div>
+
+  <%# Decorative double-rule frame %>
+  <div class="absolute inset-3 border border-[#c89942]/40 rounded pointer-events-none"></div>
+
+  <div class="relative p-6 md:p-10">
+
+    <%# Eyebrow: position on the left, birth date in serif italic on the right. %>
+    <div class="flex items-baseline justify-between gap-3 mb-6 flex-wrap">
+      <div class="text-[11px] tracking-[0.35em] uppercase text-[#c89942] font-semibold">
         <% if @player.position %>
-          <div><%= @player.position.humanize %></div>
+          <%= @player.position.humanize %>
+        <% else %>
+          Player
         <% end %>
-        <% if @player.birth_date %>
-          <div>Born <%= @player.birth_date.strftime("%B %-d, %Y") %></div>
-        <% end %>
-        <% if (img = @player.default_image)&.attribution_line %>
-          <div class="text-xs text-stone-400 pt-1">
-            Photo:
-            <% if img.source_url.present? %>
-              <%= link_to img.attribution_line, img.source_url,
-                          target: "_blank", rel: "noopener",
-                          class: "hover:text-stone-600" %>
-            <% else %>
-              <%= img.attribution_line %>
-            <% end %>
+      </div>
+      <% if @player.birth_date %>
+        <div class="font-serif italic text-base md:text-lg text-[#1c5c3f]">
+          Born <%= @player.birth_date.strftime("%-d %b %Y") %>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Main row: portrait | name + nationality. %>
+    <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 md:gap-10">
+
+      <div class="shrink-0">
+        <div class="ring-4 ring-[#c89942]/75 rounded-md overflow-hidden shadow-md shadow-black/25"
+             style="width: 150px;">
+          <%= render "players/avatar", player: @player, size: 150, height: 230, radius: "0" %>
+        </div>
+      </div>
+
+      <div class="flex-1 min-w-0 text-center sm:text-left">
+        <h1 class="font-serif font-bold text-[#0a3520] leading-none mb-4"
+            style="font-size:clamp(2.25rem, 5.5vw, 3.75rem); letter-spacing:-0.02em;">
+          <%= @player.name %>
+        </h1>
+
+        <% if @player.nationality_team %>
+          <div class="flex items-center justify-center sm:justify-start gap-3 mb-4">
+            <span class="text-3xl leading-none"><%= @player.nationality_team.flag_emoji %></span>
+            <%= link_to @player.nationality_team.name, team_path(@player.nationality_team),
+                        class: "font-serif font-bold text-xl md:text-2xl text-[#0a3520] hover:text-[#f0c870] transition" %>
           </div>
         <% end %>
+
       </div>
     </div>
   </div>
 
-  <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-    <div>
-      <div class="text-stone-500 text-xs uppercase tracking-wide">Goals</div>
-      <div class="font-semibold text-lg tabular-nums"><%= @goals.size %></div>
-    </div>
-    <% if @shootout_totals[:taken].positive? %>
-      <div>
-        <div class="text-stone-500 text-xs uppercase tracking-wide">Shootout kicks</div>
-        <div class="font-semibold text-lg tabular-nums">
-          <%= @shootout_totals[:scored] %>/<%= @shootout_totals[:taken] %>
+  <%# Career totals trailer — Goals / Shootouts / Tournaments. Transparent
+      so the map watermark continues underneath; gold tint marks the shelf. %>
+  <div class="relative border-t border-[#c89942]/40">
+    <div class="absolute inset-0 pointer-events-none bg-[#c89942]/10"></div>
+    <div class="relative px-6 md:px-10 py-5 flex flex-wrap justify-center gap-x-10 gap-y-4">
+      <div class="text-center">
+        <div class="font-serif font-bold text-[#0a3520] tabular-nums leading-none text-3xl md:text-4xl">
+          <%= @goals.size %>
+        </div>
+        <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-bold mt-1">
+          <%= @goals.size == 1 ? "Goal" : "Goals" %>
         </div>
       </div>
-    <% end %>
-    <% if @tournament_records.any? %>
-      <div>
-        <div class="text-stone-500 text-xs uppercase tracking-wide">Tournaments</div>
-        <div class="font-semibold text-lg tabular-nums"><%= @tournament_records.size %></div>
-      </div>
-    <% end %>
+
+      <% if @shootout_totals[:taken].positive? %>
+        <div class="text-center">
+          <div class="font-serif font-bold text-[#0a3520] tabular-nums leading-none text-3xl md:text-4xl">
+            <%= @shootout_totals[:scored] %>/<%= @shootout_totals[:taken] %>
+          </div>
+          <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-bold mt-1">
+            Shootout kicks
+          </div>
+        </div>
+      <% end %>
+
+      <% if @tournament_records.any? %>
+        <div class="text-center">
+          <div class="font-serif font-bold text-[#0a3520] tabular-nums leading-none text-3xl md:text-4xl">
+            <%= @tournament_records.size %>
+          </div>
+          <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-bold mt-1">
+            <%= @tournament_records.size == 1 ? "Tournament" : "Tournaments" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
   </div>
 </section>
 
-<%# === World Cup history === %>
+<%# === World Cup history — parchment card mirroring the group-stage table:
+       gold-bordered cream card, gold header eyebrow, mono numeric columns
+       aligned under right-aligned labels, year link in serif bold. Awards
+       row hangs below each year when present, styled like fixture rows. === %>
 <% if @tournament_records.any? %>
-  <section class="mb-8">
-    <h2 class="text-lg font-semibold mb-3">World Cup history</h2>
-    <div class="overflow-x-auto border border-stone-200 rounded-md bg-white">
-      <table class="w-full text-sm tabular-nums">
-        <thead class="bg-stone-50 text-stone-500 text-xs uppercase tracking-wide">
-          <tr>
-            <th class="text-left px-3 py-2">Year</th>
-            <th class="text-right px-3 py-2">Goals</th>
-            <th class="text-right px-3 py-2">Assists</th>
-            <th class="text-right px-3 py-2">Shootouts</th>
-            <th class="text-left px-3 py-2">Awards</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-stone-100">
-          <% @tournament_records.each do |r| %>
-            <tr class="hover:bg-stone-50">
-              <td class="px-3 py-2">
-                <%= link_to r.tournament.year, tournament_path(r.tournament),
-                            class: "font-medium hover:text-emerald-700" %>
-              </td>
-              <td class="text-right px-3 py-2"><%= r.goals_count.positive? ? r.goals_count : "—" %></td>
-              <td class="text-right px-3 py-2"><%= r.assists_count.positive? ? r.assists_count : "—" %></td>
-              <td class="text-right px-3 py-2">
-                <% if r.shootout_kicks_count.positive? %>
-                  <%= r.shootout_kicks_scored %>/<%= r.shootout_kicks_count %>
-                <% else %>
-                  —
-                <% end %>
-              </td>
-              <td class="px-3 py-2">
-                <% if r.has_award? %>
-                  <ul class="space-y-0.5">
-                    <% r.awards.each do |a| %>
-                      <li class="text-amber-700">
-                        <%= a.award_type.to_s.humanize %><%
-                        %><% if a.notes.present? %>
-                          <span class="text-stone-500 text-xs">· <%= a.notes %></span>
-                        <% end %>
-                      </li>
-                    <% end %>
-                  </ul>
-                <% else %>
-                  <span class="text-stone-300">—</span>
-                <% end %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-  </section>
-<% end %>
+  <% stat_cols = [
+       { key: :goals,    w: "w-8",  label: "G"   },
+       { key: :shootout, w: "w-12", label: "Pen" }
+     ] %>
+  <section class="mb-10 max-w-2xl mx-auto">
+    <h2 class="font-serif text-xl text-[#f0c870] mb-3 text-center">World Cup history</h2>
 
-<%# === Goal type breakdown === %>
-<% if @goal_type_breakdown.any? && @goals.size > 1 %>
-  <section class="mb-8">
-    <h2 class="text-lg font-semibold mb-3">Goal type breakdown</h2>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <% Goal::GOAL_TYPES.keys.each do |type| %>
-        <% count = @goal_type_breakdown[type] || 0 %>
-        <div class="bg-white border border-stone-200 rounded-md p-3">
-          <div class="text-stone-500 text-xs uppercase tracking-wide"><%= type.to_s.humanize %></div>
-          <div class="font-semibold text-lg tabular-nums <%= "text-stone-300" if count.zero? %>"><%= count %></div>
-        </div>
+    <div class="rounded border border-[#c89942]/70 shadow-md shadow-black/20 overflow-hidden"
+         style="background:#fdf6dc;">
+
+      <%# Column-label header — same rhythm as group-card headers. %>
+      <div class="px-3 py-2 border-b border-[#c89942]/40 flex items-center justify-between gap-2"
+           style="background:#f5e7b8;">
+        <span class="font-serif text-base font-bold text-[#0a3520]">Year</span>
+        <span class="flex items-center gap-1.5 text-[9px] uppercase text-[#c89942] font-semibold">
+          <% stat_cols.each do |col| %>
+            <span class="font-mono <%= col[:w] %> text-right"><%= col[:label] %></span>
+          <% end %>
+        </span>
+      </div>
+
+      <% @tournament_records.sort_by { |r| -r.tournament.year }.each do |r| %>
+        <%= link_to tournament_path(r.tournament),
+                    class: "flex items-center justify-between gap-2 px-3 py-1.5 border-b border-[#c89942]/15 last:border-b-0 hover:bg-[#f5e7b8] transition text-[#0a3520]" do %>
+          <span class="flex items-center gap-2 min-w-0">
+            <span class="font-serif font-bold tabular-nums shrink-0"><%= r.tournament.year %></span>
+            <% if r.has_award? %>
+              <span class="flex items-center gap-1.5 min-w-0">
+                <span class="text-[#c89942] text-xs leading-none shrink-0">★</span>
+                <span class="text-[10px] uppercase tracking-[0.25em] text-[#1c5c3f] font-semibold truncate">
+                  <%= r.awards.map { |a| a.award_type.to_s.humanize }.join(" · ") %>
+                </span>
+              </span>
+            <% end %>
+          </span>
+          <span class="flex items-center gap-1.5 shrink-0">
+            <% stat_cols.each do |col| %>
+              <span class="font-mono text-[11px] tabular-nums <%= col[:w] %> text-right">
+                <% case col[:key]
+                   when :goals %>
+                  <%= r.goals_count.positive? ? r.goals_count : %(<span class="text-[#c89942]/50">&ndash;</span>).html_safe %>
+                <% when :shootout %>
+                  <% if r.shootout_kicks_count.positive? %>
+                    <%= r.shootout_kicks_scored %>/<%= r.shootout_kicks_count %>
+                  <% else %><span class="text-[#c89942]/50">&ndash;</span><% end %>
+                <% end %>
+              </span>
+            <% end %>
+          </span>
+        <% end %>
       <% end %>
     </div>
   </section>
 <% end %>
 
-<%# === Goals lane === %>
-<section class="mb-8">
-  <h2 class="text-lg font-semibold mb-3">Goals scored by <%= @player.name %></h2>
+<%# === Goals lane — filterable by tournament. Pills are stage-selector-style
+       gold caps; "All" is the default. Years are derived from the player's
+       actual goals so we never show an empty filter pill. === %>
+<section class="mb-8" data-controller="goal-filter">
+  <h2 class="font-serif text-xl text-[#f0c870] mb-3 text-center">Goals scored</h2>
+
   <% if @goals.any? %>
+    <% years_with_goals = @goals.map { |g| g.match.tournament.year }.uniq.sort.reverse %>
+
+    <% if years_with_goals.size > 1 %>
+      <div class="flex flex-wrap justify-center gap-2 mb-5">
+        <% [["All", "all"], *years_with_goals.map { |y| [y, y.to_s] }].each_with_index do |(label, value), idx| %>
+          <button type="button"
+                  data-goal-filter-target="pill"
+                  data-year="<%= value %>"
+                  data-active="<%= idx == 0 ? "true" : "false" %>"
+                  data-action="click->goal-filter#select"
+                  class="shrink-0 px-3.5 py-1.5 rounded-full border font-mono text-[11px] tracking-[0.2em] uppercase font-semibold transition cursor-pointer
+                         border-[#c89942]/45 text-[#c89942] hover:border-[#f0c870]
+                         data-[active=true]:bg-[#f0c870] data-[active=true]:text-[#fef0c8]! data-[active=true]:border-[#f0c870] data-[active=true]:shadow-md data-[active=true]:shadow-black/30 data-[active=true]:font-bold"
+                  style="background:rgba(253,246,220,0.06);">
+            <%= label %>
+          </button>
+        <% end %>
+      </div>
+    <% end %>
+
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <% @goals.each do |g| %>
-        <%= render "goals/goal_row", goal: g %>
+        <div data-goal-filter-target="entry" data-year="<%= g.match.tournament.year %>">
+          <%= render "goals/goal_row", goal: g %>
+        </div>
       <% end %>
     </div>
+
+    <p data-goal-filter-target="empty"
+       class="hidden text-sm text-[#c89942] text-center mt-4 uppercase tracking-[0.25em] font-semibold">
+      No goals in this tournament
+    </p>
   <% else %>
-    <p class="text-sm text-stone-500">No goals in our dataset yet.</p>
+    <p class="text-sm text-[#c89942] text-center uppercase tracking-[0.25em] font-semibold">
+      No goals in our dataset yet
+    </p>
   <% end %>
 </section>
+
+</div>
+
