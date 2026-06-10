@@ -22,6 +22,10 @@
   end
 
   # ===== Bracket geometry =====
+  # The bracket adapts to whichever rounds the tournament actually has: 1986+
+  # get the full R16+QF+SF+F layout, 1954–1970 get QF+SF+F, 1930/1982 get
+  # SF+F, 1974/1978 get a synthetic group_outcome+F layout, and tournaments
+  # without even a Final fall through to standalone panels.
   card_w        = 240
   card_h        = 64
   final_w       = 280
@@ -29,30 +33,62 @@
   third_w       = 220
   inter_col_gap = 80
   slot_h        = 84
-  total_h       = slot_h * 8
   left_pad      = 24
 
-  x_r16   = 0
-  x_qf    = x_r16 + card_w + inter_col_gap
-  x_sf    = x_qf  + card_w + inter_col_gap
-  x_f     = x_sf  + card_w + inter_col_gap
-  track_w = x_f + final_w + 32
-  x_third = x_f + (final_w - third_w) / 2.0
+  round_match_count = { round_of_16: 8, quarter_final: 4, semi_final: 2, final: 1, group_outcome: 2 }
+  pillable_rounds   = [:round_of_16, :quarter_final, :semi_final, :final]
 
-  r16_ys  = (0..7).map { |i| (i + 0.5) * slot_h }
-  qf_ys   = (0..3).map { |i| (2 * i + 1) * slot_h }
-  sf_ys   = (0..1).map { |i| (4 * i + 2) * slot_h }
-  final_y = 4 * slot_h
+  if @bracket
+    rounds_in_bracket = @bracket[:rounds]
 
-  third_label_y = final_y + final_h / 2.0 + 22
-  third_card_y  = third_label_y + 14 + 10 + card_h / 2.0
+    total_slots = round_match_count[rounds_in_bracket.first]
+    total_h     = slot_h * total_slots
 
-  offsets = {
-    "round_of_16"   => left_pad - x_r16,
-    "quarter_final" => left_pad - x_qf,
-    "semi_final"    => left_pad - x_sf,
-    "final"         => left_pad - x_f
-  }
+    round_x = {}
+    cur_x   = 0
+    rounds_in_bracket.each do |r|
+      round_x[r] = cur_x
+      cur_x += (r == :final ? final_w : card_w) + inter_col_gap
+    end
+
+    round_ys = rounds_in_bracket.each_with_object({}) do |r, h|
+      count = round_match_count[r]
+      h[r]  = (0...count).map { |i| (i + 0.5) * (total_h.to_f / count) }
+    end
+
+    final_y = round_ys[:final].first
+    track_w = round_x[:final] + final_w + 32
+    x_third = round_x[:final] + (final_w - third_w) / 2.0
+
+    third_label_y = final_y + final_h / 2.0 + 22
+    third_card_y  = third_label_y + 14 + 10 + card_h / 2.0
+
+    panel_h = @bracket[:third_place] ? [total_h, third_card_y + card_h / 2.0 + 16].max : total_h
+
+    cells_by_round = {
+      round_of_16:    @bracket[:round_of_16],
+      quarter_final:  @bracket[:quarters],
+      semi_final:     @bracket[:semis],
+      final:          [@bracket[:final]],
+      group_outcome:  @bracket[:group_outcomes]
+    }
+
+    # When the bracket has only one stage that owns a pill (1974/1978: only F),
+    # panning would push the only other column off-screen on click. Anchor
+    # every pill to the leftmost column so the whole bracket stays visible.
+    bracket_pill_rounds = rounds_in_bracket & pillable_rounds
+    if bracket_pill_rounds.size <= 1
+      fixed_offset = left_pad - round_x[rounds_in_bracket.first]
+      offsets = rounds_in_bracket.each_with_object({}) { |r, h| h[r.to_s] = fixed_offset }
+    else
+      offsets = rounds_in_bracket.each_with_object({}) do |r, h|
+        h[r.to_s] = left_pad - round_x[r]
+      end
+    end
+  else
+    rounds_in_bracket = []
+    offsets           = {}
+  end
 
   connector = ->(from_x, from_y, to_x, to_y) {
     mid_x = (from_x + to_x) / 2.0
@@ -60,8 +96,10 @@
   }
 
   # ===== Panel ordering for the outer slide =====
-  # Each panel occupies one slot in the stagesWrapper. R16/QF/SF/F all share
-  # the bracket panel's slot (inner pan handles which column is visible).
+  # Each panel occupies one slot in the stagesWrapper. Bracket rounds share
+  # the bracket panel's slot (inner pan handles which column is visible);
+  # any knockout rounds that exist but aren't in the bracket (e.g. 1934 QF
+  # replays) get their own standalone panel afterwards.
   stage_indices = {}
   panel_count   = 0
 
@@ -82,16 +120,15 @@
 
   if @bracket
     bracket_idx = panel_count
-    %w[round_of_16 quarter_final semi_final final].each do |s|
-      stage_indices[s] = bracket_idx
-    end
+    rounds_in_bracket.each { |s| stage_indices[s.to_s] = bracket_idx }
     panel_count += 1
-  else
-    %w[round_of_16 quarter_final semi_final final].each do |s|
-      next unless @matches_by_stage[s]&.any?
-      stage_indices[s] = panel_count
-      panel_count += 1
-    end
+  end
+
+  %w[round_of_16 quarter_final semi_final final].each do |s|
+    next if stage_indices.key?(s)
+    next unless @matches_by_stage[s]&.any?
+    stage_indices[s] = panel_count
+    panel_count += 1
   end
 %>
 
@@ -111,7 +148,7 @@
                 data-stage-selector-target="pill"
                 data-stage="<%= stage %>"
                 data-active="<%= idx == 0 ? "true" : "false" %>"
-                data-action="mouseenter->stage-selector#select focus->stage-selector#select click->stage-selector#select"
+                data-action="click->stage-selector#select focus->stage-selector#select"
                 class="group shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full border font-mono text-xs tracking-[0.2em] uppercase font-semibold transition
                        border-[#c89942]/45 text-[#c89942] hover:border-[#f0c870]
                        data-[active=true]:bg-[#f0c870] data-[active=true]:text-[#fef0c8]! data-[active=true]:border-[#f0c870] data-[active=true]:shadow-md data-[active=true]:shadow-black/30 data-[active=true]:font-bold"
@@ -151,13 +188,13 @@
           </div>
         <% end %>
 
-        <%# --- Second group stage (rare) --- %>
-        <% if @matches_by_stage["second_group_stage"]&.any? %>
+        <%# --- Second group stage — same standings-table treatment as the
+             regular group stage. Single-group years (1950) show as one
+             untitled "Final round" table. --- %>
+        <% if @second_group_standings.present? %>
           <div class="shrink-0 w-full">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <% @matches_by_stage["second_group_stage"].each do |m| %>
-                <%= render "tournaments/match_card_compact", match: m %>
-              <% end %>
+            <div class="columns-1 sm:columns-2 gap-4 [column-fill:balance]">
+              <%= render "tournaments/group_cards", standings: @second_group_standings, matches: @second_group_matches %>
             </div>
           </div>
         <% end %>
@@ -173,85 +210,74 @@
           </div>
         <% end %>
 
-        <%# --- Bracket panel (R16 + QF + SF + F together, with internal pan) --- %>
+        <%# --- Bracket panel (any prefix of R16 / QF / SF / F, with internal pan) --- %>
         <% if @bracket %>
+          <% initial_offset = offsets[rounds_in_bracket.first.to_s] %>
           <div class="shrink-0 w-full">
             <div class="overflow-x-hidden rounded-md">
               <div data-stage-selector-target="bracketTrack"
                    class="relative transition-transform duration-500 ease-out"
-                   style="width:<%= track_w %>px; height:<%= total_h %>px; transform: translateX(<%= offsets["round_of_16"] %>px);">
+                   style="width:<%= track_w %>px; height:<%= panel_h %>px; transform: translateX(<%= initial_offset %>px);">
 
-                <%# Connectors %>
+                <%# Connectors — one pass per adjacent pair of bracket rounds,
+                    plus a dashed pair from the SFs down to the third-place card. %>
                 <svg class="absolute inset-0 pointer-events-none"
-                     viewBox="0 0 <%= track_w %> <%= total_h %>"
+                     viewBox="0 0 <%= track_w %> <%= panel_h %>"
                      style="overflow:visible;">
-                  <% @bracket[:quarters].each_with_index do |qf, q_idx| %>
-                    <% [2 * q_idx, 2 * q_idx + 1].each do |r_idx| %>
-                      <% next unless @bracket[:round_of_16][r_idx] && qf %>
-                      <path d="<%= connector.call(x_r16 + card_w, r16_ys[r_idx], x_qf, qf_ys[q_idx]) %>"
-                            stroke="#c89942" stroke-width="1.2" fill="none" opacity="0.7"/>
+                  <% rounds_in_bracket.each_cons(2) do |left, right| %>
+                    <% left_cells  = cells_by_round[left] %>
+                    <% right_cells = cells_by_round[right] %>
+                    <% is_to_final = right == :final %>
+                    <% right_cells.each_with_index do |right_cell, r_idx| %>
+                      <% next unless right_cell %>
+                      <% [2 * r_idx, 2 * r_idx + 1].each do |l_idx| %>
+                        <% next unless left_cells[l_idx] %>
+                        <path d="<%= connector.call(round_x[left] + card_w, round_ys[left][l_idx], round_x[right], round_ys[right][r_idx]) %>"
+                              stroke="<%= is_to_final ? "#f0c870" : "#c89942" %>"
+                              stroke-width="<%= is_to_final ? "1.6" : "1.2" %>"
+                              fill="none"
+                              opacity="<%= is_to_final ? "0.95" : "0.7" %>"/>
+                      <% end %>
                     <% end %>
                   <% end %>
-                  <% @bracket[:semis].each_with_index do |sf, s_idx| %>
-                    <% [2 * s_idx, 2 * s_idx + 1].each do |q_idx| %>
-                      <% next unless @bracket[:quarters][q_idx] && sf %>
-                      <path d="<%= connector.call(x_qf + card_w, qf_ys[q_idx], x_sf, sf_ys[s_idx]) %>"
-                            stroke="#c89942" stroke-width="1.2" fill="none" opacity="0.7"/>
-                    <% end %>
-                  <% end %>
-                  <% [0, 1].each do |s_idx| %>
-                    <% next unless @bracket[:semis][s_idx] %>
-                    <path d="<%= connector.call(x_sf + card_w, sf_ys[s_idx], x_f, final_y) %>"
-                          stroke="#f0c870" stroke-width="1.6" fill="none" opacity="0.95"/>
-                  <% end %>
-                  <% if @bracket[:third_place] %>
-                    <% sf_right = x_sf + card_w %>
+                  <% if @bracket[:third_place] && rounds_in_bracket.include?(:semi_final) %>
+                    <% sf_right = round_x[:semi_final] + card_w %>
                     <% conv_y   = third_label_y - 10 %>
                     <% center_x = x_third + third_w / 2.0 %>
-                    <path d="M <%= sf_right %> <%= sf_ys[0] + card_h / 2.0 %>
+                    <path d="M <%= sf_right %> <%= round_ys[:semi_final][0] + card_h / 2.0 %>
                              V <%= conv_y %>
                              H <%= center_x %>"
                           stroke="#c89942" stroke-width="0.9" stroke-dasharray="3 3" fill="none" opacity="0.45"/>
-                    <path d="M <%= sf_right %> <%= sf_ys[1] + card_h / 2.0 %>
+                    <path d="M <%= sf_right %> <%= round_ys[:semi_final][1] + card_h / 2.0 %>
                              V <%= conv_y %>"
                           stroke="#c89942" stroke-width="0.9" stroke-dasharray="3 3" fill="none" opacity="0.45"/>
                   <% end %>
                 </svg>
 
-                <%# R16 cards %>
-                <% @bracket[:round_of_16].each_with_index do |m, i| %>
-                  <% next unless m %>
-                  <div class="absolute transition-all duration-300 ease-out origin-center"
-                       data-stage="round_of_16"
-                       style="left:<%= x_r16 %>px; top:<%= r16_ys[i] - card_h / 2.0 %>px; width:<%= card_w %>px;">
-                    <%= render "tournaments/bracket_card", match: m %>
-                  </div>
-                <% end %>
-
-                <%# QF cards %>
-                <% @bracket[:quarters].each_with_index do |m, i| %>
-                  <% next unless m %>
-                  <div class="absolute transition-all duration-300 ease-out origin-center"
-                       data-stage="quarter_final"
-                       style="left:<%= x_qf %>px; top:<%= qf_ys[i] - card_h / 2.0 %>px; width:<%= card_w %>px;">
-                    <%= render "tournaments/bracket_card", match: m %>
-                  </div>
-                <% end %>
-
-                <%# SF cards %>
-                <% @bracket[:semis].each_with_index do |m, i| %>
-                  <% next unless m %>
-                  <div class="absolute transition-all duration-300 ease-out origin-center"
-                       data-stage="semi_final"
-                       style="left:<%= x_sf %>px; top:<%= sf_ys[i] - card_h / 2.0 %>px; width:<%= card_w %>px;">
-                    <%= render "tournaments/bracket_card", match: m %>
-                  </div>
+                <%# Non-final round cards — render a bracket_card, bye_card, or
+                    group_outcome_card depending on what's in the slot. %>
+                <% rounds_in_bracket.each do |round_name| %>
+                  <% next if round_name == :final %>
+                  <% cells_by_round[round_name].each_with_index do |cell, i| %>
+                    <% next unless cell %>
+                    <div class="absolute transition-all duration-300 ease-out origin-center"
+                         data-stage="<%= round_name %>"
+                         style="left:<%= round_x[round_name] %>px; top:<%= round_ys[round_name][i] - card_h / 2.0 %>px; width:<%= card_w %>px;">
+                      <% if round_name == :group_outcome %>
+                        <%= render "tournaments/group_outcome_card", node: cell %>
+                      <% elsif cell.is_a?(Hash) && cell[:bye] %>
+                        <%= render "tournaments/bye_card", team: cell[:team] %>
+                      <% else %>
+                        <%= render "tournaments/bracket_card", match: cell %>
+                      <% end %>
+                    </div>
+                  <% end %>
                 <% end %>
 
                 <%# Final card %>
                 <div class="absolute transition-all duration-300 ease-out origin-center"
                      data-stage="final"
-                     style="left:<%= x_f %>px; top:<%= final_y - final_h / 2.0 %>px; width:<%= final_w %>px;">
+                     style="left:<%= round_x[:final] %>px; top:<%= final_y - final_h / 2.0 %>px; width:<%= final_w %>px;">
                   <%= render "tournaments/final_card", match: @bracket[:final] %>
                 </div>
 
@@ -271,36 +297,39 @@
               </div>
             </div>
           </div>
-        <% else %>
-          <%# --- Standalone knockout panels (older tournaments without full bracket) --- %>
-          <% %w[round_of_16 quarter_final semi_final final].each do |stage| %>
-            <% next unless @matches_by_stage[stage]&.any? %>
-            <div class="shrink-0 w-full">
-              <% if stage == "final" %>
-                <% final_match = @matches_by_stage["final"].first %>
-                <% third_match = @matches_by_stage["third_place_playoff"]&.first %>
-                <div class="flex flex-col md:flex-row md:items-start gap-6">
-                  <div class="md:w-1/2 max-w-md mx-auto md:mx-0 w-full">
-                    <%= render "tournaments/final_card", match: final_match %>
-                  </div>
-                  <% if third_match %>
-                    <div class="md:w-1/2 max-w-md w-full">
-                      <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mb-2">
-                        Third place
-                      </div>
-                      <%= render "tournaments/match_card_compact", match: third_match %>
+        <% end %>
+
+        <%# --- Standalone knockout panels: any rounds that exist but aren't in
+             the bracket (e.g. 1934/1938 QFs with replays, or 1974/1978 finals
+             reached straight from a second group stage). --- %>
+        <% %w[round_of_16 quarter_final semi_final final].each do |stage| %>
+          <% next if @bracket && @bracket[:rounds].include?(stage.to_sym) %>
+          <% next unless @matches_by_stage[stage]&.any? %>
+          <div class="shrink-0 w-full">
+            <% if stage == "final" %>
+              <% final_match = @matches_by_stage["final"].first %>
+              <% third_match = @matches_by_stage["third_place_playoff"]&.first %>
+              <div class="flex flex-col md:flex-row md:items-start gap-6">
+                <div class="md:w-1/2 max-w-md mx-auto md:mx-0 w-full">
+                  <%= render "tournaments/final_card", match: final_match %>
+                </div>
+                <% if third_match %>
+                  <div class="md:w-1/2 max-w-md w-full">
+                    <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mb-2">
+                      Third place
                     </div>
-                  <% end %>
-                </div>
-              <% else %>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <% @matches_by_stage[stage].each do |m| %>
-                    <%= render "tournaments/match_card_compact", match: m %>
-                  <% end %>
-                </div>
-              <% end %>
-            </div>
-          <% end %>
+                    <%= render "tournaments/match_card_compact", match: third_match %>
+                  </div>
+                <% end %>
+              </div>
+            <% else %>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <% @matches_by_stage[stage].each do |m| %>
+                  <%= render "tournaments/match_card_compact", match: m %>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
         <% end %>
       </div>
     </div>

@@ -1,0 +1,17 @@
+<%# Synthetic bracket node for tournaments whose Final was contested by the
+    winners of two second-group-stage groups (1974, 1978). Reads as a result
+    rather than a match — the eyebrow names the group, the row names the team. %>
+<% short_name = ->(team) { team.fifa_code.presence || team.country_code.to_s.upcase.presence || team.name[0..2].upcase } %>
+
+<%= link_to team_path(node[:team]),
+            class: "block rounded border border-[#c89942]/70 hover:border-[#f0c870] shadow-md shadow-black/20 overflow-hidden",
+            style: "background:#fdf6dc;" do %>
+  <div class="text-[9px] uppercase tracking-[0.25em] text-[#c89942] font-semibold text-center border-b border-[#c89942]/25 py-0.5"
+       style="background:#f5e7b8;">
+    Group <%= node[:group_letter] %> winner
+  </div>
+  <div class="flex items-center gap-1.5 px-2 py-2 text-[#0a3520] font-semibold">
+    <span class="text-sm shrink-0 leading-none"><%= node[:team].flag_emoji %></span>
+    <span class="font-mono text-[10px] tracking-wider truncate flex-1"><%= short_name.call(node[:team]) %></span>
+  </div>
+<% end %>

@@ -1,0 +1,14 @@
+<%# Placeholder slot used when a team walked over instead of playing a round
+    (1938 R16: Sweden, after Austria's withdrawal). Distinct dashed border +
+    muted parchment so it doesn't read as a missing match. %>
+<% short_name = ->(team) { team.fifa_code.presence || team.country_code.to_s.upcase.presence || team.name[0..2].upcase } %>
+
+<%= link_to team_path(team),
+            class: "block rounded border border-dashed border-[#c89942]/55 hover:border-[#f0c870] overflow-hidden",
+            style: "background:rgba(253,246,220,0.55);" do %>
+  <div class="flex items-center gap-1.5 px-2 py-1.5 text-[#6e7d6e]">
+    <span class="text-sm shrink-0 leading-none opacity-80"><%= team.flag_emoji %></span>
+    <span class="font-mono text-[10px] tracking-wider truncate flex-1"><%= short_name.call(team) %></span>
+    <span class="font-mono text-[9px] uppercase tracking-[0.2em] text-[#c89942] shrink-0">Bye</span>
+  </div>
+<% end %>
