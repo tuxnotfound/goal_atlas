@@ -14,15 +14,6 @@
 <%# === Filter groups === %>
 <section class="space-y-4 mb-8">
   <div>
-    <div class="text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">Goal type</div>
-    <div class="flex flex-wrap gap-2">
-      <% @goal_types.each do |t| %>
-        <%= link_to t.humanize, goal_filter_url(:type, t), class: goal_filter_chip_class(goal_filter_active?(:type, t)) %>
-      <% end %>
-    </div>
-  </div>
-
-  <div>
     <div class="text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">Stage</div>
     <div class="flex flex-wrap gap-2">
       <% @stages.each do |s| %>
@@ -30,17 +21,6 @@
       <% end %>
     </div>
   </div>
-
-  <% if @tags.any? %>
-    <div>
-      <div class="text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2">Tag</div>
-      <div class="flex flex-wrap gap-2">
-        <% @tags.each do |tag| %>
-          <%= link_to tag.name, goal_filter_url(:tag, tag.slug), class: goal_filter_chip_class(goal_filter_active?(:tag, tag.slug)) %>
-        <% end %>
-      </div>
-    </div>
-  <% end %>
 
   <% if @tournaments.size > 1 %>
     <div>
