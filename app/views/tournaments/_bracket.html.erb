@@ -1,0 +1,160 @@
+<%# Split knockout bracket — left half flows right, right half flows left, Final centered.
+    The Final is the visual centerpiece (bigger + brighter gold).
+    Third-place playoff sits directly below the Final in the same column. %>
+<%
+  card_h        = 60
+  col_w         = 142
+  final_w       = 200
+  final_h       = 150         # matches actual rendered final_card height (header + 2 padded rows + footer)
+  third_label_h = 14
+  gap           = 22
+  center_gap    = 18
+  slot_h        = 130
+  total_h       = slot_h * 4
+  header_h      = 28
+
+  x_r16_l = 0
+  x_qf_l  = col_w + gap
+  x_sf_l  = 2 * col_w + 2 * gap
+  x_final = 3 * col_w + 2 * gap + center_gap
+  x_sf_r  = x_final + final_w + center_gap
+  x_qf_r  = x_sf_r + col_w + gap
+  x_r16_r = x_qf_r + col_w + gap
+  total_w = x_r16_r + col_w
+
+  r16_ys  = [0.5, 1.5, 2.5, 3.5].map { |i| i * slot_h }
+  qf_ys   = [1.0, 3.0].map { |i| i * slot_h }
+  sf_y    = 2 * slot_h
+  final_y = sf_y
+
+  # Third-place card sits beneath the Final inside the same column,
+  # leaving a comfortable gap below the (taller) Final card.
+  final_bottom_y = sf_y + final_h / 2.0
+  third_label_y  = final_bottom_y + 22
+  third_y        = third_label_y + third_label_h + 10 + card_h / 2.0
+
+  card_top = ->(cy, h = card_h) { cy - h / 2.0 }
+
+  connector = ->(from_x, from_y, to_x, to_y) {
+    mid_x = (from_x + to_x) / 2.0
+    "M #{from_x} #{from_y} H #{mid_x} V #{to_y} H #{to_x}"
+  }
+%>
+
+<section class="mb-10">
+  <div class="flex items-baseline justify-between mb-2">
+    <h2 class="font-serif text-2xl text-[#f0c870]">Knockout bracket</h2>
+    <span class="text-[10px] uppercase tracking-[0.25em] text-[#c89942] font-semibold hidden sm:inline">
+      Round of 16 &rarr; Final
+    </span>
+  </div>
+
+  <div class="overflow-x-auto pb-2">
+    <div class="relative mx-auto" style="width:<%= total_w %>px; height:<%= total_h + header_h %>px;">
+
+      <%# Column headers %>
+      <% [
+           [x_r16_l, col_w,   "Round of 16"],
+           [x_qf_l,  col_w,   "Quarter-finals"],
+           [x_sf_l,  col_w,   "Semi-finals"],
+           [x_final, final_w, "Final"],
+           [x_sf_r,  col_w,   "Semi-finals"],
+           [x_qf_r,  col_w,   "Quarter-finals"],
+           [x_r16_r, col_w,   "Round of 16"]
+         ].each do |xpos, w, label| %>
+        <div class="absolute text-[10px] uppercase tracking-[0.25em] text-[#c89942] font-semibold text-center"
+             style="left:<%= xpos %>px; top:0; width:<%= w %>px;">
+          <%= label %>
+        </div>
+      <% end %>
+
+      <%# Connectors %>
+      <svg class="absolute pointer-events-none"
+           style="left:0; top:<%= header_h %>px; width:<%= total_w %>px; height:<%= total_h %>px; overflow:visible;"
+           viewBox="0 0 <%= total_w %> <%= total_h %>">
+
+        <%# ----- Left half: R16 → QF → SF → Final ----- %>
+        <% [[0,1,0], [2,3,1]].each do |i, j, q| %>
+          <path d="<%= connector.call(x_r16_l + col_w, r16_ys[i], x_qf_l, qf_ys[q]) %>"
+                stroke="#c89942" stroke-width="1.2" fill="none" opacity="0.75"/>
+          <path d="<%= connector.call(x_r16_l + col_w, r16_ys[j], x_qf_l, qf_ys[q]) %>"
+                stroke="#c89942" stroke-width="1.2" fill="none" opacity="0.75"/>
+        <% end %>
+        <path d="<%= connector.call(x_qf_l + col_w, qf_ys[0], x_sf_l, sf_y) %>"
+              stroke="#c89942" stroke-width="1.2" fill="none" opacity="0.75"/>
+        <path d="<%= connector.call(x_qf_l + col_w, qf_ys[1], x_sf_l, sf_y) %>"
+              stroke="#c89942" stroke-width="1.2" fill="none" opacity="0.75"/>
+        <path d="M <%= x_sf_l + col_w %> <%= sf_y %> H <%= x_final %>"
+              stroke="#f0c870" stroke-width="1.6" fill="none" opacity="0.95"/>
+
+        <%# ----- Right half: R16 ← QF ← SF ← Final (mirrored) ----- %>
+        <% [[0,1,0], [2,3,1]].each do |i, j, q| %>
+          <path d="<%= connector.call(x_r16_r, r16_ys[i], x_qf_r + col_w, qf_ys[q]) %>"
+                stroke="#c89942" stroke-width="1.2" fill="none" opacity="0.75"/>
+          <path d="<%= connector.call(x_r16_r, r16_ys[j], x_qf_r + col_w, qf_ys[q]) %>"
+                stroke="#c89942" stroke-width="1.2" fill="none" opacity="0.75"/>
+        <% end %>
+        <path d="<%= connector.call(x_qf_r, qf_ys[0], x_sf_r + col_w, sf_y) %>"
+              stroke="#c89942" stroke-width="1.2" fill="none" opacity="0.75"/>
+        <path d="<%= connector.call(x_qf_r, qf_ys[1], x_sf_r + col_w, sf_y) %>"
+              stroke="#c89942" stroke-width="1.2" fill="none" opacity="0.75"/>
+        <path d="M <%= x_final + final_w %> <%= final_y %> H <%= x_sf_r %>"
+              stroke="#f0c870" stroke-width="1.6" fill="none" opacity="0.95"/>
+
+        <%# ----- Dashed "losers' path" from SF cards converging above the Third place label ----- %>
+        <% if @bracket[:third_place] %>
+          <% sf_bottom     = sf_y + card_h / 2.0 %>
+          <% convergence_y = third_label_y - 8 %>
+          <% center_x      = x_final + final_w / 2.0 %>
+          <path d="M <%= x_sf_l + col_w / 2.0 %> <%= sf_bottom %>
+                   V <%= convergence_y %>
+                   H <%= center_x %>"
+                stroke="#c89942" stroke-width="0.9" stroke-dasharray="3 3" fill="none" opacity="0.45"/>
+          <path d="M <%= x_sf_r + col_w / 2.0 %> <%= sf_bottom %>
+                   V <%= convergence_y %>"
+                stroke="#c89942" stroke-width="0.9" stroke-dasharray="3 3" fill="none" opacity="0.45"/>
+        <% end %>
+      </svg>
+
+      <%# ===== Match cards ===== %>
+      <% render_card = ->(match, xpos, w, cy, h = card_h, partial = "tournaments/bracket_card") { %>
+        <div class="absolute"
+             style="left:<%= xpos %>px; top:<%= header_h + card_top.call(cy, h) %>px; width:<%= w %>px;">
+          <%= render partial, match: match %>
+        </div>
+      <% } %>
+
+      <%# Left half cards %>
+      <% @bracket[:left][:round_of_16].each_with_index do |m, i| %>
+        <% render_card.call(m, x_r16_l, col_w, r16_ys[i]) if m %>
+      <% end %>
+      <% @bracket[:left][:quarters].each_with_index do |m, i| %>
+        <% render_card.call(m, x_qf_l, col_w, qf_ys[i]) if m %>
+      <% end %>
+      <% render_card.call(@bracket[:left][:semi], x_sf_l, col_w, sf_y) if @bracket[:left][:semi] %>
+
+      <%# Final — bigger, brighter gold styling %>
+      <% render_card.call(@bracket[:final], x_final, final_w, final_y, final_h, "tournaments/final_card") %>
+
+      <%# Third-place playoff — sits inside the Final column below the Final %>
+      <% if @bracket[:third_place] %>
+        <% third_w = col_w %>
+        <% x_third = x_final + (final_w - third_w) / 2.0 %>
+        <div class="absolute text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold text-center"
+             style="left:<%= x_third %>px; top:<%= header_h + third_label_y %>px; width:<%= third_w %>px;">
+          Third place
+        </div>
+        <% render_card.call(@bracket[:third_place], x_third, third_w, third_y) %>
+      <% end %>
+
+      <%# Right half cards %>
+      <% render_card.call(@bracket[:right][:semi], x_sf_r, col_w, sf_y) if @bracket[:right][:semi] %>
+      <% @bracket[:right][:quarters].each_with_index do |m, i| %>
+        <% render_card.call(m, x_qf_r, col_w, qf_ys[i]) if m %>
+      <% end %>
+      <% @bracket[:right][:round_of_16].each_with_index do |m, i| %>
+        <% render_card.call(m, x_r16_r, col_w, r16_ys[i]) if m %>
+      <% end %>
+    </div>
+  </div>
+</section>

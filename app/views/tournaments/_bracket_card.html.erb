@@ -1,0 +1,39 @@
+<%# Compact match card used inside the knockout bracket. %>
+<% short_name = ->(team) { team.fifa_code.presence || team.country_code.to_s.upcase.presence || team.name[0..2].upcase } %>
+<% home_winner = match.winner_team_id == match.home_team_id %>
+<% away_winner = match.winner_team_id == match.away_team_id %>
+<% home_score = match.home_score_after_extra_time || match.home_score %>
+<% away_score = match.away_score_after_extra_time || match.away_score %>
+<% pens = match.result_type == "after_penalties" %>
+
+<%= link_to match_path(match),
+            class: "block rounded shadow-md shadow-black/20 hover:shadow-lg transition border border-[#c89942]/70 hover:border-[#f0c870] overflow-hidden",
+            style: "background:#fdf6dc;" do %>
+  <%# Home row %>
+  <div class="flex items-center gap-1.5 px-2 py-1.5 border-b border-[#c89942]/25
+              <%= home_winner ? "font-semibold text-[#0a3520]" : "text-[#6e7d6e]" %>">
+    <span class="text-sm shrink-0 leading-none"><%= match.home_team.flag_emoji %></span>
+    <span class="font-mono text-[10px] tracking-wider truncate flex-1"><%= short_name.call(match.home_team) %></span>
+    <span class="font-mono text-xs tabular-nums shrink-0">
+      <%= home_score %><% if pens && match.home_penalties %><span class="text-[#c89942]">&nbsp;(<%= match.home_penalties %>)</span><% end %>
+    </span>
+  </div>
+
+  <%# Away row %>
+  <div class="flex items-center gap-1.5 px-2 py-1.5
+              <%= away_winner ? "font-semibold text-[#0a3520]" : "text-[#6e7d6e]" %>">
+    <span class="text-sm shrink-0 leading-none"><%= match.away_team.flag_emoji %></span>
+    <span class="font-mono text-[10px] tracking-wider truncate flex-1"><%= short_name.call(match.away_team) %></span>
+    <span class="font-mono text-xs tabular-nums shrink-0">
+      <%= away_score %><% if pens && match.away_penalties %><span class="text-[#c89942]">&nbsp;(<%= match.away_penalties %>)</span><% end %>
+    </span>
+  </div>
+
+  <%# Result-type stamp (AET / Pens) — sits as a thin footer when present %>
+  <% if (label = result_type_short(match)) %>
+    <div class="text-[9px] uppercase tracking-widest text-[#c89942] text-center border-t border-[#c89942]/25 py-0.5"
+         style="background:#f5e7b8;">
+      <%= label %>
+    </div>
+  <% end %>
+<% end %>

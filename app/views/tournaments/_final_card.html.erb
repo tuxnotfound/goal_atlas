@@ -1,0 +1,45 @@
+<%# Larger, more prominent Final match card — the bracket centerpiece. %>
+<% short_name = ->(team) { team.fifa_code.presence || team.country_code.to_s.upcase.presence || team.name[0..2].upcase } %>
+<% home_winner = match.winner_team_id == match.home_team_id %>
+<% away_winner = match.winner_team_id == match.away_team_id %>
+<% home_score = match.home_score_after_extra_time || match.home_score %>
+<% away_score = match.away_score_after_extra_time || match.away_score %>
+<% pens = match.result_type == "after_penalties" %>
+
+<%= link_to match_path(match),
+            class: "block rounded-md shadow-xl shadow-black/40 hover:shadow-2xl transition border-2 border-[#c89942] hover:border-[#f0c870] overflow-hidden",
+            style: "background:#fef0c8;" do %>
+  <%# Header band — "FINAL" in deep green on bright gold %>
+  <div class="text-[11px] uppercase tracking-[0.45em] text-[#0a3520] font-bold text-center py-1.5 border-b border-[#c89942]"
+       style="background:#f0c870;">
+    Final
+  </div>
+
+  <%# Home row %>
+  <div class="flex items-center gap-2 px-3 py-3 border-b border-[#c89942]/40
+              <%= home_winner ? "font-bold text-[#0a3520]" : "text-[#6e7d6e]" %>">
+    <span class="text-xl shrink-0 leading-none"><%= match.home_team.flag_emoji %></span>
+    <span class="font-mono text-xs tracking-wider truncate flex-1"><%= short_name.call(match.home_team) %></span>
+    <span class="font-mono text-lg tabular-nums shrink-0">
+      <%= home_score %><% if pens && match.home_penalties %><span class="text-[#c89942] text-sm">&nbsp;(<%= match.home_penalties %>)</span><% end %>
+    </span>
+  </div>
+
+  <%# Away row %>
+  <div class="flex items-center gap-2 px-3 py-3
+              <%= away_winner ? "font-bold text-[#0a3520]" : "text-[#6e7d6e]" %>">
+    <span class="text-xl shrink-0 leading-none"><%= match.away_team.flag_emoji %></span>
+    <span class="font-mono text-xs tracking-wider truncate flex-1"><%= short_name.call(match.away_team) %></span>
+    <span class="font-mono text-lg tabular-nums shrink-0">
+      <%= away_score %><% if pens && match.away_penalties %><span class="text-[#c89942] text-sm">&nbsp;(<%= match.away_penalties %>)</span><% end %>
+    </span>
+  </div>
+
+  <%# Result-type stamp on the bottom band %>
+  <% if (label = result_type_short(match)) %>
+    <div class="text-[10px] uppercase tracking-[0.3em] text-[#0a3520] text-center border-t border-[#c89942] py-1 font-semibold"
+         style="background:#f0c870;">
+      <%= label %>
+    </div>
+  <% end %>
+<% end %>

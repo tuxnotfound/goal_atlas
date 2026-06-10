@@ -1,0 +1,46 @@
+<%# Compact match card used inside the tournament-view stage panels.
+    Shows a date header above two team rows with flags + names + scores. %>
+<% short_name = ->(team) { team.fifa_code.presence || team.country_code.to_s.upcase.presence || team.name[0..2].upcase } %>
+<% home_winner = match.winner_team_id == match.home_team_id %>
+<% away_winner = match.winner_team_id == match.away_team_id %>
+<% home_score  = match.home_score_after_extra_time || match.home_score %>
+<% away_score  = match.away_score_after_extra_time || match.away_score %>
+<% pens = match.result_type == "after_penalties" %>
+<% suffix = result_type_short(match) %>
+
+<%= link_to match_path(match),
+            class: "block rounded-md border border-[#c89942]/55 hover:border-[#f0c870] shadow-md shadow-black/20 hover:shadow-lg transition overflow-hidden",
+            style: "background:#fdf6dc;" do %>
+  <%# Date header %>
+  <div class="flex items-center justify-between px-3 py-1.5 border-b border-[#c89942]/30 text-[10px] uppercase tracking-[0.2em]"
+       style="background:#f5e7b8;">
+    <span class="text-[#1c5c3f] font-semibold">
+      <%= match.date.strftime("%a, %-d %b") %>
+    </span>
+    <% if suffix %>
+      <span class="text-[#c89942] font-semibold"><%= suffix %></span>
+    <% end %>
+  </div>
+
+  <%# Home row %>
+  <div class="flex items-center gap-2 px-3 py-2 border-b border-[#c89942]/20
+              <%= home_winner ? "font-bold text-[#0a3520]" : "text-[#6e7d6e]" %>">
+    <span class="text-base shrink-0 leading-none"><%= match.home_team.flag_emoji %></span>
+    <span class="font-mono text-[11px] tracking-wider w-9 shrink-0 text-[#c89942]"><%= short_name.call(match.home_team) %></span>
+    <span class="font-serif text-sm truncate flex-1"><%= match.home_team.name %></span>
+    <span class="font-mono text-base tabular-nums shrink-0">
+      <%= home_score %><% if pens && match.home_penalties %><span class="text-[#c89942] text-xs">&nbsp;(<%= match.home_penalties %>)</span><% end %>
+    </span>
+  </div>
+
+  <%# Away row %>
+  <div class="flex items-center gap-2 px-3 py-2
+              <%= away_winner ? "font-bold text-[#0a3520]" : "text-[#6e7d6e]" %>">
+    <span class="text-base shrink-0 leading-none"><%= match.away_team.flag_emoji %></span>
+    <span class="font-mono text-[11px] tracking-wider w-9 shrink-0 text-[#c89942]"><%= short_name.call(match.away_team) %></span>
+    <span class="font-serif text-sm truncate flex-1"><%= match.away_team.name %></span>
+    <span class="font-mono text-base tabular-nums shrink-0">
+      <%= away_score %><% if pens && match.away_penalties %><span class="text-[#c89942] text-xs">&nbsp;(<%= match.away_penalties %>)</span><% end %>
+    </span>
+  </div>
+<% end %>
