@@ -184,7 +184,9 @@
     <% years_with_goals = @goals.map { |g| g.match.tournament.year }.uniq.sort.reverse %>
 
     <% if years_with_goals.size > 1 %>
-      <div class="flex flex-wrap justify-center gap-2 mb-5">
+      <%# Hanging-indent: container has pl-20, first pill negates with -ml-20
+          so wrapped rows align under the second pill of the first row. %>
+      <div class="flex flex-wrap justify-start gap-2 mb-5 pl-20">
         <% [["All", "all"], *years_with_goals.map { |y| [y, y.to_s] }].each_with_index do |(label, value), idx| %>
           <button type="button"
                   data-goal-filter-target="pill"
@@ -193,7 +195,8 @@
                   data-action="click->goal-filter#select"
                   class="shrink-0 px-3.5 py-1.5 rounded-full border font-mono text-[11px] tracking-[0.2em] uppercase font-semibold transition cursor-pointer
                          border-[#c89942]/45 text-[#c89942] hover:border-[#f0c870]
-                         data-[active=true]:bg-[#f0c870] data-[active=true]:text-[#fef0c8]! data-[active=true]:border-[#f0c870] data-[active=true]:shadow-md data-[active=true]:shadow-black/30 data-[active=true]:font-bold"
+                         data-[active=true]:bg-[#f0c870] data-[active=true]:text-[#fef0c8]! data-[active=true]:border-[#f0c870] data-[active=true]:shadow-md data-[active=true]:shadow-black/30 data-[active=true]:font-bold
+                         <%= "-ml-20" if idx.zero? %>"
                   style="background:rgba(253,246,220,0.06);">
             <%= label %>
           </button>
