@@ -40,8 +40,37 @@ class Search
       ).ordered_by_year.limit(LIMIT_PER_TYPE).to_a
   end
 
+  # Matches a game by either team's name (trigram fuzzy). Most-recent first.
+  # When the fuzzy team match returned more than one team, head-to-head games
+  # between any two of those teams float to the top of the list — searching
+  # "germ" with both Germany and West Germany returned surfaces their direct
+  # meetings first, then other games involving either side.
+  def matches
+    return @matches ||= [] if too_short?
+    @matches ||= begin
+      fetched = Match.kept
+                     .joins("INNER JOIN teams home_t ON home_t.id = matches.home_team_id")
+                     .joins("INNER JOIN teams away_t ON away_t.id = matches.away_team_id")
+                     .where("home_t.name % :q OR away_t.name % :q", q: query)
+                     .includes(:home_team, :away_team, :tournament, :stadium)
+                     .order(date: :desc)
+                     .limit(LIMIT_PER_TYPE)
+                     .to_a
+
+      matched_team_ids = teams.map(&:id).to_set
+      if matched_team_ids.size >= 2
+        head_to_head, others = fetched.partition do |m|
+          matched_team_ids.include?(m.home_team_id) && matched_team_ids.include?(m.away_team_id)
+        end
+        head_to_head + others
+      else
+        fetched
+      end
+    end
+  end
+
   def total
-    teams.size + players.size + stadiums.size + tournaments.size
+    teams.size + players.size + stadiums.size + tournaments.size + matches.size
   end
 
   def empty?

@@ -1,110 +1,162 @@
 <% content_for :title, "Search — The Goal Atlas" %>
 
-<header class="mb-6">
-  <h1 class="text-2xl font-bold tracking-tight mb-1">
-    <% if @query.present? %>
-      Results for "<%= @query %>"
-    <% else %>
-      Search
+<div class="max-w-6xl mx-auto">
+
+  <header class="mb-8 text-center">
+    <h1 class="font-serif text-4xl font-bold text-[#f0c870]">
+      <% if @query.present? %>
+        Results for &ldquo;<%= @query %>&rdquo;
+      <% else %>
+        Search
+      <% end %>
+    </h1>
+    <% if @query.present? && !@results.empty? %>
+      <p class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mt-2">
+        <%= pluralize(@results.total, "match") %> across the archive
+      </p>
     <% end %>
-  </h1>
-  <% if @query.present? && !@results.empty? %>
-    <p class="text-sm text-stone-500"><%= @results.total %> matches across the archive</p>
-  <% end %>
-</header>
+  </header>
 
-<% if @query.blank? %>
-  <div class="bg-white border border-stone-200 rounded-lg p-6 text-sm text-stone-600">
-    Type a team, player, tournament, or stadium name into the search bar above. Fuzzy matching is on,
-    so partial spellings work: <em>"maradon"</em> finds Maradona, <em>"qatar"</em> finds the 2022 World Cup.
-  </div>
+  <% if @query.blank? %>
+    <div class="rounded border border-[#c89942]/60 shadow-md shadow-black/20 p-6 text-sm text-[#1c5c3f] max-w-2xl mx-auto"
+         style="background:#fdf6dc;">
+      Type a team, player, tournament, match-up, or stadium name into the search bar above.
+      Fuzzy matching is on, so partial spellings work: <em class="text-[#0a3520]">&ldquo;maradon&rdquo;</em> finds Maradona,
+      <em class="text-[#0a3520]">&ldquo;qatar&rdquo;</em> finds the 2022 World Cup.
+    </div>
 
-<% elsif @results.too_short? %>
-  <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-    Please enter at least two characters.
-  </div>
+  <% elsif @results.too_short? %>
+    <div class="rounded border border-[#c89942]/60 shadow-md shadow-black/20 p-4 text-sm text-[#1c5c3f] text-center max-w-2xl mx-auto"
+         style="background:#fdf6dc;">
+      Please enter at least two characters.
+    </div>
 
-<% elsif @results.empty? %>
-  <div class="bg-white border border-stone-200 rounded-lg p-6 text-sm text-stone-600">
-    No results found for <strong><%= @query %></strong>. Check spelling, or try a partial name.
-  </div>
+  <% elsif @results.empty? %>
+    <div class="rounded border border-[#c89942]/60 shadow-md shadow-black/20 p-6 text-sm text-[#1c5c3f] text-center max-w-2xl mx-auto"
+         style="background:#fdf6dc;">
+      No results found for <strong class="text-[#0a3520]"><%= @query %></strong>. Check spelling, or try a partial name.
+    </div>
 
-<% else %>
-  <% if @results.tournaments.any? %>
-    <section class="mb-8">
-      <h2 class="text-lg font-semibold mb-3">Tournaments <span class="text-stone-400 font-normal">· <%= @results.tournaments.size %></span></h2>
-      <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <% @results.tournaments.each do |t| %>
-          <li>
-            <%= link_to tournament_path(t), class: "block bg-white border border-stone-200 rounded-md p-3 hover:border-emerald-400 transition" do %>
-              <div class="font-medium"><%= t.name %></div>
-              <div class="text-xs text-stone-500 mt-0.5">
-                <%= t.host_countries.join(", ") %>
-                <% if t.winner_team %>· Won by <%= t.winner_team.name %><% end %>
-              </div>
-            <% end %>
-          </li>
-        <% end %>
-      </ul>
-    </section>
-  <% end %>
-
-  <% if @results.teams.any? %>
-    <section class="mb-8">
-      <h2 class="text-lg font-semibold mb-3">Teams <span class="text-stone-400 font-normal">· <%= @results.teams.size %></span></h2>
-      <ul class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        <% @results.teams.each do |team| %>
-          <li>
-            <%= link_to team_path(team), class: "flex items-center gap-2 bg-white border border-stone-200 rounded-md p-3 hover:border-emerald-400 transition" do %>
-              <span class="text-xl"><%= team.flag_emoji %></span>
-              <span>
-                <span class="font-medium"><%= team.name %></span>
-                <span class="block text-xs text-stone-500"><%= team.fifa_code %></span>
+  <% else %>
+    <% if @results.teams.any? %>
+      <section class="mb-10">
+        <h2 class="font-serif text-xl text-[#f0c870] mb-4 text-center">
+          Teams <span class="text-[#c89942]/70 text-base font-normal">· <%= @results.teams.size %></span>
+        </h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <% @results.teams.each do |team| %>
+            <%= link_to team_path(team),
+                        class: "flex items-center gap-3 rounded border border-[#c89942]/60 shadow-md shadow-black/15 hover:border-[#f0c870] hover:shadow-lg transition px-3 py-2.5",
+                        style: "background:#fdf6dc;" do %>
+              <span class="text-3xl leading-none shrink-0"><%= team.flag_emoji %></span>
+              <span class="min-w-0">
+                <span class="block font-serif font-bold text-[#0a3520] truncate"><%= team.name %></span>
+                <% if team.fifa_code.present? %>
+                  <span class="block text-[10px] uppercase tracking-[0.25em] text-[#c89942] font-semibold">
+                    <%= team.fifa_code %>
+                  </span>
+                <% end %>
               </span>
             <% end %>
-          </li>
-        <% end %>
-      </ul>
-    </section>
-  <% end %>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
 
-  <% if @results.players.any? %>
-    <section class="mb-8">
-      <h2 class="text-lg font-semibold mb-3">Players <span class="text-stone-400 font-normal">· <%= @results.players.size %></span></h2>
-      <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <% @results.players.each do |player| %>
-          <li>
-            <%= link_to player_path(player), class: "flex items-center gap-3 bg-white border border-stone-200 rounded-md p-3 hover:border-emerald-400 transition" do %>
-              <%= render "players/avatar", player: player, size: 40 %>
-              <div class="flex-1 min-w-0">
-                <div class="font-medium truncate"><%= player.name %></div>
-                <div class="text-xs text-stone-500 mt-0.5">
-                  <% if player.nationality_team %>
-                    <%= player.nationality_team.flag_emoji %> <%= player.nationality_team.name %>
+    <% if @results.matches.any? %>
+      <section class="mb-10">
+        <h2 class="font-serif text-xl text-[#f0c870] mb-4 text-center">
+          Matches <span class="text-[#c89942]/70 text-base font-normal">· <%= @results.matches.size %></span>
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <% @results.matches.each do |match| %>
+            <%= render "matches/card", match: match %>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <% if @results.tournaments.any? %>
+      <section class="mb-10">
+        <h2 class="font-serif text-xl text-[#f0c870] mb-4 text-center">
+          Tournaments <span class="text-[#c89942]/70 text-base font-normal">· <%= @results.tournaments.size %></span>
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <% @results.tournaments.each do |t| %>
+            <%= link_to tournament_path(t),
+                        class: "block rounded border border-[#c89942]/60 shadow-md shadow-black/15 hover:border-[#f0c870] hover:shadow-lg transition overflow-hidden",
+                        style: "background:#fdf6dc;" do %>
+              <div class="px-4 py-3">
+                <div class="flex items-baseline justify-between gap-2 mb-1">
+                  <span class="font-serif font-bold text-[#0a3520] text-2xl tabular-nums leading-none">
+                    <%= t.year %>
+                  </span>
+                  <% if t.winner_team %>
+                    <span class="flex items-center gap-1 text-[10px] uppercase tracking-[0.25em] text-[#c89942] font-bold shrink-0">
+                      <span class="text-[#c89942]">★</span>
+                      <span class="text-base leading-none"><%= t.winner_team.flag_emoji %></span>
+                    </span>
                   <% end %>
-                  <% if player.position %>· <%= player.position.humanize %><% end %>
+                </div>
+                <div class="text-[10px] uppercase tracking-[0.25em] text-[#c89942]/85 font-semibold truncate">
+                  <%= t.host_countries.join(" · ") %>
                 </div>
               </div>
             <% end %>
-          </li>
-        <% end %>
-      </ul>
-    </section>
-  <% end %>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
 
-  <% if @results.stadiums.any? %>
-    <section class="mb-8">
-      <h2 class="text-lg font-semibold mb-3">Stadiums <span class="text-stone-400 font-normal">· <%= @results.stadiums.size %></span></h2>
-      <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <% @results.stadiums.each do |stadium| %>
-          <li class="bg-white border border-stone-200 rounded-md p-3">
-            <div class="font-medium"><%= stadium.name %></div>
-            <div class="text-xs text-stone-500 mt-0.5">
-              <%= [stadium.city, stadium.country].compact.join(", ") %>
+    <% if @results.players.any? %>
+      <section class="mb-10">
+        <h2 class="font-serif text-xl text-[#f0c870] mb-4 text-center">
+          Players <span class="text-[#c89942]/70 text-base font-normal">· <%= @results.players.size %></span>
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <% @results.players.each do |player| %>
+            <%= link_to player_path(player),
+                        class: "flex items-center gap-3 rounded border border-[#c89942]/60 shadow-md shadow-black/15 hover:border-[#f0c870] hover:shadow-lg transition px-3 py-2.5",
+                        style: "background:#fdf6dc;" do %>
+              <div class="ring-2 ring-[#c89942]/60 rounded-md overflow-hidden shrink-0" style="width:48px;">
+                <%= render "players/avatar", player: player, size: 48, height: 64, radius: "0" %>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-serif font-bold text-[#0a3520] truncate"><%= player.name %></div>
+                <div class="text-[10px] uppercase tracking-[0.25em] text-[#c89942] font-semibold mt-0.5 flex items-center gap-1.5 truncate">
+                  <% if player.nationality_team %>
+                    <span class="text-sm leading-none"><%= player.nationality_team.flag_emoji %></span>
+                    <span><%= player.nationality_team.name %></span>
+                  <% end %>
+                  <% if player.position %>
+                    <span class="text-[#c89942]/60">·</span>
+                    <span><%= player.position.humanize %></span>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <% if @results.stadiums.any? %>
+      <section class="mb-10">
+        <h2 class="font-serif text-xl text-[#f0c870] mb-4 text-center">
+          Stadiums <span class="text-[#c89942]/70 text-base font-normal">· <%= @results.stadiums.size %></span>
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <% @results.stadiums.each do |stadium| %>
+            <div class="rounded border border-[#c89942]/60 shadow-md shadow-black/15 px-4 py-3"
+                 style="background:#fdf6dc;">
+              <div class="font-serif font-bold text-[#0a3520] truncate"><%= stadium.name %></div>
+              <div class="text-[10px] uppercase tracking-[0.25em] text-[#c89942] font-semibold mt-1 truncate">
+                <%= [stadium.city, stadium.country].compact.join(" · ") %>
+              </div>
             </div>
-          </li>
-        <% end %>
-      </ul>
-    </section>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
   <% end %>
-<% end %>
+</div>
