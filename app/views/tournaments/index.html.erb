@@ -1,8 +1,8 @@
-<% content_for :title, "World Cups — Goal Atlas" %>
+<% content_for :title, "World Cups — The Goal Atlas" %>
 
 <div class="mb-8">
-  <h1 class="text-3xl font-bold tracking-tight">World Cups</h1>
-  <p class="text-stone-500 mt-1">
+  <h1 class="font-serif text-4xl font-bold text-[#f0c870]">World Cups</h1>
+  <p class="text-[#8aa898] mt-1">
     <% if @tournaments.any? %>
       <%= pluralize(@tournaments.size, "edition") %> in the archive.
     <% else %>
@@ -15,23 +15,24 @@
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
     <% @tournaments.each do |tournament| %>
       <%= link_to tournament_path(tournament),
-                  class: "block bg-white border border-stone-200 rounded-lg p-5 hover:shadow-sm hover:border-emerald-300 transition" do %>
-        <div class="text-xs uppercase tracking-wider text-emerald-700 font-semibold mb-2">
+                  class: "block border border-[#c89942]/60 rounded-md p-5 shadow-md shadow-black/20 hover:border-[#f0c870] hover:shadow-lg transition",
+                  style: "background:#fdf6dc;" do %>
+        <div class="text-[10px] uppercase tracking-[0.25em] text-[#c89942] font-semibold mb-2">
           <%= tournament.host_countries.join(", ") %>
         </div>
-        <h2 class="text-2xl font-bold tracking-tight mb-3"><%= tournament.year %></h2>
+        <h2 class="font-serif text-3xl font-bold text-[#0a3520] tabular-nums mb-3"><%= tournament.year %></h2>
 
         <% if tournament.winner_team %>
-          <div class="flex items-center gap-2 text-sm">
+          <div class="flex items-center gap-2 text-sm text-[#1c5c3f]">
             <span class="text-2xl"><%= tournament.winner_team.flag_emoji %></span>
-            <span class="text-stone-600">
-              <strong class="text-stone-900"><%= tournament.winner_team.name %></strong> won
+            <span>
+              <strong class="text-[#0a3520] font-semibold"><%= tournament.winner_team.name %></strong> won
             </span>
           </div>
         <% end %>
 
         <% if tournament.total_matches || tournament.total_goals %>
-          <div class="text-xs text-stone-400 mt-3 tabular-nums">
+          <div class="text-xs text-[#c89942] mt-3 tabular-nums">
             <%= [
               tournament.total_matches && "#{tournament.total_matches} matches",
               tournament.total_goals && "#{tournament.total_goals} goals"
