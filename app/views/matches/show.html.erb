@@ -1,137 +1,199 @@
 <% content_for :title, "#{@match.home_team.name} #{@match.home_score}-#{@match.away_score} #{@match.away_team.name} — The Goal Atlas" %>
 
+<div class="max-w-6xl mx-auto">
+
 <nav class="text-sm mb-6">
-  <%= link_to "← All matches", matches_path, class: "text-stone-500 hover:text-emerald-700 transition" %>
+  <%= link_to "← All matches", matches_path,
+              class: "text-[#c89942] hover:text-[#f0c870] tracking-wider uppercase text-xs font-semibold transition" %>
 </nav>
 
-<%# === Scoreboard === %>
-<section class="bg-white border border-stone-200 rounded-lg p-6 mb-6">
-  <div class="flex items-baseline justify-between mb-4">
-    <span class="text-xs uppercase tracking-wider text-emerald-700 font-semibold">
-      <%= stage_label(@match) %> ·
-      <%= link_to @match.tournament.name, tournament_path(@match.tournament),
-                  class: "hover:underline" %>
-    </span>
-    <span class="text-sm text-stone-500">
-      <%= @match.date.strftime("%B %-d, %Y") %>
-    </span>
+<%# === Match hero — parchment card mirroring the tournament hero: gold border,
+       world map watermark, soft paper texture, decorative inner frame. The score
+       is the visual anchor; team names flank it, stage/date/venue trail beneath
+       in serif eyebrows. === %>
+<% home_winner = @match.winner_team_id == @match.home_team_id %>
+<% away_winner = @match.winner_team_id == @match.away_team_id %>
+<% map_asset   = Rails.public_path.join("hero_world_map.png") %>
+
+<section class="relative overflow-hidden rounded-lg border-2 border-[#c89942]/70 shadow-xl shadow-black/30 mb-10"
+         style="background:#f5e7b8;">
+
+  <%# World map watermark %>
+  <div class="absolute inset-0 pointer-events-none <%= File.exist?(map_asset) ? "opacity-20" : "text-[#1c5c3f] opacity-[0.1]" %>">
+    <% if File.exist?(map_asset) %>
+      <%= image_tag "/hero_world_map.png", alt: "", class: "w-full h-full object-cover" %>
+    <% else %>
+      <%= render "tournaments/world_map_svg" %>
+    <% end %>
   </div>
 
-  <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-6">
-    <div class="text-right">
-      <div class="text-5xl mb-2"><%= @match.home_team.flag_emoji %></div>
-      <%= link_to @match.home_team.name, team_path(@match.home_team),
-                  class: "text-lg font-semibold hover:text-emerald-700 transition" %>
-      <% if @match.winner_team_id == @match.home_team_id %>
-        <div class="text-xs uppercase tracking-wide text-emerald-700 font-bold mt-1">Winner</div>
-      <% end %>
-    </div>
+  <%# Soft paper texture %>
+  <div class="absolute inset-0 pointer-events-none opacity-60"
+       style="background:
+              radial-gradient(circle at 25% 15%, rgba(200,153,66,0.22), transparent 55%),
+              radial-gradient(circle at 80% 80%, rgba(28,92,63,0.16), transparent 50%),
+              radial-gradient(circle at 60% 40%, rgba(255,255,255,0.45), transparent 45%);"></div>
 
-    <div class="text-center font-mono">
-      <div class="text-5xl font-bold tabular-nums">
-        <%= @match.home_score %>&ndash;<%= @match.away_score %>
+  <%# Decorative double-rule frame %>
+  <div class="absolute inset-3 border border-[#c89942]/40 rounded pointer-events-none"></div>
+
+  <div class="relative p-6 md:p-10">
+
+    <%# Eyebrow: stage · tournament link, date on the right. %>
+    <div class="flex items-baseline justify-between gap-3 mb-6 flex-wrap">
+      <div class="text-[11px] tracking-[0.35em] uppercase text-[#c89942] font-semibold">
+        <%= stage_label(@match) %>
+        <span class="text-[#c89942]/60">·</span>
+        <%= link_to @match.tournament.name, tournament_path(@match.tournament),
+                    class: "hover:text-[#f0c870] transition" %>
       </div>
-      <% if @match.home_score_after_extra_time %>
-        <div class="text-sm text-stone-500 mt-2">
-          AET <%= @match.home_score_after_extra_time %>&ndash;<%= @match.away_score_after_extra_time %>
+      <div class="font-serif italic text-base md:text-lg text-[#1c5c3f]">
+        <%= @match.date.strftime("%-d %b %Y") %>
+      </div>
+    </div>
+
+    <%# Scoreline: flag/name | score | flag/name. %>
+    <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-4 md:gap-10">
+
+      <div class="text-right min-w-0">
+        <div class="text-5xl md:text-6xl leading-none mb-3"><%= @match.home_team.flag_emoji %></div>
+        <%= link_to team_path(@match.home_team),
+                    class: "block font-serif font-bold text-xl md:text-2xl leading-tight hover:text-[#f0c870] transition #{home_winner ? "text-[#0a3520]" : "text-[#6e7d6e]"}" do %>
+          <%= @match.home_team.name %>
+        <% end %>
+        <% if home_winner %>
+          <div class="text-[9px] uppercase tracking-[0.35em] text-[#c89942] font-bold mt-2 flex items-center justify-end gap-1.5">
+            <span>Winner</span><span>★</span>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="text-center">
+        <div class="font-serif font-bold text-[#0a3520] tabular-nums leading-none"
+             style="font-size:clamp(3.75rem, 10vw, 6.5rem); letter-spacing:-0.02em;">
+          <%= @match.home_score %><span class="text-[#c89942]">&ndash;</span><%= @match.away_score %>
         </div>
-      <% end %>
-      <% if @match.home_penalties %>
-        <div class="text-sm text-stone-500">
-          Pens <%= @match.home_penalties %>&ndash;<%= @match.away_penalties %>
+        <% if @match.home_score_after_extra_time %>
+          <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-bold mt-3 tabular-nums">
+            AET&nbsp;<%= @match.home_score_after_extra_time %>&ndash;<%= @match.away_score_after_extra_time %>
+          </div>
+        <% end %>
+        <% if @match.home_penalties %>
+          <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-bold mt-1 tabular-nums">
+            Pens&nbsp;<%= @match.home_penalties %>&ndash;<%= @match.away_penalties %>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="text-left min-w-0">
+        <div class="text-5xl md:text-6xl leading-none mb-3"><%= @match.away_team.flag_emoji %></div>
+        <%= link_to team_path(@match.away_team),
+                    class: "block font-serif font-bold text-xl md:text-2xl leading-tight hover:text-[#f0c870] transition #{away_winner ? "text-[#0a3520]" : "text-[#6e7d6e]"}" do %>
+          <%= @match.away_team.name %>
+        <% end %>
+        <% if away_winner %>
+          <div class="text-[9px] uppercase tracking-[0.35em] text-[#c89942] font-bold mt-2 flex items-center gap-1.5">
+            <span>★</span><span>Winner</span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Venue + attendance trailer — flex row that wraps under small widths. %>
+    <div class="mt-8 pt-5 border-t border-[#c89942]/30 flex flex-wrap justify-center gap-x-8 gap-y-3 text-[11px] uppercase tracking-[0.25em] text-[#c89942] font-semibold">
+      <div class="flex items-baseline gap-1.5">
+        <span class="text-[#c89942]/70">Stadium</span>
+        <span class="text-[#1c5c3f] font-serif font-bold normal-case tracking-normal text-sm"><%= @match.stadium.name %></span>
+      </div>
+      <div class="flex items-baseline gap-1.5">
+        <span class="text-[#c89942]/70">City</span>
+        <span class="text-[#1c5c3f] font-serif font-bold normal-case tracking-normal text-sm"><%= @match.stadium.city %></span>
+      </div>
+      <% if @match.attendance %>
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-[#c89942]/70">Attendance</span>
+          <span class="text-[#1c5c3f] font-serif font-bold tabular-nums normal-case tracking-normal text-sm"><%= number_with_delimiter(@match.attendance) %></span>
         </div>
       <% end %>
     </div>
+  </div>
 
-    <div class="text-left">
-      <div class="text-5xl mb-2"><%= @match.away_team.flag_emoji %></div>
-      <%= link_to @match.away_team.name, team_path(@match.away_team),
-                  class: "text-lg font-semibold hover:text-emerald-700 transition" %>
-      <% if @match.winner_team_id == @match.away_team_id %>
-        <div class="text-xs uppercase tracking-wide text-emerald-700 font-bold mt-1">Winner</div>
-      <% end %>
-    </div>
-  </div>
-</section>
-
-<%# === Metadata strip === %>
-<dl class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-sm">
-  <div>
-    <dt class="text-stone-500 text-xs uppercase tracking-wide">Stadium</dt>
-    <dd class="font-medium mt-1"><%= @match.stadium.name %></dd>
-  </div>
-  <div>
-    <dt class="text-stone-500 text-xs uppercase tracking-wide">City</dt>
-    <dd class="font-medium mt-1"><%= @match.stadium.city %></dd>
-  </div>
-  <% if @match.attendance %>
-    <div>
-      <dt class="text-stone-500 text-xs uppercase tracking-wide">Attendance</dt>
-      <dd class="font-medium mt-1 tabular-nums"><%= number_with_delimiter(@match.attendance) %></dd>
+  <%# Goals timeline — shelf at the foot of the hero, mirroring the group-card
+      fixtures list. Background stays transparent so the world-map watermark
+      continues underneath; a faint gold tint overlay marks it as a distinct
+      shelf without hiding the map. Each row links to the goal page so deeper
+      detail (highlight clip, tags) is one click away. %>
+  <% if @goals.any? %>
+    <div class="relative border-t border-[#c89942]/40">
+      <div class="absolute inset-0 pointer-events-none bg-[#c89942]/10"></div>
+      <div class="relative px-6 md:px-10 py-4">
+        <div class="text-[10px] uppercase tracking-[0.35em] text-[#c89942] font-semibold text-center mb-3">
+          Goals
+        </div>
+        <ol>
+          <% @goals.each do |goal| %>
+            <li>
+              <%= link_to goal_path(goal),
+                          class: "flex items-center gap-3 py-2 border-t border-[#c89942]/15 first:border-t-0 hover:bg-[#f5e7b8] transition rounded" do %>
+                <span class="font-mono text-[11px] tabular-nums w-14 text-right text-[#c89942] shrink-0">
+                  <%= goal_minute_label(goal) %>
+                </span>
+                <span class="text-lg leading-none shrink-0"><%= goal.scoring_team.flag_emoji %></span>
+                <span class="flex-1 min-w-0">
+                  <span class="block font-serif font-bold text-[#0a3520] text-sm truncate leading-tight">
+                    <%= goal.player.name %>
+                  </span>
+                </span>
+                <span class="font-mono text-[11px] tabular-nums w-14 text-left shrink-0 font-semibold text-[#1c5c3f]">
+                  <%= goal.score_after_goal_home %>&ndash;<%= goal.score_after_goal_away %>
+                </span>
+              <% end %>
+            </li>
+          <% end %>
+        </ol>
+      </div>
     </div>
   <% end %>
-  <div>
-    <dt class="text-stone-500 text-xs uppercase tracking-wide">Stage</dt>
-    <dd class="font-medium mt-1"><%= stage_label(@match) %></dd>
-  </div>
-</dl>
+
+  <%# Penalty shootout — second parchment shelf, only when the match went to
+      pens. Same transparent-with-gold-tint treatment as the goals shelf so
+      the map watermark continues underneath. %>
+  <% if @shootout_kicks.any? %>
+    <div class="relative border-t border-[#c89942]/40">
+      <div class="absolute inset-0 pointer-events-none bg-[#c89942]/10"></div>
+      <div class="relative px-6 md:px-10 py-4">
+        <div class="text-[10px] uppercase tracking-[0.35em] text-[#c89942] font-semibold text-center mb-3">
+          Penalty shootout
+        </div>
+        <ol>
+          <% @shootout_kicks.each do |kick| %>
+            <li class="flex items-center gap-3 px-6 sm:px-10 py-2 border-t border-[#c89942]/15 first:border-t-0">
+              <span class="font-mono text-[11px] tabular-nums w-8 text-right text-[#c89942] shrink-0">
+                <%= kick.kick_order %>
+              </span>
+              <span class="text-lg leading-none shrink-0"><%= kick.team.flag_emoji %></span>
+              <span class="min-w-0">
+                <span class="block font-serif font-bold text-[#0a3520] text-sm truncate leading-tight">
+                  <%= kick.player.name %>
+                </span>
+                <% if kick.notes.present? %>
+                  <span class="block text-[10px] uppercase tracking-[0.2em] text-[#c89942]/80 truncate">
+                    <%= kick.notes %>
+                  </span>
+                <% end %>
+              </span>
+              <span class="font-mono text-[10px] uppercase tracking-[0.25em] shrink-0 font-bold <%= kick.was_scored ? "text-[#1c5c3f]" : "text-[#6e7d6e]" %>">
+                <%= kick.was_scored ? "Goal" : "Miss" %>
+              </span>
+            </li>
+          <% end %>
+        </ol>
+      </div>
+    </div>
+  <% end %>
+</section>
 
 <%= render "video_links/video_links", links: @video_links %>
 
-<%# === Goal timeline === %>
-<% if @goals.any? %>
-  <section class="mb-8">
-    <h2 class="text-lg font-semibold mb-3">Goals</h2>
-    <ol class="border border-stone-200 rounded-lg bg-white divide-y divide-stone-100">
-      <% @goals.each do |goal| %>
-        <li>
-          <%= link_to goal_path(goal), class: "p-3 flex items-center gap-4 hover:bg-stone-50 transition" do %>
-            <div class="font-mono text-sm tabular-nums w-20 text-stone-600 shrink-0">
-              <%= goal_minute_label(goal) %>
-            </div>
-            <div class="text-2xl shrink-0"><%= goal.scoring_team.flag_emoji %></div>
-            <div class="flex-1 min-w-0">
-              <div class="font-medium truncate"><%= goal.player.name %></div>
-              <div class="text-xs text-stone-500">
-                <%= goal.goal_type.humanize %>
-                <% if goal.body_part %> · <%= goal.body_part.humanize %><% end %>
-              </div>
-              <% if goal.goal_tags.any? %>
-                <div class="mt-1"><%= render "goals/tag_chips", goal: goal %></div>
-              <% end %>
-            </div>
-            <div class="font-mono text-sm tabular-nums text-stone-500 shrink-0">
-              <%= goal.score_after_goal_home %>&ndash;<%= goal.score_after_goal_away %>
-            </div>
-          <% end %>
-        </li>
-      <% end %>
-    </ol>
-  </section>
-<% end %>
+</div>
 
-<%# === Shootout === %>
-<% if @shootout_kicks.any? %>
-  <section class="mb-8">
-    <h2 class="text-lg font-semibold mb-3">Penalty shootout</h2>
-    <ol class="border border-stone-200 rounded-lg bg-white divide-y divide-stone-100">
-      <% @shootout_kicks.each do |kick| %>
-        <li class="p-3 flex items-center gap-4">
-          <div class="font-mono text-sm tabular-nums w-8 text-stone-400 shrink-0">
-            <%= kick.kick_order %>
-          </div>
-          <div class="text-2xl shrink-0"><%= kick.team.flag_emoji %></div>
-          <div class="flex-1 min-w-0">
-            <div class="font-medium truncate"><%= kick.player.name %></div>
-            <% if kick.notes.present? %>
-              <div class="text-xs text-stone-500 truncate"><%= kick.notes %></div>
-            <% end %>
-          </div>
-          <div class="shrink-0 text-sm font-semibold <%= kick.was_scored ? "text-emerald-700" : "text-stone-400" %>">
-            <%= kick.was_scored ? "GOAL" : "MISS" %>
-          </div>
-        </li>
-      <% end %>
-    </ol>
-  </section>
-<% end %>
