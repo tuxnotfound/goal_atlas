@@ -285,6 +285,7 @@ class VideoLinkScout
     title = result[:title].to_s.downcase
     return false if title.empty?
     return false if title_mentions_other_wc_year?(title, goal.match.tournament.year)
+    return false if url_is_blacklisted?(result[:url])
 
     keywords = [
       goal.player.name,
@@ -305,11 +306,22 @@ class VideoLinkScout
     title = result[:title].to_s.downcase
     return false if title.empty?
     return false if title_mentions_other_wc_year?(title, match.tournament.year)
+    return false if url_is_blacklisted?(result[:url])
 
     home_keys = [match.home_team.name, match.home_team.fifa_code].compact.map(&:downcase)
     away_keys = [match.away_team.name, match.away_team.fifa_code].compact.map(&:downcase)
 
     home_keys.any? { |k| title.include?(k) } && away_keys.any? { |k| title.include?(k) }
+  end
+
+  # A URL is "blacklisted" if every VideoLink we've ever made for it has been
+  # discarded (i.e., we already determined it's wrong content and removed it).
+  # This prevents the autofetch loop where YouTube keeps returning the same
+  # top result and we keep re-attaching the same wrong video.
+  def url_is_blacklisted?(url)
+    return false if url.blank?
+    VideoLink.where(url: url).exists? &&
+      !VideoLink.where(url: url, discarded_at: nil).exists?
   end
 
   # True iff the title contains any WC year other than `expected_year`. A

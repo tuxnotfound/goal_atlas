@@ -408,6 +408,94 @@ namespace :video_links do
   # non-YouTube link wouldn't help the auto-timestamp flow.
   YOUTUBE_URL_LIKE = ["%youtube.com%", "%youtu.be%"].freeze
 
+  desc "Find a YouTube short-highlight for every match in a tournament that doesn't have one yet. Skips matches that already have a kept-active YouTube link or any admin-validated content. Uses VideoLinkScout's blacklist-aware fallback chain. Propagates the found URL to all of the match's goals. Idempotent. Usage: rake video_links:fill_youtube_highlights[<year>,<mode=dry|apply>]"
+  task :fill_youtube_highlights, [:year, :mode] => :environment do |_t, args|
+    abort "Usage: rake video_links:fill_youtube_highlights[<year>,<mode>]" unless args[:year]
+    mode = (args[:mode] || "dry").downcase
+    abort "mode must be 'dry' or 'apply'" unless %w[dry apply].include?(mode)
+
+    tournament = Tournament.find_by!(year: args[:year].to_i)
+    matches = tournament.matches.kept.order(:match_number).to_a
+    puts "Tournament: #{tournament.year} #{tournament.name}  |  Mode: #{mode.upcase}"
+    puts "Total matches: #{matches.size}"
+    puts ""
+
+    scout = VideoLinkScout.new
+    filled = already_yt = validated_skipped = not_found = quota_dead = 0
+
+    matches.each_with_index do |match, idx|
+      label = "M#{match.match_number} #{match.home_team.fifa_code} v #{match.away_team.fifa_code}"
+
+      # Skip if a kept-active YouTube link already exists at match level
+      if match.video_links.kept.active
+              .where("url LIKE ? OR url LIKE ?", "%youtube.com%", "%youtu.be%").exists?
+        already_yt += 1; next
+      end
+
+      # Skip if admin has validated any link (match or goal level) for this match
+      has_validated = match.video_links.kept.where.not(timestamp_validated_at: nil).exists? ||
+                      Goal.kept.where(match_id: match.id).joins(:video_links)
+                          .where(video_links: { discarded_at: nil })
+                          .where.not(video_links: { timestamp_validated_at: nil }).exists?
+      if has_validated
+        puts "#{label}: SKIPPED (admin-validated)"
+        validated_skipped += 1; next
+      end
+
+      begin
+        result = scout.find_best_short_match_video_with_fallback(match)
+      rescue VideoLinkScout::RateLimited => e
+        puts "#{label}: 429 — STOPPING (#{e.message[0,80]})"
+        quota_dead = idx
+        break
+      end
+
+      if result.nil?
+        puts "#{label}: no YouTube short clip found (with fallback + blacklist)"
+        not_found += 1
+        sleep RESCOUT_SLEEP_SECONDS unless idx == matches.size - 1
+        next
+      end
+
+      new_url = result[:url]
+      puts "#{label}: → #{new_url}"
+
+      if mode == "apply"
+        ActiveRecord::Base.transaction do
+          match.video_links.create!(
+            url:           new_url,
+            source:        result[:source],
+            confidence:    :unverified,
+            language:      "en",
+            is_active:     true,
+            embed_allowed: result.fetch(:embed_allowed, false),
+          )
+          Goal.kept.where(match_id: match.id).each do |goal|
+            # Don't double-propagate if the goal already has a YouTube link
+            next if goal.video_links.kept.active
+                        .where("url LIKE ? OR url LIKE ?", "%youtube.com%", "%youtu.be%").exists?
+            goal.video_links.create!(
+              url:               new_url,
+              source:            result[:source],
+              confidence:        :unverified,
+              language:          "en",
+              is_active:         true,
+              embed_allowed:     result.fetch(:embed_allowed, false),
+              starts_at_seconds: nil,
+            )
+          end
+        end
+      end
+
+      filled += 1
+      sleep RESCOUT_SLEEP_SECONDS unless idx == matches.size - 1
+    end
+
+    puts ""
+    puts "Filled: #{filled} | Already had YouTube: #{already_yt} | Admin-validated skip: #{validated_skipped} | Not found: #{not_found} | Quota-stopped at idx #{quota_dead || "n/a"}"
+    puts "(Dry run — no DB changes. Re-run with mode=apply to commit.)" if mode == "dry"
+  end
+
   desc "For each goal in a tournament whose match has a YouTube video_link, attach that same video to the goal (if the goal lacks a YouTube link). Idempotent. Usage: rake video_links:propagate_match_videos_to_goals[<year>,<mode=dry|apply>]"
   task :propagate_match_videos_to_goals, [:year, :mode] => :environment do |_t, args|
     abort "Usage: rake video_links:propagate_match_videos_to_goals[<year>,<mode=dry|apply>]" unless args[:year]
