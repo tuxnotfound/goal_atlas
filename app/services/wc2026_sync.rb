@@ -209,14 +209,15 @@ class Wc2026Sync
 
     info = api_id ? player_details_cached(api_id) : nil
 
-    # Step 2 — name fallback. Collect every name variant we can think of and
-    # try matching each (diacritic + case insensitive). First hit wins.
+    # Step 2 — name fallback. Only forms that uniquely identify the player —
+    # the short broadcast name ("L. Messi"), api-football's curated `name`
+    # ("Cristiano Ronaldo"), and the firstname+lastname computed form. We
+    # intentionally exclude firstname alone because common compound first
+    # names like "Roberto Carlos" collide with unrelated legends.
     names_to_try = [
       short_name,
       info&.dig(:api_name),
-      info&.dig(:computed_name),
-      info&.dig(:firstname),
-      info && [info[:firstname], info[:lastname_full]].compact.join(" ")
+      info&.dig(:computed_name)
     ].compact.map(&:to_s).map(&:strip).reject(&:empty?).uniq
 
     names_to_try.each do |n|
@@ -240,25 +241,18 @@ class Wc2026Sync
     ).tap { @stats[:players_created] += 1 }
   end
 
-  # Diacritic + case insensitive match. Prefers a same-nationality-team match
-  # over a cross-team one to defuse "Carlos Sánchez" / "C. Sánchez" collisions
-  # across different national sides.
+  # Diacritic + case insensitive name match scoped to the player's
+  # nationality_team plus teamless players. Cross-team matches are NEVER
+  # returned — "Roberto Carlos" in BRA must not be matched as MEX's
+  # "Roberto Alvarado" when api-football lists his firstname as "Roberto
+  # Carlos". If the player isn't in the right team's roster (or teamless)
+  # we create a new row.
   def lookup_player_by_name(name, nationality_team)
     target = normalize_name(name)
-    return nil if target.empty?
+    return nil if target.empty? || nationality_team.nil?
 
-    if nationality_team
-      in_team = Player.kept.where(nationality_team_id: [nationality_team.id, nil]).to_a
-      hit = in_team.find { |p| normalize_name(p.name) == target }
-      return hit if hit
-    end
-
-    # Last-resort scan: narrow with SQL LIKE on the first word so we don't
-    # pull the entire 1500-row players table for an in-memory comparison.
-    first_word = name.to_s.strip.split.first.to_s.downcase
-    return nil if first_word.length < 3
-    Player.kept.where("LOWER(name) LIKE ?", "%#{first_word}%").limit(50).to_a
-          .find { |p| normalize_name(p.name) == target }
+    candidates = Player.kept.where(nationality_team_id: [nationality_team.id, nil]).to_a
+    candidates.find { |p| normalize_name(p.name) == target }
   end
 
   # Strip diacritics + lowercase + squeeze whitespace. "García Hernández" →
