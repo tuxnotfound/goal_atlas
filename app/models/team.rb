@@ -26,6 +26,13 @@ class Team < ApplicationRecord
   scope :active_in_year, ->(year) {
     where("(active_from IS NULL OR active_from <= ?) AND (active_until IS NULL OR active_until >= ?)", year, year)
   }
+
+  # IDs to aggregate on this team's public page: self + any predecessor teams
+  # that have us as their successor. E.g. Germany.family_ids returns
+  # [GER, FRG, GDR] so the team page shows the unified history.
+  def family_ids
+    [id, *predecessor_teams.kept.pluck(:id)].uniq
+  end
 end
 
 # == Schema Information

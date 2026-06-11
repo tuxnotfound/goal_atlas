@@ -4,13 +4,23 @@ class TeamsController < ApplicationController
   def show
     @team = Team.kept.friendly.find(params[:slug])
 
-    @goals = Goal.kept.by_team(@team)
+    # Predecessor teams (e.g. West Germany) redirect to their canonical
+    # successor so /teams/west-germany funnels into /teams/germany. The
+    # successor page aggregates the predecessor's history below.
+    if @team.successor_team
+      redirect_to team_path(@team.successor_team), status: :moved_permanently
+      return
+    end
+
+    team_ids = @team.family_ids
+
+    @goals = Goal.kept.where(scoring_team_id: team_ids)
                  .includes(:player, match: [:home_team, :away_team, :tournament])
                  .order("matches.date DESC, goals.minute ASC")
                  .references(:match)
 
     @matches = Match.kept
-                    .where("home_team_id = :id OR away_team_id = :id", id: @team.id)
+                    .where("home_team_id IN (:ids) OR away_team_id IN (:ids)", ids: team_ids)
                     .includes(:home_team, :away_team, :tournament, :stadium)
                     .order(date: :desc)
 
@@ -18,7 +28,7 @@ class TeamsController < ApplicationController
 
     @team_awards = TournamentAward
                      .joins(:player)
-                     .where(players: { nationality_team_id: @team.id })
+                     .where(players: { nationality_team_id: team_ids })
                      .includes(:tournament, :player)
                      .order("tournaments.year DESC, award_type ASC")
                      .group_by(&:tournament)
@@ -27,7 +37,7 @@ class TeamsController < ApplicationController
     # across every World Cup. Powers the parchment podium on the team page.
     @top_scorers = Player
       .joins(goals: :match)
-      .where(goals:   { scoring_team_id: @team.id, discarded_at: nil })
+      .where(goals:   { scoring_team_id: team_ids, discarded_at: nil })
       .where(matches: { discarded_at: nil })
       .group("players.id")
       .order(Arel.sql("COUNT(goals.id) DESC, players.name ASC"))

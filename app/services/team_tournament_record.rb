@@ -18,12 +18,16 @@ class TeamTournamentRecord
     @matches    = matches
   end
 
-  # Returns an Array<TeamTournamentRecord> for every tournament the team has
-  # any match in, ordered chronologically. Issues two queries total regardless
-  # of how many tournaments the team appeared in.
+  # Returns an Array<TeamTournamentRecord> for every tournament the team —
+  # or any of its predecessor teams (West Germany under Germany, etc.) —
+  # appeared in. Each row's `team` is the era-appropriate family member so
+  # finish_label and per-match score arithmetic stay accurate.
   def self.for_team(team)
+    family_ids = team.family_ids
+    family_by_id = Team.where(id: family_ids).index_by(&:id)
+
     matches = Match.kept
-                   .where("home_team_id = :id OR away_team_id = :id", id: team.id)
+                   .where("home_team_id IN (:ids) OR away_team_id IN (:ids)", ids: family_ids)
                    .includes(:tournament)
                    .ordered_by_date
                    .to_a
@@ -31,7 +35,12 @@ class TeamTournamentRecord
     by_tournament = matches.group_by(&:tournament)
     by_tournament
       .sort_by { |t, _| t.year }
-      .map { |tournament, ms| new(team, tournament, matches: ms) }
+      .map do |tournament, ms|
+        # Identify which family member was the participant in this edition.
+        member_id = ms.flat_map { |m| [m.home_team_id, m.away_team_id] }.find { |id| family_ids.include?(id) }
+        era_team = family_by_id[member_id] || team
+        new(era_team, tournament, matches: ms)
+      end
   end
 
   def matches
