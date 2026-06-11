@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_11_083100) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_11_220000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -147,6 +147,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_083100) do
   end
 
   create_table "players", force: :cascade do |t|
+    t.integer "api_football_player_id"
     t.date "birth_date"
     t.datetime "created_at", null: false
     t.datetime "discarded_at"
@@ -156,6 +157,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_083100) do
     t.integer "position"
     t.string "slug", null: false
     t.datetime "updated_at", null: false
+    t.index ["api_football_player_id"], name: "index_players_on_api_football_player_id", unique: true, where: "(api_football_player_id IS NOT NULL)"
     t.index ["discarded_at"], name: "index_players_on_discarded_at"
     t.index ["name"], name: "index_players_on_name"
     t.index ["name"], name: "index_players_on_name_trgm", opclass: :gin_trgm_ops, using: :gin

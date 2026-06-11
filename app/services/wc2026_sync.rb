@@ -192,66 +192,107 @@ class Wc2026Sync
     team.id == match.home_team_id ? match.away_team : match.home_team
   end
 
-  # Player upsert. Looks for an existing Player matching either:
-  #   1. the canonical "Firstname Lastname" pulled fresh from api-football, or
-  #   2. the short name api-football gave us in the event payload.
-  # When neither matches we create the row with the canonical name + birth date.
-  # Pulling /players is one extra API call per never-seen-before player and
-  # gives us a name Wikidata can actually match for the portrait scout.
+  # Player upsert. Order:
+  #   1. exact lookup by api_football_player_id (persistent ID — bulletproof)
+  #   2. name fallback (diacritic + case insensitive) trying every plausible
+  #      form so existing rows (Messi, Ronaldo, etc.) get linked instead of
+  #      duplicated. On match we backfill api_football_player_id so step 1
+  #      catches them next time.
+  #   3. create a fresh row with the best canonical name we can compute.
   def find_or_create_player(api_id, short_name, nationality_team)
-    short = short_name.to_s.strip
-    return nil if short.empty?
+    return nil if short_name.to_s.strip.empty?
 
-    if (existing = lookup_player_by_name(short, nationality_team))
+    # Step 1 — persistent ID
+    if api_id && (existing = Player.kept.find_by(api_football_player_id: api_id))
       return existing
     end
 
-    canonical, birth_date = canonical_player_info(api_id) if api_id
-    canonical ||= short
+    info = api_id ? player_details_cached(api_id) : nil
 
-    if canonical != short && (existing = lookup_player_by_name(canonical, nationality_team))
+    # Step 2 — name fallback. Collect every name variant we can think of and
+    # try matching each (diacritic + case insensitive). First hit wins.
+    names_to_try = [
+      short_name,
+      info&.dig(:api_name),
+      info&.dig(:computed_name),
+      info&.dig(:firstname),
+      info && [info[:firstname], info[:lastname_full]].compact.join(" ")
+    ].compact.map(&:to_s).map(&:strip).reject(&:empty?).uniq
+
+    names_to_try.each do |n|
+      existing = lookup_player_by_name(n, nationality_team)
+      next unless existing
+      # Backfill the ID so this player is matched directly next time. Don't
+      # clobber a different id already set (could indicate a name collision
+      # with a different real person).
+      if api_id && existing.api_football_player_id.blank?
+        existing.update!(api_football_player_id: api_id)
+      end
       return existing
     end
 
+    # Step 3 — create
     Player.create!(
-      name: canonical,
-      birth_date: birth_date,
-      nationality_team: nationality_team
+      name: info&.dig(:computed_name).presence || info&.dig(:api_name).presence || short_name,
+      birth_date: info&.dig(:birth_date),
+      nationality_team: nationality_team,
+      api_football_player_id: api_id
     ).tap { @stats[:players_created] += 1 }
   end
 
+  # Diacritic + case insensitive match. Prefers a same-nationality-team match
+  # over a cross-team one to defuse "Carlos Sánchez" / "C. Sánchez" collisions
+  # across different national sides.
   def lookup_player_by_name(name, nationality_team)
-    scoped = Player.kept.where("LOWER(name) = ?", name.downcase)
-    scoped.where(nationality_team: nationality_team).first ||
-      scoped.where(nationality_team_id: nil).first ||
-      scoped.first
+    target = normalize_name(name)
+    return nil if target.empty?
+
+    if nationality_team
+      in_team = Player.kept.where(nationality_team_id: [nationality_team.id, nil]).to_a
+      hit = in_team.find { |p| normalize_name(p.name) == target }
+      return hit if hit
+    end
+
+    # Last-resort scan: narrow with SQL LIKE on the first word so we don't
+    # pull the entire 1500-row players table for an in-memory comparison.
+    first_word = name.to_s.strip.split.first.to_s.downcase
+    return nil if first_word.length < 3
+    Player.kept.where("LOWER(name) LIKE ?", "%#{first_word}%").limit(50).to_a
+          .find { |p| normalize_name(p.name) == target }
   end
 
-  # Memoised /players?id=N call. Returns [name, birth_date]. nil/nil on miss.
-  # Trims the 4-word "Julián Andrés Quiñones Quiñones" form down to
-  # "Julián Quiñones" — Wikidata's wbsearchentities fails on full Spanish
-  # double-surname names but matches reliably on the 2-token form, which is
-  # also how Commons file titles + WC broadcast graphics name these players.
-  def canonical_player_info(api_id)
+  # Strip diacritics + lowercase + squeeze whitespace. "García Hernández" →
+  # "garcia hernandez", so it matches "Garcia Hernandez".
+  def normalize_name(str)
+    str.to_s.unicode_normalize(:nfkd).gsub(/\p{Mn}/, "").downcase.gsub(/\s+/, " ").strip
+  end
+
+  # Memoised /players?id=N. Returns a hash with both the api-football "name"
+  # (often the common short form like "Cristiano Ronaldo") and a computed
+  # firstname-lastname form for cases like Spanish double surnames.
+  def player_details_cached(api_id)
     @player_info_cache ||= {}
     @player_info_cache[api_id] ||= begin
       payload = @client.player_details(id: api_id, season: SEASON)
       p = payload["response"]&.first&.dig("player")
-      if p
-        # Spanish naming convention: the *first* surname is the paternal one
-        # and the one the player goes by (Raúl Jiménez Rodríguez → "Jiménez").
-        first_token = p["firstname"].to_s.strip.split.first
-        last_token  = p["lastname"].to_s.strip.split.first
-        full = [first_token, last_token].compact.reject(&:empty?).join(" ")
-        full = nil if full.empty?
-        birth = p.dig("birth", "date")
-        [full, birth.present? ? Date.parse(birth) : nil]
-      else
-        [nil, nil]
-      end
-    rescue ApiFootballClient::Error, ArgumentError => e
+      next nil unless p
+
+      # First firstname + first lastname — sane default for Spanish names.
+      first_token = p["firstname"].to_s.strip.split.first
+      last_token  = p["lastname"].to_s.strip.split.first
+      computed = [first_token, last_token].compact.reject(&:empty?).join(" ")
+      birth    = p.dig("birth", "date")
+
+      {
+        api_name:      p["name"].to_s.strip.presence,        # e.g. "L. Messi", "Cristiano Ronaldo"
+        computed_name: computed.presence,                     # e.g. "Lionel Messi"
+        firstname:     p["firstname"].to_s.strip.presence,    # for extra-loose match
+        lastname_full: p["lastname"].to_s.strip.presence,
+        birth_date:    (Date.parse(birth) rescue nil)
+      }
+    rescue ApiFootballClient::Error => e
       Rails.logger.warn("Wc2026Sync: player_details lookup failed for api_id=#{api_id}: #{e.message}")
-      [nil, nil]
+      nil
     end
   end
 
