@@ -35,6 +35,8 @@
 
     <% if Rails.env.production? && !request.path.start_with?("/admin") %>
       <script defer src="https://cloud.umami.is/script.js" data-website-id="de8ced7d-1fa1-4ec5-a135-2329d9841539"></script>
+      <meta name="google-adsense-account" content="ca-pub-4897451870888857">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4897451870888857" crossorigin="anonymous"></script>
     <% end %>
   </head>
 
@@ -71,10 +73,23 @@
     </main>
 
     <footer class="bg-[#082619] border-t border-[#c89942]/20 text-xs text-[#8aa898]">
-      <div class="max-w-7xl mx-auto px-6 py-6 leading-relaxed">
-        This is an independent football history project. Videos are linked or embedded
-        from official/public sources where available. All trademarks, footage, and media
-        belong to their respective owners. Not affiliated with FIFA.
+      <div class="max-w-7xl mx-auto px-6 py-6 leading-relaxed flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div class="max-w-3xl space-y-2">
+          <p>
+            This is an independent football history project. Videos are linked or embedded
+            from official/public sources where available. All trademarks, footage, and media
+            belong to their respective owners. Not affiliated with FIFA.
+          </p>
+          <p>
+            Contact:
+            <a href="mailto:tuxnotfound@cioga.eu" class="text-[#c89942] hover:text-[#f0c870] transition">tuxnotfound@cioga.eu</a>
+          </p>
+        </div>
+        <a href="https://ko-fi.com/tux404" target="_blank" rel="noopener"
+           class="shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-[#c89942]/40 text-[#f0c870] hover:text-[#fef0c8] hover:border-[#c89942] transition">
+          <span aria-hidden="true">☕</span>
+          <span class="tracking-wider uppercase font-semibold">Support on Ko-fi</span>
+        </a>
       </div>
     </footer>
   </body>
