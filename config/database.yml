@@ -90,6 +90,7 @@ production:
     database: goal_atlas_production
     username: goal_atlas
     password: <%= ENV["GOAL_ATLAS_DATABASE_PASSWORD"] %>
+    host: <%= ENV.fetch("DB_HOST", "localhost") %>
   cache:
     <<: *primary_production
     database: goal_atlas_production_cache
