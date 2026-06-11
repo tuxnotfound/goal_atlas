@@ -1,14 +1,4 @@
-<%#
-  Renders a breadcrumb trail and a JSON-LD BreadcrumbList for SEO.
-
-  Usage:
-    <%%= render "shared/breadcrumbs", crumbs: [
-      ["World Cups", tournaments_path],
-      [@tournament.name, nil]    # last crumb: url is nil → not linked
-    ] %%>
-
-  "Home" is prepended automatically.
-%>
+<%# "Home" is auto-prepended; pass remaining crumbs as [label, url] (url nil for current page). %>
 <% crumbs = [["Home", root_path]] + (local_assigns[:crumbs] || []) %>
 
 <nav aria-label="Breadcrumb" class="text-xs mb-6 tracking-wider uppercase font-semibold">
