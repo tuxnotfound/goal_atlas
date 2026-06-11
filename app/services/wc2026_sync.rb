@@ -147,8 +147,8 @@ class Wc2026Sync
       # For own goals the api-football scorer plays FOR the team that conceded.
       scorer_nationality = (goal_type == :own_goal ? opponent_of(match, scoring_team) : scoring_team)
 
-      player        = find_or_create_player(ev.dig("player", "name"), scorer_nationality)
-      assist_player = ev.dig("assist", "id") && find_or_create_player(ev.dig("assist", "name"), scoring_team)
+      player        = find_or_create_player(ev.dig("player", "id"), ev.dig("player", "name"), scorer_nationality)
+      assist_player = ev.dig("assist", "id") && find_or_create_player(ev.dig("assist", "id"), ev.dig("assist", "name"), scoring_team)
 
       # Running tally so score_after_goal_* reflects the state right after this goal.
       if scoring_team.id == match.home_team_id
@@ -192,23 +192,58 @@ class Wc2026Sync
     team.id == match.home_team_id ? match.away_team : match.home_team
   end
 
-  # Player upsert: case-insensitive name match scoped to the scorer's
-  # nationality team first (avoids name collisions across teams), then
-  # falling back to a name-only match. New players are created with
-  # nationality_team set so future syncs find them.
-  def find_or_create_player(name, nationality_team)
-    name = name.to_s.strip
-    return nil if name.empty?
+  # Player upsert. Looks for an existing Player matching either:
+  #   1. the canonical "Firstname Lastname" pulled fresh from api-football, or
+  #   2. the short name api-football gave us in the event payload.
+  # When neither matches we create the row with the canonical name + birth date.
+  # Pulling /players is one extra API call per never-seen-before player and
+  # gives us a name Wikidata can actually match for the portrait scout.
+  def find_or_create_player(api_id, short_name, nationality_team)
+    short = short_name.to_s.strip
+    return nil if short.empty?
 
+    if (existing = lookup_player_by_name(short, nationality_team))
+      return existing
+    end
+
+    canonical, birth_date = canonical_player_info(api_id) if api_id
+    canonical ||= short
+
+    if canonical != short && (existing = lookup_player_by_name(canonical, nationality_team))
+      return existing
+    end
+
+    Player.create!(
+      name: canonical,
+      birth_date: birth_date,
+      nationality_team: nationality_team
+    ).tap { @stats[:players_created] += 1 }
+  end
+
+  def lookup_player_by_name(name, nationality_team)
     scoped = Player.kept.where("LOWER(name) = ?", name.downcase)
-    player = scoped.where(nationality_team: nationality_team).first
-    player ||= scoped.where(nationality_team_id: nil).first
-    player ||= scoped.first
+    scoped.where(nationality_team: nationality_team).first ||
+      scoped.where(nationality_team_id: nil).first ||
+      scoped.first
+  end
 
-    return player if player
-
-    Player.create!(name: name, nationality_team: nationality_team).tap do
-      @stats[:players_created] += 1
+  # Memoised /players?id=N call. Returns [name, birth_date]. nil/nil on miss.
+  def canonical_player_info(api_id)
+    @player_info_cache ||= {}
+    @player_info_cache[api_id] ||= begin
+      payload = @client.player_details(id: api_id, season: SEASON)
+      p = payload["response"]&.first&.dig("player")
+      if p
+        full = [p["firstname"], p["lastname"]].compact.map(&:strip).reject(&:empty?).join(" ")
+        full = nil if full.empty?
+        birth = p.dig("birth", "date")
+        [full, birth.present? ? Date.parse(birth) : nil]
+      else
+        [nil, nil]
+      end
+    rescue ApiFootballClient::Error, ArgumentError => e
+      Rails.logger.warn("Wc2026Sync: player_details lookup failed for api_id=#{api_id}: #{e.message}")
+      [nil, nil]
     end
   end
 
