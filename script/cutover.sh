@@ -74,7 +74,9 @@ EOF
 # ---------- 4. Rsync stylized portraits -----------------------------------
 echo ">>> Rsync stylized portraits → ${REMOTE_HOST}:${REMOTE_VOLUME}"
 ssh -i "$SSH_KEY" "$REMOTE_HOST" "mkdir -p '${REMOTE_VOLUME}'"
-rsync -avh --info=progress2 \
+# Use -P (=--partial --progress) instead of --info=progress2 because macOS
+# ships an ancient rsync (2.6.9) that lacks the latter flag.
+rsync -avhP \
   -e "ssh -i ${SSH_KEY}" \
   "$LOCAL_PORTRAITS" \
   "${REMOTE_HOST}:${REMOTE_VOLUME}"
