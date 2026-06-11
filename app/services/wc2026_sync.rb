@@ -238,8 +238,10 @@ class Wc2026Sync
       payload = @client.player_details(id: api_id, season: SEASON)
       p = payload["response"]&.first&.dig("player")
       if p
+        # Spanish naming convention: the *first* surname is the paternal one
+        # and the one the player goes by (Raúl Jiménez Rodríguez → "Jiménez").
         first_token = p["firstname"].to_s.strip.split.first
-        last_token  = p["lastname"].to_s.strip.split.last
+        last_token  = p["lastname"].to_s.strip.split.first
         full = [first_token, last_token].compact.reject(&:empty?).join(" ")
         full = nil if full.empty?
         birth = p.dig("birth", "date")
