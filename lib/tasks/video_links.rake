@@ -443,9 +443,9 @@ namespace :video_links do
       end
 
       begin
-        result = scout.find_best_short_match_video_with_fallback(match)
+        result = with_rate_limit_retry { scout.find_best_short_match_video_with_fallback(match) }
       rescue VideoLinkScout::RateLimited => e
-        puts "#{label}: 429 — STOPPING (#{e.message[0,80]})"
+        puts "#{label}: 429 after retries — STOPPING (#{e.message[0,80]})"
         quota_dead = idx
         break
       end
