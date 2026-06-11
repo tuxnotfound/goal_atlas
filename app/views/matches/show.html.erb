@@ -72,7 +72,7 @@
         <div class="font-serif font-bold text-[#0a3520] tabular-nums leading-none"
              style="font-size:clamp(3.75rem, 10vw, 6.5rem); letter-spacing:-0.02em;">
           <% if @match.scheduled? %>
-            <span class="text-[#c89942]">vs</span>
+            <span class="text-[#c89942]">&ndash;</span>
           <% else %>
             <%= @match.home_score %><span class="text-[#c89942]">&ndash;</span><%= @match.away_score %>
           <% end %>
