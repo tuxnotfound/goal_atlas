@@ -4,6 +4,11 @@
 service: goal_atlas
 image: tuxnotfound/goal_atlas  # GitHub username gets templated in via secrets at deploy time
 
+# First-boot db:prepare runs all seeds (~30s of inserts). Default kamal-proxy
+# deploy-timeout of 30s kills the container mid-seed. Steady-state boots
+# without seeds finish in seconds, so this is only the first-boot ceiling.
+deploy_timeout: 180
+
 servers:
   web:
     - 5.161.109.253
@@ -14,6 +19,10 @@ servers:
 proxy:
   ssl: true
   host: thegoalatlas.com
+  healthcheck:
+    interval: 3
+    timeout: 5
+    path: /up
 
 registry:
   server: ghcr.io
