@@ -48,6 +48,12 @@ env:
     DB_HOST: goal_atlas-db        # name of the Postgres accessory below
     RAILS_LOG_LEVEL: info
 
+    # Thruster (HTTP proxy in front of Puma) defaults to 30s write timeout,
+    # which is shorter than OpenAI gpt-image-1's ~55s call. Bump so admin
+    # stylize requests aren't cut mid-response.
+    HTTP_IDLE_TIMEOUT: 180
+    HTTP_WRITE_TIMEOUT: 180
+
 aliases:
   console: app exec --interactive --reuse "bin/rails console"
   shell:   app exec --interactive --reuse "bash"
