@@ -1,4 +1,8 @@
 class StylizedPortrait < ApplicationRecord
+  # Files live outside public/ on a persistent volume in production
+  # (Kamal goal_atlas_storage mount), served via PortraitsController#show.
+  STORAGE_DIR = "stylized_portraits".freeze
+
   belongs_to :player
   belongs_to :source_player_image, class_name: "PlayerImage", optional: true
 
@@ -8,19 +12,16 @@ class StylizedPortrait < ApplicationRecord
   scope :selected, -> { where(is_selected: true) }
   scope :recent,   -> { order(generated_at: :desc, id: :desc) }
 
-  # Public URL Rails serves from /public.
   def public_url
-    "/#{file_path.sub(%r{\Apublic/}, "")}"
+    Rails.application.routes.url_helpers.portrait_path(filename: file_path)
   end
 
-  # File presence on disk — DB rows can outlive their files when devs prune
-  # public/stylized_portraits/ manually.
   def file_exists?
     File.exist?(absolute_path)
   end
 
   def absolute_path
-    Rails.root.join(file_path)
+    Rails.root.join("storage", STORAGE_DIR, file_path)
   end
 end
 

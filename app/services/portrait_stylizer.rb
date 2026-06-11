@@ -46,7 +46,7 @@ class PortraitStylizer
     No text, no words, no logos, no jersey numbers, no team badges.
   PROMPT
 
-  PUBLIC_DIR = "public/stylized_portraits".freeze
+  STORAGE_DIR = Rails.root.join("storage", StylizedPortrait::STORAGE_DIR).to_s.freeze
 
   # If true the freshly-generated portrait is automatically marked
   # is_selected when no other selection exists for the player.
@@ -155,17 +155,18 @@ class PortraitStylizer
   end
 
   # Saves the raw output, then crops + flood-fills to produce the final image
-  # at public/stylized_portraits/<slug>_<timestamp>.png. Returns the path
-  # relative to the repo root for storage in DB.
+  # at storage/stylized_portraits/<slug>_<timestamp>.png. Returns the basename
+  # (e.g. "lionel-messi_1700000000.png") for storage in DB.
   def post_process_and_save(b64)
     unless File.executable?(MAGICK_BIN)
       raise "ImageMagick not found at #{MAGICK_BIN}"
     end
 
-    FileUtils.mkdir_p(PUBLIC_DIR)
+    FileUtils.mkdir_p(STORAGE_DIR)
     ts        = Time.current.to_i
-    raw_path  = File.join(PUBLIC_DIR, "#{@player.slug}_#{ts}_raw.png")
-    out_path  = File.join(PUBLIC_DIR, "#{@player.slug}_#{ts}.png")
+    basename  = "#{@player.slug}_#{ts}.png"
+    raw_path  = File.join(STORAGE_DIR, "#{@player.slug}_#{ts}_raw.png")
+    out_path  = File.join(STORAGE_DIR, basename)
     File.binwrite(raw_path, Base64.decode64(b64))
 
     crop_path = "#{raw_path}.crop.png"
@@ -187,6 +188,6 @@ class PortraitStylizer
     end
     File.delete(crop_path)
 
-    out_path
+    basename
   end
 end

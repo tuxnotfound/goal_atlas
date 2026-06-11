@@ -49,5 +49,11 @@ Rails.application.routes.draw do
   resources :players,     only: [:show],         param: :slug
   get "search", to: "search#index", as: :search
 
+  # Serves stylized portrait PNGs from storage/ (Kamal persistent volume).
+  # Route uses an unanchored constraint (Rails forbids \A\z in routes);
+  # PortraitsController#show re-validates with the anchored FILENAME_RE.
+  get "portraits/:filename", to: "portraits#show", as: :portrait,
+      constraints: { filename: /[a-z0-9][a-z0-9\-_]*\.png/ }
+
   root "tournaments#index"
 end
