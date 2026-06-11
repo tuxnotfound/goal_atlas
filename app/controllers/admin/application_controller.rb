@@ -1,24 +1,17 @@
-# All Administrate controllers inherit from this
-# `Administrate::ApplicationController`, making it the ideal place to put
-# authentication logic or other before_actions.
+# All Administrate controllers inherit from this. Auth is enforced here so
+# every /admin/* route requires (a) a valid session and (b) an admin user.
 module Admin
   class ApplicationController < Administrate::ApplicationController
-    before_action :authenticate_admin
+    include Authentication
+
+    before_action :require_admin
 
     private
 
-    # Opt-in HTTP Basic Auth gated by an env var.
-    #
-    # - When ADMIN_PASSWORD is unset (typical local dev): admin is open.
-    # - When ADMIN_PASSWORD is set (deployed environments): the prompt fires
-    #   and ADMIN_USERNAME / ADMIN_PASSWORD must match.
-    def authenticate_admin
-      return if ENV["ADMIN_PASSWORD"].blank?
-
-      authenticate_or_request_with_http_basic("Goal Atlas Admin") do |username, password|
-        ActiveSupport::SecurityUtils.secure_compare(username, ENV["ADMIN_USERNAME"].to_s) &
-          ActiveSupport::SecurityUtils.secure_compare(password, ENV["ADMIN_PASSWORD"].to_s)
-      end
+    def require_admin
+      return if Current.user&.admin?
+      reset_session
+      redirect_to new_session_path, alert: "Admin access required."
     end
   end
 end
