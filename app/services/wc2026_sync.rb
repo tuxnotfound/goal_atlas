@@ -138,8 +138,17 @@ class Wc2026Sync
     }.compact
   end
 
-  # Returns api-football team id => Team row. Matches on fifa_code (= api-football
-  # `code`) so the rare team without a fifa_code falls back to name match.
+  # api-football uses a few codes/names that differ from FIFA's. Mapping is
+  # api-football code => our fifa_code. Add entries as new mismatches surface.
+  CODE_ALIASES = {
+    "CGO" => "COD",   # api: "Congo DR"  → ours: "DR Congo"
+    "SER" => "SRB",   # api: "Serbia"     → ours: "Serbia" (matched by name anyway, but explicit)
+    "COS" => "CRC",   # api: "Costa Rica" → ours: "Costa Rica"
+    "CAM" => "CMR"    # api: "Cameroon"   → ours: "Cameroon"
+  }.freeze
+
+  # Returns api-football team id => Team row. Tries (1) fifa_code match, then
+  # (2) the alias table, then (3) team name. Logs unresolved teams.
   def build_team_map
     api_teams = @client.teams(league: LEAGUE_ID, season: SEASON)["response"]
     our_teams_by_code = Team.where.not(fifa_code: nil).index_by(&:fifa_code)
@@ -147,7 +156,9 @@ class Wc2026Sync
 
     api_teams.each_with_object({}) do |item, map|
       t = item["team"]
-      our = our_teams_by_code[t["code"]] || our_teams_by_name[t["name"]]
+      our = our_teams_by_code[t["code"]] ||
+            our_teams_by_code[CODE_ALIASES[t["code"]]] ||
+            our_teams_by_name[t["name"]]
       if our
         map[t["id"]] = our
       else
