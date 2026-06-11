@@ -272,28 +272,32 @@ class Wc2026Sync
   # firstname-lastname form for cases like Spanish double surnames.
   def player_details_cached(api_id)
     @player_info_cache ||= {}
-    @player_info_cache[api_id] ||= begin
-      payload = @client.player_details(id: api_id, season: SEASON)
-      p = payload["response"]&.first&.dig("player")
-      next nil unless p
+    return @player_info_cache[api_id] if @player_info_cache.key?(api_id)
 
-      # First firstname + first lastname — sane default for Spanish names.
-      first_token = p["firstname"].to_s.strip.split.first
-      last_token  = p["lastname"].to_s.strip.split.first
-      computed = [first_token, last_token].compact.reject(&:empty?).join(" ")
-      birth    = p.dig("birth", "date")
+    @player_info_cache[api_id] = fetch_player_details(api_id)
+  end
 
-      {
-        api_name:      p["name"].to_s.strip.presence,        # e.g. "L. Messi", "Cristiano Ronaldo"
-        computed_name: computed.presence,                     # e.g. "Lionel Messi"
-        firstname:     p["firstname"].to_s.strip.presence,    # for extra-loose match
-        lastname_full: p["lastname"].to_s.strip.presence,
-        birth_date:    (Date.parse(birth) rescue nil)
-      }
-    rescue ApiFootballClient::Error => e
-      Rails.logger.warn("Wc2026Sync: player_details lookup failed for api_id=#{api_id}: #{e.message}")
-      nil
-    end
+  def fetch_player_details(api_id)
+    payload = @client.player_details(id: api_id, season: SEASON)
+    p = payload["response"]&.first&.dig("player")
+    return nil unless p
+
+    # First firstname + first lastname — sane default for Spanish names.
+    first_token = p["firstname"].to_s.strip.split.first
+    last_token  = p["lastname"].to_s.strip.split.first
+    computed = [first_token, last_token].compact.reject(&:empty?).join(" ")
+    birth    = p.dig("birth", "date")
+
+    {
+      api_name:      p["name"].to_s.strip.presence,        # e.g. "L. Messi", "Cristiano Ronaldo"
+      computed_name: computed.presence,                     # e.g. "Lionel Messi"
+      firstname:     p["firstname"].to_s.strip.presence,    # for extra-loose match
+      lastname_full: p["lastname"].to_s.strip.presence,
+      birth_date:    (Date.parse(birth) rescue nil)
+    }
+  rescue ApiFootballClient::Error => e
+    Rails.logger.warn("Wc2026Sync: player_details lookup failed for api_id=#{api_id}: #{e.message}")
+    nil
   end
 
   def determine_winner_id(match, attrs, new_type)
