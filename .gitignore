@@ -34,6 +34,12 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+# Never commit SSH keys accidentally left in the repo root.
+/id_*
+/*.pub
+/tux
+/tux.pub
+
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
