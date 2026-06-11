@@ -4,6 +4,7 @@
 <div class="max-w-6xl mx-auto">
 
 <%= render "shared/breadcrumbs", crumbs: [[@player.name, nil]] %>
+<%= render "shared/structured_data/player", player: @player %>
 
 <%# === Player hero — parchment card matching the match/goal heroes. Portrait
        on the left anchors the visual; name + nationality + role sit on the

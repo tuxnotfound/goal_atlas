@@ -1,0 +1,26 @@
+<%#
+  Emits a schema.org Person for the player into <head> as JSON-LD.
+  Pass `player:` (Player instance).
+%>
+<%
+  p = player
+  data = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": p.name,
+    "url": player_url(p)
+  }
+  data["birthDate"] = p.birth_date.iso8601 if p.birth_date
+  if p.nationality_team
+    data["nationality"] = { "@type": "Country", "name": p.nationality_team.name }
+  end
+  portrait = p.selected_stylized_portrait
+  if portrait&.file_exists?
+    image_url = portrait.public_url
+    image_url = "#{request.base_url}#{image_url}" unless image_url.start_with?("http://", "https://")
+    data["image"] = image_url
+  end
+%>
+<% content_for :head do %>
+<script type="application/ld+json"><%= raw data.to_json %></script>
+<% end %>

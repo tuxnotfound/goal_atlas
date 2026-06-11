@@ -1,0 +1,26 @@
+<%#
+  Emits a schema.org SportsEvent for the tournament into <head> as JSON-LD.
+  Pass `tournament:` (Tournament instance).
+%>
+<%
+  t = tournament
+  data = {
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    "name": t.name,
+    "url": tournament_url(t),
+    "sport": "Soccer",
+    "organizer": { "@type": "Organization", "name": "FIFA" }
+  }
+  data["startDate"] = t.start_date.iso8601 if t.start_date
+  data["endDate"]   = t.end_date.iso8601   if t.end_date
+  if t.host_countries.present?
+    data["location"] = t.host_countries.map { |c| { "@type": "Country", "name": c } }
+  end
+  if t.winner_team
+    data["awards"] = "Champion: #{t.winner_team.name}"
+  end
+%>
+<% content_for :head do %>
+<script type="application/ld+json"><%= raw data.to_json %></script>
+<% end %>

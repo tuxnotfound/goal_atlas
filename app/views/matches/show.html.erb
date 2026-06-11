@@ -19,6 +19,7 @@
   [@match.tournament.name, tournament_path(@match.tournament)],
   [match_title, nil]
 ] %>
+<%= render "shared/structured_data/match", match: @match %>
 
 <%# === Match hero — parchment card mirroring the tournament hero: gold border,
        world map watermark, soft paper texture, decorative inner frame. The score

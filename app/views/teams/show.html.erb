@@ -4,6 +4,7 @@
 <div class="max-w-6xl mx-auto">
 
 <%= render "shared/breadcrumbs", crumbs: [[@team.name, nil]] %>
+<%= render "shared/structured_data/team", team: @team %>
 
 <%# === Team hero — parchment card. Flag emoji on the left anchors the visual
        (the team's equivalent of the player portrait); team name + confederation

@@ -1,0 +1,40 @@
+<%#
+  Emits a schema.org VideoObject for the goal's primary highlight, if one exists.
+  Pass `goal:` (Goal), `match:` (Match), `scorer:` (Player), `scoring_team:` (Team),
+  `opponent_team:` (Team), `tournament:` (Tournament), `video_links:` (Array<VideoLink>).
+
+  Picks the first kept link with an embeddable YouTube ID. If none qualifies,
+  renders nothing — schema.org VideoObject requires thumbnailUrl + uploadDate
+  and Google will reject malformed entries.
+%>
+<%
+  primary = (video_links || []).find { |l| youtube_video_id(l.url).present? }
+%>
+<% if primary %>
+<%
+  vid_id = youtube_video_id(primary.url)
+  name   = "#{scorer.name} #{goal_minute_label(goal)} — #{scoring_team.name} vs #{opponent_team.name}, #{tournament.name}"
+  desc   = "#{scorer.name} scores #{goal_minute_label(goal)} for #{scoring_team.name} against " \
+           "#{opponent_team.name} in the #{match.stage.to_s.humanize.downcase} of #{tournament.name}."
+
+  data = {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "name": name,
+    "description": desc,
+    "thumbnailUrl": "https://img.youtube.com/vi/#{vid_id}/hqdefault.jpg",
+    "uploadDate": match.date.iso8601,
+    "contentUrl": primary.url,
+    "embedUrl": youtube_embed_url(primary)
+  }
+  if primary.video_duration_seconds.present?
+    data["duration"] = "PT#{primary.video_duration_seconds}S"
+  end
+  if primary.youtube_official?
+    data["publisher"] = { "@type": "Organization", "name": "FIFA" }
+  end
+%>
+<% content_for :head do %>
+<script type="application/ld+json"><%= raw data.to_json %></script>
+<% end %>
+<% end %>

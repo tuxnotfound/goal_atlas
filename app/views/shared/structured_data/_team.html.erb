@@ -1,0 +1,20 @@
+<%#
+  Emits a schema.org SportsTeam for the national team into <head> as JSON-LD.
+  Pass `team:` (Team instance).
+%>
+<%
+  t = team
+  data = {
+    "@context": "https://schema.org",
+    "@type": "SportsTeam",
+    "name": t.name,
+    "url": team_url(t),
+    "sport": "Soccer"
+  }
+  if t.country_code.present?
+    data["memberOf"] = { "@type": "Country", "name": t.name, "alternateName": t.country_code }
+  end
+%>
+<% content_for :head do %>
+<script type="application/ld+json"><%= raw data.to_json %></script>
+<% end %>

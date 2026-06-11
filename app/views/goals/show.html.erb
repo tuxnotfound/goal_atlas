@@ -18,6 +18,10 @@
   [match_label, match_path(@match)],
   [goal_title, nil]
 ] %>
+<%= render "shared/structured_data/goal_video",
+           goal: @goal, match: @match, scorer: @scorer,
+           scoring_team: @scoring_team, opponent_team: @opponent_team,
+           tournament: @tournament, video_links: @video_links %>
 
 <%# === Goal hero — parchment card matching the match hero. Player card on
        the left anchors the visual; goal meta sits on the right (minute, scorer
