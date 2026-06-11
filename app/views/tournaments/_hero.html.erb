@@ -39,8 +39,12 @@
       </div>
     <% end %>
 
-    <%# === Content: 3-column grid === %>
-    <div class="relative p-6 md:p-8 grid grid-cols-12 gap-6 items-stretch">
+    <%# === Content: 3-column grid. min-h matches the natural height of a
+         finished tournament's hero (year + host + dates + goals stats on the
+         left, podium + 4th line on the right), so upcoming tournaments
+         without those data points still hold the same card shape and the
+         navigation between editions doesn't visibly jump. === %>
+    <div class="relative p-6 md:p-8 md:min-h-[440px] grid grid-cols-12 gap-6 items-stretch">
 
       <%# Column 1 — eyebrow + year + host + dates + goals.
           Trimmed from col-span-4 to col-span-3 so the podium beside it shifts
