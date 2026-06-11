@@ -4,13 +4,14 @@
   stage_label   = @match.stage.to_s.humanize
   date_label    = @match.date&.strftime("%-d %b %Y")
   tournament_label = @match.tournament&.name
+  seo_title = "#{match_title}: #{@match.tournament.year} World Cup #{stage_label}"
   match_desc = [
     "#{match_title} — #{stage_label}",
     date_label,
     tournament_label
   ].compact.reject(&:empty?).join(" · ") + ". Goals, scorers, lineups, and video highlights."
 %>
-<% seo_for title: match_title, description: match_desc %>
+<% seo_for title: seo_title, description: match_desc %>
 
 <div class="max-w-6xl mx-auto">
 

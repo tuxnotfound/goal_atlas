@@ -1,9 +1,10 @@
 <%
   goal_title = "#{@scorer.name} #{goal_minute_label(@goal)}"
+  seo_title  = "#{goal_title} — #{@scoring_team.name} vs #{@opponent_team.name}, #{@tournament.year} World Cup #{@match.stage.to_s.humanize}"
   goal_desc  = "#{@scorer.name} #{goal_minute_label(@goal)} for #{@scoring_team.name} vs #{@opponent_team.name} — " \
                "#{@match.stage.to_s.humanize}, #{@tournament.name}. Watch the highlight."
 %>
-<% seo_for title: goal_title, description: goal_desc %>
+<% seo_for title: seo_title, description: goal_desc %>
 
 <div class="max-w-6xl mx-auto">
 
