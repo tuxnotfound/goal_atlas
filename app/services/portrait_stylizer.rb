@@ -14,10 +14,18 @@ require "securerandom"
 class PortraitStylizer
   USER_AGENT  = "GoalAtlas/0.1 (https://goalatlas.local; pcioga@gmail.com)".freeze
   OPENAI_EDIT = "https://api.openai.com/v1/images/edits".freeze
-  # Resolve at boot: macOS (homebrew) vs prod Linux container (apt). Both
-  # install the v7+ `magick` binary; fall back to legacy `convert` if needed.
-  MAGICK_BIN = ["/opt/homebrew/bin/magick", "/usr/bin/magick", "/usr/local/bin/magick", "/usr/bin/convert"]
-                 .find { |p| File.executable?(p) } || "magick"
+  # Resolve at boot: macOS (homebrew, v7 `magick`) vs prod Linux container
+  # (Debian apt ships ImageMagick 6 which uses separate `convert`/`identify`
+  # binaries; there is no `magick` wrapper). We pick whichever transform +
+  # identify pair exists.
+  MAGICK_BIN, IDENTIFY_BIN =
+    if (m = ["/opt/homebrew/bin/magick", "/usr/bin/magick", "/usr/local/bin/magick"].find { |p| File.executable?(p) })
+      [m, "#{m} identify"]
+    elsif File.executable?("/usr/bin/convert") && File.executable?("/usr/bin/identify")
+      ["/usr/bin/convert", "/usr/bin/identify"]
+    else
+      ["magick", "magick identify"]
+    end
 
   PROMPT = <<~PROMPT.strip
     Restyle this photo as a high-end vector portrait illustration, in the
@@ -177,7 +185,7 @@ class PortraitStylizer
       raise "ImageMagick crop failed"
     end
 
-    dims = `#{MAGICK_BIN} identify -format "%w %h" #{crop_path}`.split.map(&:to_i)
+    dims = `#{IDENTIFY_BIN} -format "%w %h" #{crop_path}`.split.map(&:to_i)
     w, h = dims
     unless system(MAGICK_BIN, crop_path,
                   "-fuzz", "15%",
