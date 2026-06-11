@@ -51,6 +51,8 @@ Rails.application.routes.draw do
   resources :players,     only: [:show],         param: :slug
   get "search", to: "search#index", as: :search
 
+  get "sitemap.xml", to: "sitemaps#show", defaults: { format: :xml }, as: :sitemap
+
   # Serves stylized portrait PNGs from storage/ (Kamal persistent volume).
   # Route uses an unanchored constraint (Rails forbids \A\z in routes);
   # PortraitsController#show re-validates with the anchored FILENAME_RE.
