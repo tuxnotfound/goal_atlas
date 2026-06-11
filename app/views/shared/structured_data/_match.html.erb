@@ -7,30 +7,9 @@
   name = m.scheduled? ?
            "#{m.home_team.name} vs #{m.away_team.name}" :
            "#{m.home_team.name} #{m.home_score}-#{m.away_score} #{m.away_team.name}"
-  data = {
-    "@context": "https://schema.org",
-    "@type": "SportsEvent",
-    "name": name,
-    "url": match_url(m),
-    "sport": "Soccer",
-    "startDate": m.date.iso8601,
-    "eventStatus": m.scheduled? ? "https://schema.org/EventScheduled" : "https://schema.org/EventCompleted",
-    "competitor": [
-      { "@type": "SportsTeam", "name": m.home_team.name },
-      { "@type": "SportsTeam", "name": m.away_team.name }
-    ],
-    "homeTeam": { "@type": "SportsTeam", "name": m.home_team.name },
-    "awayTeam": { "@type": "SportsTeam", "name": m.away_team.name }
-  }
-  if m.tournament
-    data["superEvent"] = {
-      "@type": "SportsEvent",
-      "name": m.tournament.name,
-      "url": tournament_url(m.tournament)
-    }
-  end
-  if m.stadium
-    data["location"] = {
+  tournament_host = m.tournament&.host_countries&.first
+  location = if m.stadium
+    {
       "@type": "Place",
       "name": m.stadium.name,
       "address": {
@@ -39,8 +18,47 @@
         "addressCountry": m.stadium.country_code.presence || m.stadium.country
       }.compact
     }
+  elsif tournament_host
+    {
+      "@type": "Place",
+      "name": tournament_host,
+      "address": { "@type": "PostalAddress", "addressCountry": tournament_host }
+    }
+  end
+  data = {
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    "name": name,
+    "url": match_url(m),
+    "sport": "Soccer",
+    "startDate": m.date.iso8601,
+    "endDate": m.date.iso8601,
+    "eventStatus": m.scheduled? ? "https://schema.org/EventScheduled" : "https://schema.org/EventCompleted",
+    "location": location,
+    "competitor": [
+      { "@type": "SportsTeam", "name": m.home_team.name },
+      { "@type": "SportsTeam", "name": m.away_team.name }
+    ],
+    "homeTeam": { "@type": "SportsTeam", "name": m.home_team.name },
+    "awayTeam": { "@type": "SportsTeam", "name": m.away_team.name }
+  }.compact
+  if m.tournament && m.tournament.start_date && tournament_host
+    data["superEvent"] = {
+      "@type": "SportsEvent",
+      "name": m.tournament.name,
+      "url": tournament_url(m.tournament),
+      "startDate": m.tournament.start_date.iso8601,
+      "endDate": m.tournament.end_date&.iso8601,
+      "location": {
+        "@type": "Place",
+        "name": tournament_host,
+        "address": { "@type": "PostalAddress", "addressCountry": tournament_host }
+      }
+    }.compact
   end
 %>
+<% if location %>
 <% content_for :head do %>
 <script type="application/ld+json"><%= raw data.to_json %></script>
+<% end %>
 <% end %>
