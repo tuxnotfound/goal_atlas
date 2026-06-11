@@ -188,6 +188,11 @@ class TournamentsController < ApplicationController
         row = (groups[letter][team.id] ||= {
           team: team, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0
         })
+
+        # Scheduled fixtures keep the team in the group standings (so the card
+        # renders) but don't contribute to W/D/L/GF/GA/Pts.
+        next if match.scheduled?
+
         row[:p]  += 1
         row[:gf] += gf
         row[:ga] += ga

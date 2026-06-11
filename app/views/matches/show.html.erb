@@ -71,7 +71,11 @@
       <div class="text-center">
         <div class="font-serif font-bold text-[#0a3520] tabular-nums leading-none"
              style="font-size:clamp(3.75rem, 10vw, 6.5rem); letter-spacing:-0.02em;">
-          <%= @match.home_score %><span class="text-[#c89942]">&ndash;</span><%= @match.away_score %>
+          <% if @match.scheduled? %>
+            <span class="text-[#c89942]">vs</span>
+          <% else %>
+            <%= @match.home_score %><span class="text-[#c89942]">&ndash;</span><%= @match.away_score %>
+          <% end %>
         </div>
         <% if @match.home_score_after_extra_time %>
           <div class="text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-bold mt-3 tabular-nums">

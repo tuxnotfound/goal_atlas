@@ -21,7 +21,8 @@ class Match < ApplicationRecord
     after_penalties: 2,
     abandoned: 3,
     replay_required: 4,
-    walkover: 5
+    walkover: 5,
+    scheduled: 6
   }.freeze
 
   DATA_CONFIDENCES = {

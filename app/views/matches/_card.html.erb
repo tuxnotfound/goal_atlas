@@ -4,9 +4,13 @@
     Locals: match (Match) %>
 <% home_winner = match.winner_team_id == match.home_team_id %>
 <% away_winner = match.winner_team_id == match.away_team_id %>
-<% score = match.home_score_after_extra_time ?
-             "#{match.home_score_after_extra_time}–#{match.away_score_after_extra_time}" :
-             "#{match.home_score}–#{match.away_score}" %>
+<% score = if match.scheduled?
+             "vs"
+           elsif match.home_score_after_extra_time
+             "#{match.home_score_after_extra_time}–#{match.away_score_after_extra_time}"
+           else
+             "#{match.home_score}–#{match.away_score}"
+           end %>
 
 <%= link_to match_path(match),
             class: "block rounded border border-[#c89942]/60 shadow-md shadow-black/15 hover:border-[#f0c870] hover:shadow-lg transition overflow-hidden",

@@ -1,0 +1,111 @@
+# WC2026 group-stage fixtures — 72 matches across 12 groups, June 11-27, 2026.
+# Source: DAZN's published full draw + FIFA schedule.
+# Teams keyed by FIFA 3-letter code; stadiums by their canonical name.
+# Knockout fixtures (32 matches) are NOT seeded yet — they'll be added by the
+# sync task once group standings determine the bracket.
+
+# 2026-06-11 (matchday 1)
+- { date: 2026-06-11, group: A, home: MEX, away: RSA, stadium: Estadio Azteca }
+- { date: 2026-06-11, group: A, home: KOR, away: CZE, stadium: Estadio Akron }
+
+# 2026-06-12
+- { date: 2026-06-12, group: B, home: CAN, away: BIH, stadium: BMO Field }
+- { date: 2026-06-12, group: B, home: QAT, away: SUI, stadium: Levi's Stadium }
+- { date: 2026-06-12, group: D, home: USA, away: PAR, stadium: SoFi Stadium }
+- { date: 2026-06-12, group: D, home: AUS, away: TUR, stadium: BC Place }
+
+# 2026-06-13
+- { date: 2026-06-13, group: C, home: BRA, away: MAR, stadium: Gillette Stadium }
+- { date: 2026-06-13, group: C, home: HAI, away: SCO, stadium: MetLife Stadium }
+
+# 2026-06-14
+- { date: 2026-06-14, group: E, home: GER, away: CUW, stadium: Lincoln Financial Field }
+- { date: 2026-06-14, group: E, home: CIV, away: ECU, stadium: NRG Stadium }
+- { date: 2026-06-14, group: F, home: NED, away: JPN, stadium: AT&T Stadium }
+- { date: 2026-06-14, group: F, home: SWE, away: TUN, stadium: Estadio BBVA }
+
+# 2026-06-15
+- { date: 2026-06-15, group: G, home: BEL, away: EGY, stadium: SoFi Stadium }
+- { date: 2026-06-15, group: G, home: IRN, away: NZL, stadium: Lumen Field }
+- { date: 2026-06-15, group: H, home: ESP, away: CPV, stadium: Hard Rock Stadium }
+- { date: 2026-06-15, group: H, home: KSA, away: URU, stadium: Mercedes-Benz Stadium }
+
+# 2026-06-16
+- { date: 2026-06-16, group: I, home: FRA, away: SEN, stadium: MetLife Stadium }
+- { date: 2026-06-16, group: I, home: IRQ, away: NOR, stadium: Gillette Stadium }
+- { date: 2026-06-16, group: J, home: ARG, away: ALG, stadium: Arrowhead Stadium }
+- { date: 2026-06-16, group: J, home: AUT, away: JOR, stadium: Levi's Stadium }
+
+# 2026-06-17
+- { date: 2026-06-17, group: K, home: POR, away: COD, stadium: NRG Stadium }
+- { date: 2026-06-17, group: K, home: UZB, away: COL, stadium: Estadio Azteca }
+- { date: 2026-06-17, group: L, home: ENG, away: CRO, stadium: BMO Field }
+- { date: 2026-06-17, group: L, home: GHA, away: PAN, stadium: AT&T Stadium }
+
+# 2026-06-18 (matchday 2 begins)
+- { date: 2026-06-18, group: A, home: CZE, away: RSA, stadium: Mercedes-Benz Stadium }
+- { date: 2026-06-18, group: A, home: MEX, away: KOR, stadium: Estadio Akron }
+- { date: 2026-06-18, group: B, home: SUI, away: BIH, stadium: SoFi Stadium }
+- { date: 2026-06-18, group: B, home: CAN, away: QAT, stadium: BC Place }
+
+# 2026-06-19
+- { date: 2026-06-19, group: C, home: BRA, away: HAI, stadium: Lincoln Financial Field }
+- { date: 2026-06-19, group: C, home: SCO, away: MAR, stadium: Gillette Stadium }
+- { date: 2026-06-19, group: D, home: TUR, away: PAR, stadium: Levi's Stadium }
+- { date: 2026-06-19, group: D, home: USA, away: AUS, stadium: Lumen Field }
+
+# 2026-06-20
+- { date: 2026-06-20, group: E, home: GER, away: CIV, stadium: BMO Field }
+- { date: 2026-06-20, group: E, home: ECU, away: CUW, stadium: Arrowhead Stadium }
+- { date: 2026-06-20, group: F, home: NED, away: SWE, stadium: NRG Stadium }
+- { date: 2026-06-20, group: F, home: TUN, away: JPN, stadium: Estadio BBVA }
+
+# 2026-06-21
+- { date: 2026-06-21, group: G, home: BEL, away: IRN, stadium: SoFi Stadium }
+- { date: 2026-06-21, group: G, home: NZL, away: EGY, stadium: BC Place }
+- { date: 2026-06-21, group: H, home: ESP, away: KSA, stadium: Hard Rock Stadium }
+- { date: 2026-06-21, group: H, home: URU, away: CPV, stadium: Mercedes-Benz Stadium }
+
+# 2026-06-22
+- { date: 2026-06-22, group: I, home: FRA, away: IRQ, stadium: MetLife Stadium }
+- { date: 2026-06-22, group: I, home: NOR, away: SEN, stadium: Lincoln Financial Field }
+- { date: 2026-06-22, group: J, home: ARG, away: AUT, stadium: AT&T Stadium }
+- { date: 2026-06-22, group: J, home: JOR, away: ALG, stadium: Levi's Stadium }
+
+# 2026-06-23
+- { date: 2026-06-23, group: K, home: POR, away: UZB, stadium: NRG Stadium }
+- { date: 2026-06-23, group: K, home: COL, away: COD, stadium: Estadio Akron }
+- { date: 2026-06-23, group: L, home: ENG, away: GHA, stadium: Gillette Stadium }
+- { date: 2026-06-23, group: L, home: PAN, away: CRO, stadium: BMO Field }
+
+# 2026-06-24 (matchday 3 begins — both group matches simultaneous)
+- { date: 2026-06-24, group: A, home: CZE, away: MEX, stadium: Estadio Azteca }
+- { date: 2026-06-24, group: A, home: RSA, away: KOR, stadium: Estadio BBVA }
+- { date: 2026-06-24, group: B, home: SUI, away: CAN, stadium: BC Place }
+- { date: 2026-06-24, group: B, home: BIH, away: QAT, stadium: Lumen Field }
+- { date: 2026-06-24, group: C, home: SCO, away: BRA, stadium: Hard Rock Stadium }
+- { date: 2026-06-24, group: C, home: MAR, away: HAI, stadium: Mercedes-Benz Stadium }
+
+# 2026-06-25
+- { date: 2026-06-25, group: D, home: TUR, away: USA, stadium: SoFi Stadium }
+- { date: 2026-06-25, group: D, home: PAR, away: AUS, stadium: Levi's Stadium }
+- { date: 2026-06-25, group: E, home: ECU, away: GER, stadium: Lincoln Financial Field }
+- { date: 2026-06-25, group: E, home: CUW, away: CIV, stadium: MetLife Stadium }
+- { date: 2026-06-25, group: F, home: TUN, away: NED, stadium: AT&T Stadium }
+- { date: 2026-06-25, group: F, home: JPN, away: SWE, stadium: Arrowhead Stadium }
+
+# 2026-06-26
+- { date: 2026-06-26, group: G, home: NZL, away: BEL, stadium: Lumen Field }
+- { date: 2026-06-26, group: G, home: EGY, away: IRN, stadium: BC Place }
+- { date: 2026-06-26, group: H, home: URU, away: ESP, stadium: NRG Stadium }
+- { date: 2026-06-26, group: H, home: CPV, away: KSA, stadium: Estadio Akron }
+- { date: 2026-06-26, group: I, home: NOR, away: FRA, stadium: Gillette Stadium }
+- { date: 2026-06-26, group: I, home: SEN, away: IRQ, stadium: BMO Field }
+
+# 2026-06-27
+- { date: 2026-06-27, group: J, home: JOR, away: ARG, stadium: Arrowhead Stadium }
+- { date: 2026-06-27, group: J, home: ALG, away: AUT, stadium: AT&T Stadium }
+- { date: 2026-06-27, group: K, home: COL, away: POR, stadium: Hard Rock Stadium }
+- { date: 2026-06-27, group: K, home: COD, away: UZB, stadium: Mercedes-Benz Stadium }
+- { date: 2026-06-27, group: L, home: PAN, away: ENG, stadium: MetLife Stadium }
+- { date: 2026-06-27, group: L, home: CRO, away: GHA, stadium: Lincoln Financial Field }
