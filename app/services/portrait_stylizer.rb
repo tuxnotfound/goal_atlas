@@ -14,7 +14,10 @@ require "securerandom"
 class PortraitStylizer
   USER_AGENT  = "GoalAtlas/0.1 (https://goalatlas.local; pcioga@gmail.com)".freeze
   OPENAI_EDIT = "https://api.openai.com/v1/images/edits".freeze
-  MAGICK_BIN  = "/opt/homebrew/bin/magick".freeze
+  # Resolve at boot: macOS (homebrew) vs prod Linux container (apt). Both
+  # install the v7+ `magick` binary; fall back to legacy `convert` if needed.
+  MAGICK_BIN = ["/opt/homebrew/bin/magick", "/usr/bin/magick", "/usr/local/bin/magick", "/usr/bin/convert"]
+                 .find { |p| File.executable?(p) } || "magick"
 
   PROMPT = <<~PROMPT.strip
     Restyle this photo as a high-end vector portrait illustration, in the
