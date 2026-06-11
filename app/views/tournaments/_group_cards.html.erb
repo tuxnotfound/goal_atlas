@@ -100,7 +100,11 @@
               <span class="font-mono text-[10px] tracking-wider w-8 text-left"><%= short_name.call(m.home_team) %></span>
             </span>
             <span class="font-mono text-xs tabular-nums shrink-0 font-semibold w-12 text-center">
-              <%= m.home_score %>&ndash;<%= m.away_score %>
+              <% if m.scheduled? %>
+                &ndash;
+              <% else %>
+                <%= m.home_score %>&ndash;<%= m.away_score %>
+              <% end %>
             </span>
             <span class="flex items-center gap-1.5 shrink-0">
               <span class="font-mono text-[10px] tracking-wider w-8 text-right"><%= short_name.call(m.away_team) %></span>

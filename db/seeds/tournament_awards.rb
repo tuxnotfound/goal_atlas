@@ -14,6 +14,7 @@ AWARDS = {
   ],
   1986 => [
     { type: :golden_ball,        player: "Diego Maradona" },
+    { type: :silver_ball,        player: "Harald Schumacher" },
     { type: :bronze_ball,        player: "Preben Elkjær" },
     { type: :golden_boot,        player: "Gary Lineker",       notes: "6 goals" },
     { type: :silver_boot,        player: "Diego Maradona",     notes: "5 goals" },

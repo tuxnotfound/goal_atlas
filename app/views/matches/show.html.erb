@@ -1,4 +1,4 @@
-<% content_for :title, "#{@match.home_team.name} #{@match.home_score}-#{@match.away_score} #{@match.away_team.name} — The Goal Atlas" %>
+<% content_for :title, "#{@match.home_team.name} #{@match.scheduled? ? "vs" : "#{@match.home_score}-#{@match.away_score}"} #{@match.away_team.name} — The Goal Atlas" %>
 
 <div class="max-w-6xl mx-auto">
 
