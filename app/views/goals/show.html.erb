@@ -1,11 +1,23 @@
-<% content_for :title, "#{@scorer.name} #{goal_minute_label(@goal)} — The Goal Atlas" %>
+<%
+  goal_title = "#{@scorer.name} #{goal_minute_label(@goal)}"
+  goal_desc  = "#{@scorer.name} #{goal_minute_label(@goal)} for #{@scoring_team.name} vs #{@opponent_team.name} — " \
+               "#{@match.stage.to_s.humanize}, #{@tournament.name}. Watch the highlight."
+%>
+<% seo_for title: goal_title, description: goal_desc %>
 
 <div class="max-w-6xl mx-auto">
 
-<nav class="text-sm mb-6">
-  <%= link_to "← Back to match", match_path(@match),
-              class: "text-[#c89942] hover:text-[#f0c870] tracking-wider uppercase text-xs font-semibold transition" %>
-</nav>
+<%
+  match_label = @match.scheduled? ?
+                  "#{@match.home_team.name} vs #{@match.away_team.name}" :
+                  "#{@match.home_team.name} #{@match.home_score}-#{@match.away_score} #{@match.away_team.name}"
+%>
+<%= render "shared/breadcrumbs", crumbs: [
+  ["World Cups", tournaments_path],
+  [@tournament.name, tournament_path(@tournament)],
+  [match_label, match_path(@match)],
+  [goal_title, nil]
+] %>
 
 <%# === Goal hero — parchment card matching the match hero. Player card on
        the left anchors the visual; goal meta sits on the right (minute, scorer

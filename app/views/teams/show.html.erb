@@ -1,6 +1,9 @@
-<% content_for :title, "#{@team.name} — The Goal Atlas" %>
+<% seo_for title: "#{@team.name} at the World Cup",
+           description: "#{@team.name} at the FIFA World Cup: appearances, results, players, goals, and tournament records across every edition." %>
 
 <div class="max-w-6xl mx-auto">
+
+<%= render "shared/breadcrumbs", crumbs: [[@team.name, nil]] %>
 
 <%# === Team hero — parchment card. Flag emoji on the left anchors the visual
        (the team's equivalent of the player portrait); team name + confederation

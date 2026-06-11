@@ -1,9 +1,15 @@
-<% content_for :title, "#{@tournament.name} — The Goal Atlas" %>
+<% seo_for title: @tournament.name,
+           description: "#{@tournament.name}: group stage, knockout bracket, results, goal highlights, awards, and the golden boot race." %>
 
 <%# Page width container — every tournament-page section aligns to these
     horizontal edges. The hero's left/right edges define the "page border",
     and only the hero's nav arrows are allowed to sit outside it. %>
 <div class="max-w-6xl mx-auto">
+
+<%= render "shared/breadcrumbs", crumbs: [
+  ["World Cups", tournaments_path],
+  [@tournament.name, nil]
+] %>
 
 <%= render "tournaments/hero" %>
 

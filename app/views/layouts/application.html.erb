@@ -1,11 +1,26 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "The Goal Atlas" %></title>
+    <title><%= page_title %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="The Goal Atlas">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="<%= page_description %>">
+    <link rel="canonical" href="<%= canonical_url %>">
+    <% if page_noindex? %><meta name="robots" content="noindex,follow"><% end %>
+
+    <meta property="og:site_name" content="The Goal Atlas">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="<%= page_title %>">
+    <meta property="og:description" content="<%= page_description %>">
+    <meta property="og:image" content="<%= page_og_image_url %>">
+    <meta property="og:url" content="<%= request.original_url.split('?').first %>">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<%= page_title %>">
+    <meta name="twitter:description" content="<%= page_description %>">
+    <meta name="twitter:image" content="<%= page_og_image_url %>">
+
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
@@ -17,6 +32,10 @@
 
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
+
+    <% if Rails.env.production? && !request.path.start_with?("/admin") %>
+      <script defer src="https://cloud.umami.is/script.js" data-website-id="de8ced7d-1fa1-4ec5-a135-2329d9841539"></script>
+    <% end %>
   </head>
 
   <body class="bg-[#0a3520] text-[#e8d99c] min-h-screen flex flex-col">

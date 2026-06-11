@@ -1,0 +1,44 @@
+<%#
+  Renders a breadcrumb trail and a JSON-LD BreadcrumbList for SEO.
+
+  Usage:
+    <%%= render "shared/breadcrumbs", crumbs: [
+      ["World Cups", tournaments_path],
+      [@tournament.name, nil]    # last crumb: url is nil → not linked
+    ] %%>
+
+  "Home" is prepended automatically.
+%>
+<% crumbs = [["Home", root_path]] + (local_assigns[:crumbs] || []) %>
+
+<nav aria-label="Breadcrumb" class="text-xs mb-6 tracking-wider uppercase font-semibold">
+  <ol class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[#c89942]">
+    <% crumbs.each_with_index do |(label, url), i| %>
+      <% if i > 0 %>
+        <li aria-hidden="true" class="text-[#c89942]/50">›</li>
+      <% end %>
+      <li>
+        <% if url && i < crumbs.length - 1 %>
+          <%= link_to label, url, class: "hover:text-[#f0c870] transition" %>
+        <% else %>
+          <span class="text-[#e8d99c]"><%= label %></span>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+</nav>
+
+<% content_for :head do %>
+<script type="application/ld+json"><%= raw({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": crumbs.each_with_index.map do |(name, url), i|
+    item = { "@type": "ListItem", "position": i + 1, "name": name }
+    if url
+      absolute = url.start_with?("http://", "https://") ? url : "#{request.base_url}#{url}"
+      item["item"] = absolute
+    end
+    item
+  end
+}.to_json) %></script>
+<% end %>

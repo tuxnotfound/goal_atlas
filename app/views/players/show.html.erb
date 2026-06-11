@@ -1,6 +1,9 @@
-<% content_for :title, "#{@player.name} — The Goal Atlas" %>
+<% seo_for title: @player.name,
+           description: "#{@player.name} at the FIFA World Cup: goals, matches, tournament records, awards, and highlights across every appearance." %>
 
 <div class="max-w-6xl mx-auto">
+
+<%= render "shared/breadcrumbs", crumbs: [[@player.name, nil]] %>
 
 <%# === Player hero — parchment card matching the match/goal heroes. Portrait
        on the left anchors the visual; name + nationality + role sit on the

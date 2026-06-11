@@ -1,4 +1,6 @@
-<% content_for :title, "Search — The Goal Atlas" %>
+<% seo_for title: @query.present? ? "Search: #{@query}" : "Search",
+           description: "Search teams, players, and tournaments across every FIFA World Cup.",
+           noindex: true %>
 
 <div class="max-w-6xl mx-auto">
 
