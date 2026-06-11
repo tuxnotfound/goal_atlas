@@ -228,13 +228,19 @@ class Wc2026Sync
   end
 
   # Memoised /players?id=N call. Returns [name, birth_date]. nil/nil on miss.
+  # Trims the 4-word "Julián Andrés Quiñones Quiñones" form down to
+  # "Julián Quiñones" — Wikidata's wbsearchentities fails on full Spanish
+  # double-surname names but matches reliably on the 2-token form, which is
+  # also how Commons file titles + WC broadcast graphics name these players.
   def canonical_player_info(api_id)
     @player_info_cache ||= {}
     @player_info_cache[api_id] ||= begin
       payload = @client.player_details(id: api_id, season: SEASON)
       p = payload["response"]&.first&.dig("player")
       if p
-        full = [p["firstname"], p["lastname"]].compact.map(&:strip).reject(&:empty?).join(" ")
+        first_token = p["firstname"].to_s.strip.split.first
+        last_token  = p["lastname"].to_s.strip.split.last
+        full = [first_token, last_token].compact.reject(&:empty?).join(" ")
         full = nil if full.empty?
         birth = p.dig("birth", "date")
         [full, birth.present? ? Date.parse(birth) : nil]
