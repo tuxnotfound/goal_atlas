@@ -1,9 +1,7 @@
 # Pulls WC2026 fixtures from api-football and upserts scores + result_type
-# onto the matching Match rows in our DB.
-#
-# Scope (v1): scores, winner, result_type. Goals/scorers are still entered
-# via /admin/matches because mapping api-football player IDs → our Player IDs
-# isn't safe to automate during the tournament.
+# onto matching Match rows. After a match flips to a "finished" status the
+# sync also fetches the goal-event timeline and upserts Goal rows + creates
+# Player rows for any scorers/assists we don't already have.
 #
 # Usage:
 #   Wc2026Sync.new.call
@@ -24,11 +22,18 @@ class Wc2026Sync
     "AWD"  => :walkover
   }.freeze
 
+  # api-football's event `detail` string → our Goal#goal_type enum.
+  GOAL_TYPE_MAP = {
+    "Normal Goal" => :open_play,
+    "Penalty"     => :penalty,
+    "Own Goal"    => :own_goal
+  }.freeze
+
   attr_reader :stats
 
   def initialize(client: ApiFootballClient.new)
     @client = client
-    @stats  = { fetched: 0, updated: 0, skipped: 0, no_match: [] }
+    @stats  = { fetched: 0, updated: 0, skipped: 0, goals_synced: 0, players_created: 0, no_match: [] }
   end
 
   def call
@@ -66,8 +71,10 @@ class Wc2026Sync
       return
     end
 
-    # No-op if we've already applied this result.
+    # No-op if we've already applied this result… unless we still need to
+    # backfill the goal events for it (e.g. a previous run failed mid-flight).
     if match.result_type != "scheduled"
+      sync_goals_for(match, fx, team_map) if match.goals.kept.empty?
       @stats[:skipped] += 1
       return
     end
@@ -104,6 +111,105 @@ class Wc2026Sync
 
     match.update!(attrs)
     @stats[:updated] += 1
+
+    # Goal events only become available once api-football has the timeline,
+    # which is normally right at FT. Pull them now so the match doesn't sit
+    # showing a final score with no scorer info.
+    sync_goals_for(match, fx, team_map)
+  end
+
+  # Fetches goal events for one fixture and upserts a Goal row per event.
+  # Idempotent: scoped to (match, period, minute, stoppage_time, scorer name) so
+  # re-runs don't double-insert. Creates Player rows on the fly for any
+  # scorer/assist not already in the DB.
+  def sync_goals_for(match, fx, team_map)
+    fixture_id = fx.dig("fixture", "id")
+    return unless fixture_id
+
+    events = @client.fixture_events(fixture_id: fixture_id)["response"]
+    goal_events = events.select { |e| e["type"] == "Goal" }
+    return if goal_events.empty?
+
+    running_home = 0
+    running_away = 0
+
+    goal_events.each_with_index do |ev, idx|
+      scoring_team = team_map[ev.dig("team", "id")]
+      next unless scoring_team  # team mapping failure already logged
+
+      detail     = ev["detail"].to_s
+      goal_type  = GOAL_TYPE_MAP[detail] || :open_play
+      minute     = ev.dig("time", "elapsed")
+      stoppage   = ev.dig("time", "extra")
+      next unless minute.is_a?(Integer) && minute.between?(0, 120)  # skip shootout/garbage
+      period     = period_for(minute)
+
+      # For own goals the api-football scorer plays FOR the team that conceded.
+      scorer_nationality = (goal_type == :own_goal ? opponent_of(match, scoring_team) : scoring_team)
+
+      player        = find_or_create_player(ev.dig("player", "name"), scorer_nationality)
+      assist_player = ev.dig("assist", "id") && find_or_create_player(ev.dig("assist", "name"), scoring_team)
+
+      # Running tally so score_after_goal_* reflects the state right after this goal.
+      if scoring_team.id == match.home_team_id
+        running_home += 1
+      else
+        running_away += 1
+      end
+
+      Goal.where(
+        match_id:    match.id,
+        period:      Goal.periods[period],
+        minute:      minute,
+        stoppage_time: stoppage,
+        player_id:   player.id
+      ).first_or_create! do |g|
+        g.scoring_team        = scoring_team
+        g.goal_type           = goal_type
+        g.goal_order          = idx
+        g.assist_player       = assist_player
+        g.score_after_goal_home = running_home
+        g.score_after_goal_away = running_away
+        g.data_confidence     = :likely  # api-derived; admin upgrades to :verified after eyeball
+      end
+
+      @stats[:goals_synced] += 1
+    end
+  rescue ApiFootballClient::Error => e
+    Rails.logger.warn("Wc2026Sync: goal-event fetch failed for fixture #{fixture_id}: #{e.message}")
+  end
+
+  def period_for(minute)
+    case minute
+    when 0..45    then :first_half
+    when 46..90   then :second_half
+    when 91..105  then :extra_time_first
+    else               :extra_time_second
+    end
+  end
+
+  def opponent_of(match, team)
+    team.id == match.home_team_id ? match.away_team : match.home_team
+  end
+
+  # Player upsert: case-insensitive name match scoped to the scorer's
+  # nationality team first (avoids name collisions across teams), then
+  # falling back to a name-only match. New players are created with
+  # nationality_team set so future syncs find them.
+  def find_or_create_player(name, nationality_team)
+    name = name.to_s.strip
+    return nil if name.empty?
+
+    scoped = Player.kept.where("LOWER(name) = ?", name.downcase)
+    player = scoped.where(nationality_team: nationality_team).first
+    player ||= scoped.where(nationality_team_id: nil).first
+    player ||= scoped.first
+
+    return player if player
+
+    Player.create!(name: name, nationality_team: nationality_team).tap do
+      @stats[:players_created] += 1
+    end
   end
 
   def determine_winner_id(match, attrs, new_type)

@@ -38,6 +38,11 @@ class ApiFootballClient
     get("/teams", { league: league, season: season })
   end
 
+  # GET /fixtures/events?fixture=<id> — goal/card/sub timeline for one fixture.
+  def fixture_events(fixture_id:)
+    get("/fixtures/events", { fixture: fixture_id })
+  end
+
   private
 
   def get(path, params)
