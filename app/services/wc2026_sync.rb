@@ -61,10 +61,15 @@ class Wc2026Sync
 
     home_team = team_map[fx.dig("teams", "home", "id")]
     away_team = team_map[fx.dig("teams", "away", "id")]
-    date      = Date.parse(fx.dig("fixture", "date"))
+    api_date  = Date.parse(fx.dig("fixture", "date"))
 
-    match = Match.kept.find_by(tournament: tournament, home_team: home_team, away_team: away_team, date: date)
-    match ||= Match.kept.find_by(tournament: tournament, home_team: away_team, away_team: home_team, date: date)  # in case home/away flipped
+    # api-football's date is UTC, ours is local-venue date. A late-night
+    # local kickoff (e.g. 9pm CDT) rolls into the next UTC day, so we widen
+    # the lookup to a 3-day window centred on the api date.
+    date_range = (api_date - 1)..(api_date + 1)
+
+    match = Match.kept.find_by(tournament: tournament, home_team: home_team, away_team: away_team, date: date_range)
+    match ||= Match.kept.find_by(tournament: tournament, home_team: away_team, away_team: home_team, date: date_range)
 
     unless match
       @stats[:no_match] << "#{date} #{home_team&.fifa_code} vs #{away_team&.fifa_code}"
