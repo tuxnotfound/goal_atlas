@@ -49,7 +49,7 @@
       the team page treatment). %>
   <% if champion_count.positive? && File.exist?(trophy_asset) %>
     <%= image_tag "/hero_trophy.png", alt: "FIFA World Cup trophy",
-          class: "absolute -top-4 right-0 sm:right-4 h-[480px] w-auto pointer-events-none drop-shadow-2xl select-none" %>
+          class: "absolute -top-2 sm:-top-4 right-0 sm:right-4 h-[200px] sm:h-[320px] md:h-[480px] w-auto pointer-events-none drop-shadow-2xl select-none" %>
   <% end %>
 
   <div class="relative p-6 md:p-10">

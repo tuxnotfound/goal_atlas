@@ -1,1 +1,24 @@
 @import "tailwindcss";
+
+/* ─── Mobile podium fit ──────────────────────────────────────────────────
+   The silver/gold/bronze podiums (golden-boot, all-time scorers) and the
+   awards "ball" trio are built from fixed-px player cards (130/170/130) that
+   sum to ~462–478px — wider than a phone viewport, so on mobile the side
+   cards get clipped at the screen edges and the page scrolls horizontally.
+   The card + portrait widths are baked server-side (inline px), so instead of
+   rebuilding them responsively we scale the whole row down with `zoom`, which
+   (unlike `transform: scale`) also shrinks the layout box — no horizontal
+   scrollbar and no leftover vertical gap. Factors snap back to 1 (the
+   untouched desktop design) at ≥540px. Wrap each row in `.overflow-x-clip`. */
+.podium-fit { zoom: 0.54; }
+@media (min-width: 360px) { .podium-fit { zoom: 0.62; } }
+@media (min-width: 400px) { .podium-fit { zoom: 0.70; } }
+@media (min-width: 460px) { .podium-fit { zoom: 0.82; } }
+@media (min-width: 540px) { .podium-fit { zoom: 1;    } }
+
+/* The hero's final-standings podium is a little narrower (~376px); same idea,
+   gentler factors so it stays prominent. Reaches full size by 440px. */
+.hero-podium-fit { zoom: 0.68; }
+@media (min-width: 360px) { .hero-podium-fit { zoom: 0.78; } }
+@media (min-width: 400px) { .hero-podium-fit { zoom: 0.88; } }
+@media (min-width: 440px) { .hero-podium-fit { zoom: 1;    } }

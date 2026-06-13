@@ -23,13 +23,13 @@
 
     <div class="flex items-center gap-2">
       <span class="text-lg leading-none shrink-0"><%= match.home_team.flag_emoji %></span>
-      <span class="font-serif font-bold truncate flex-1 <%= home_winner ? "text-[#0a3520]" : "text-[#6e7d6e]" %>">
+      <span class="font-serif font-bold truncate flex-1 min-w-0 <%= home_winner ? "text-[#0a3520]" : "text-[#6e7d6e]" %>">
         <%= match.home_team.name %>
       </span>
       <span class="font-serif font-bold tabular-nums text-[#0a3520] text-base shrink-0">
         <%= score %>
       </span>
-      <span class="font-serif font-bold truncate flex-1 text-right <%= away_winner ? "text-[#0a3520]" : "text-[#6e7d6e]" %>">
+      <span class="font-serif font-bold truncate flex-1 min-w-0 text-right <%= away_winner ? "text-[#0a3520]" : "text-[#6e7d6e]" %>">
         <%= match.away_team.name %>
       </span>
       <span class="text-lg leading-none shrink-0"><%= match.away_team.flag_emoji %></span>

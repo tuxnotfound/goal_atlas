@@ -32,7 +32,7 @@
     <% trophy_asset = Rails.public_path.join("hero_trophy.png") %>
     <% if File.exist?(trophy_asset) %>
       <%= image_tag "/hero_trophy.png", alt: "FIFA World Cup trophy",
-            class: "absolute -top-6 right-0 sm:right-4 h-[750px] w-auto pointer-events-none drop-shadow-2xl select-none" %>
+            class: "absolute -top-3 sm:-top-6 right-0 sm:right-4 h-[240px] sm:h-[460px] md:h-[750px] w-auto pointer-events-none drop-shadow-2xl select-none" %>
     <% else %>
       <div class="absolute top-4 right-4 pointer-events-none">
         <%= render "tournaments/trophy_svg" %>
@@ -109,7 +109,8 @@
             wrap to two lines within the column rather than truncating with
             ellipsis. Sizes bumped one notch from v7 across the board. %>
         <div class="col-span-12 sm:col-span-7 md:col-span-5 flex flex-col justify-end">
-          <div class="flex items-end justify-center gap-3">
+          <div class="overflow-x-clip">
+          <div class="hero-podium-fit flex items-end justify-center gap-3">
 
             <%# 2nd — silver %>
             <% if ru %>
@@ -161,6 +162,7 @@
             <% end %>
 
           </div>
+          </div>
 
           <%# 4th place — small single line beneath the podium, centred. %>
           <% if fo %>
@@ -184,7 +186,7 @@
   <% if @next_tournament %>
     <%= link_to tournament_path(year: @next_tournament.year),
                 title: "#{@next_tournament.year} World Cup",
-                class: "absolute -left-12 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full border border-[#c89942]/50 bg-[#fdf6dc] text-[#0a3520] flex items-center justify-center transition shadow-md shadow-black/20 opacity-55 hover:opacity-100 hover:bg-[#fef0c8] hover:border-[#f0c870] hover:shadow-lg" do %>
+                class: "absolute left-1 md:-left-12 top-1/2 -translate-y-1/2 w-10 h-10 md:w-9 md:h-9 rounded-full border border-[#c89942]/50 bg-[#fdf6dc] text-[#0a3520] flex items-center justify-center transition shadow-md shadow-black/20 opacity-80 md:opacity-55 hover:opacity-100 hover:bg-[#fef0c8] hover:border-[#f0c870] hover:shadow-lg" do %>
       <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
       </svg>
@@ -194,7 +196,7 @@
   <% if @prev_tournament %>
     <%= link_to tournament_path(year: @prev_tournament.year),
                 title: "#{@prev_tournament.year} World Cup",
-                class: "absolute -right-12 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full border border-[#c89942]/50 bg-[#fdf6dc] text-[#0a3520] flex items-center justify-center transition shadow-md shadow-black/20 opacity-55 hover:opacity-100 hover:bg-[#fef0c8] hover:border-[#f0c870] hover:shadow-lg" do %>
+                class: "absolute right-1 md:-right-12 top-1/2 -translate-y-1/2 w-10 h-10 md:w-9 md:h-9 rounded-full border border-[#c89942]/50 bg-[#fdf6dc] text-[#0a3520] flex items-center justify-center transition shadow-md shadow-black/20 opacity-80 md:opacity-55 hover:opacity-100 hover:bg-[#fef0c8] hover:border-[#f0c870] hover:shadow-lg" do %>
       <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
       </svg>
