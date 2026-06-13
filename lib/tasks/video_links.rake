@@ -96,22 +96,28 @@ namespace :video_links do
     attached = 0
     skipped  = 0
 
-    matches.each_with_index do |m, idx|
-      label = "M#{m.match_number} #{m.home_team.fifa_code} v #{m.away_team.fifa_code}"
-      result = with_rate_limit_retry { scout.find_best_for_match(m) }
-      if result.nil?
-        m.update_column(:video_scout_failed_at, Time.current)
-        puts "#{label}: no relevant result (marked failed; will be skipped next run)"
-        skipped += 1
-      else
-        link = m.video_links.find_or_initialize_by(url: result[:url])
-        was_new = link.new_record?
-        link.assign_attributes(source: result[:source], confidence: :unverified, language: "en", is_active: true, embed_allowed: result.fetch(:embed_allowed, false))
-        link.save!
-        puts "#{label}: → #{result[:url]} (#{result[:source]}) #{was_new ? "[NEW]" : "[exists]"}"
-        attached += 1 if was_new
+    begin
+      matches.each_with_index do |m, idx|
+        label = "M#{m.match_number} #{m.home_team.fifa_code} v #{m.away_team.fifa_code}"
+        result = with_rate_limit_retry { scout.find_best_for_match(m) }
+        if result.nil?
+          m.update_column(:video_scout_failed_at, Time.current)
+          puts "#{label}: no relevant result (marked failed; will be skipped next run)"
+          skipped += 1
+        else
+          link = m.video_links.find_or_initialize_by(url: result[:url])
+          was_new = link.new_record?
+          link.assign_attributes(source: result[:source], confidence: :unverified, language: "en", is_active: true, embed_allowed: result.fetch(:embed_allowed, false))
+          link.save!
+          puts "#{label}: → #{result[:url]} (#{result[:source]}) #{was_new ? "[NEW]" : "[exists]"}"
+          attached += 1 if was_new
+        end
+        sleep AUTOFETCH_SLEEP_SECONDS unless idx == matches.size - 1
       end
-      sleep AUTOFETCH_SLEEP_SECONDS unless idx == matches.size - 1
+    rescue VideoLinkScout::DailyQuotaExhausted => e
+      puts ""
+      puts "Stopping early: #{e.message}."
+      puts "Re-run the same task tomorrow (after the YouTube quota resets) to continue."
     end
 
     puts ""
@@ -444,8 +450,8 @@ namespace :video_links do
 
       begin
         result = with_rate_limit_retry { scout.find_best_short_match_video_with_fallback(match) }
-      rescue VideoLinkScout::RateLimited => e
-        puts "#{label}: 429 after retries — STOPPING (#{e.message[0,80]})"
+      rescue VideoLinkScout::DailyQuotaExhausted => e
+        puts "#{label}: quota exhausted — STOPPING (#{e.message[0,80]})"
         quota_dead = idx
         break
       end
@@ -601,7 +607,12 @@ namespace :video_links do
         next
       end
 
-      result = with_rate_limit_retry { scout.find_best_short_match_video_with_fallback(match) }
+      begin
+        result = with_rate_limit_retry { scout.find_best_short_match_video_with_fallback(match) }
+      rescue VideoLinkScout::DailyQuotaExhausted => e
+        puts "#{label}: quota exhausted — STOPPING (#{e.message[0,80]})"
+        break
+      end
       if result.nil?
         puts "#{label}: no highlight found (tried short and medium)"
         not_found += 1
@@ -940,13 +951,21 @@ namespace :video_links do
     puts "Done. Forced false (youtube_official=FIFA): #{forced_false}, probed embeddable: #{probed_true}, probed blocked: #{probed_false}, rows updated: #{changed}."
   end
 
+  # YouTube sometimes returns HTTP 429 ("per-minute rate limit") when the
+  # daily quota is actually exhausted — sleeping doesn't recover. After
+  # exhausting retries, treat it as a daily-quota event so the task can
+  # exit gracefully with the "re-run tomorrow" message rather than crash
+  # with a stack trace.
   def with_rate_limit_retry(max_retries: 2, backoff_seconds: 65)
     attempts = 0
     begin
       yield
     rescue VideoLinkScout::RateLimited => e
       attempts += 1
-      raise if attempts > max_retries
+      if attempts > max_retries
+        raise VideoLinkScout::DailyQuotaExhausted,
+              "persistent 429 after #{max_retries} retries (#{e.message}) — treating as quota exhaustion"
+      end
       puts "  ! rate-limited (#{e.message}); sleeping #{backoff_seconds}s (attempt #{attempts}/#{max_retries})…"
       sleep backoff_seconds
       retry
