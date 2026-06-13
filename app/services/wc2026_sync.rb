@@ -1,9 +1,7 @@
 # Pulls WC2026 fixtures from api-football and upserts scores + result_type
-# onto the matching Match rows in our DB.
-#
-# Scope (v1): scores, winner, result_type. Goals/scorers are still entered
-# via /admin/matches because mapping api-football player IDs → our Player IDs
-# isn't safe to automate during the tournament.
+# onto matching Match rows. After a match flips to a "finished" status the
+# sync also fetches the goal-event timeline and upserts Goal rows + creates
+# Player rows for any scorers/assists we don't already have.
 #
 # Usage:
 #   Wc2026Sync.new.call
@@ -24,11 +22,18 @@ class Wc2026Sync
     "AWD"  => :walkover
   }.freeze
 
+  # api-football's event `detail` string → our Goal#goal_type enum.
+  GOAL_TYPE_MAP = {
+    "Normal Goal" => :open_play,
+    "Penalty"     => :penalty,
+    "Own Goal"    => :own_goal
+  }.freeze
+
   attr_reader :stats
 
   def initialize(client: ApiFootballClient.new)
     @client = client
-    @stats  = { fetched: 0, updated: 0, skipped: 0, no_match: [] }
+    @stats  = { fetched: 0, updated: 0, skipped: 0, goals_synced: 0, players_created: 0, no_match: [] }
   end
 
   def call
@@ -56,18 +61,25 @@ class Wc2026Sync
 
     home_team = team_map[fx.dig("teams", "home", "id")]
     away_team = team_map[fx.dig("teams", "away", "id")]
-    date      = Date.parse(fx.dig("fixture", "date"))
+    api_date  = Date.parse(fx.dig("fixture", "date"))
 
-    match = Match.kept.find_by(tournament: tournament, home_team: home_team, away_team: away_team, date: date)
-    match ||= Match.kept.find_by(tournament: tournament, home_team: away_team, away_team: home_team, date: date)  # in case home/away flipped
+    # api-football's date is UTC, ours is local-venue date. A late-night
+    # local kickoff (e.g. 9pm CDT) rolls into the next UTC day, so we widen
+    # the lookup to a 3-day window centred on the api date.
+    date_range = (api_date - 1)..(api_date + 1)
+
+    match = Match.kept.find_by(tournament: tournament, home_team: home_team, away_team: away_team, date: date_range)
+    match ||= Match.kept.find_by(tournament: tournament, home_team: away_team, away_team: home_team, date: date_range)
 
     unless match
       @stats[:no_match] << "#{date} #{home_team&.fifa_code} vs #{away_team&.fifa_code}"
       return
     end
 
-    # No-op if we've already applied this result.
+    # No-op if we've already applied this result… unless we still need to
+    # backfill the goal events for it (e.g. a previous run failed mid-flight).
     if match.result_type != "scheduled"
+      sync_goals_for(match, fx, team_map) if match.goals.kept.empty?
       @stats[:skipped] += 1
       return
     end
@@ -104,6 +116,187 @@ class Wc2026Sync
 
     match.update!(attrs)
     @stats[:updated] += 1
+
+    # Goal events only become available once api-football has the timeline,
+    # which is normally right at FT. Pull them now so the match doesn't sit
+    # showing a final score with no scorer info.
+    sync_goals_for(match, fx, team_map)
+  end
+
+  # Fetches goal events for one fixture and upserts a Goal row per event.
+  # Idempotent: scoped to (match, period, minute, stoppage_time, scorer name) so
+  # re-runs don't double-insert. Creates Player rows on the fly for any
+  # scorer/assist not already in the DB.
+  def sync_goals_for(match, fx, team_map)
+    fixture_id = fx.dig("fixture", "id")
+    return unless fixture_id
+
+    events = @client.fixture_events(fixture_id: fixture_id)["response"]
+    goal_events = events.select { |e| e["type"] == "Goal" }
+    return if goal_events.empty?
+
+    running_home = 0
+    running_away = 0
+
+    goal_events.each_with_index do |ev, idx|
+      scoring_team = team_map[ev.dig("team", "id")]
+      next unless scoring_team  # team mapping failure already logged
+
+      detail     = ev["detail"].to_s
+      goal_type  = GOAL_TYPE_MAP[detail] || :open_play
+      minute     = ev.dig("time", "elapsed")
+      stoppage   = ev.dig("time", "extra")
+      next unless minute.is_a?(Integer) && minute.between?(0, 120)  # skip shootout/garbage
+      period     = period_for(minute)
+
+      # For own goals the api-football scorer plays FOR the team that conceded.
+      scorer_nationality = (goal_type == :own_goal ? opponent_of(match, scoring_team) : scoring_team)
+
+      player        = find_or_create_player(ev.dig("player", "id"), ev.dig("player", "name"), scorer_nationality)
+      assist_player = ev.dig("assist", "id") && find_or_create_player(ev.dig("assist", "id"), ev.dig("assist", "name"), scoring_team)
+
+      # Running tally so score_after_goal_* reflects the state right after this goal.
+      if scoring_team.id == match.home_team_id
+        running_home += 1
+      else
+        running_away += 1
+      end
+
+      Goal.where(
+        match_id:    match.id,
+        period:      Goal.periods[period],
+        minute:      minute,
+        stoppage_time: stoppage,
+        player_id:   player.id
+      ).first_or_create! do |g|
+        g.scoring_team        = scoring_team
+        g.goal_type           = goal_type
+        g.goal_order          = idx
+        g.assist_player       = assist_player
+        g.score_after_goal_home = running_home
+        g.score_after_goal_away = running_away
+        g.data_confidence     = :likely  # api-derived; admin upgrades to :verified after eyeball
+      end
+
+      @stats[:goals_synced] += 1
+    end
+  rescue ApiFootballClient::Error => e
+    Rails.logger.warn("Wc2026Sync: goal-event fetch failed for fixture #{fixture_id}: #{e.message}")
+  end
+
+  def period_for(minute)
+    case minute
+    when 0..45    then :first_half
+    when 46..90   then :second_half
+    when 91..105  then :extra_time_first
+    else               :extra_time_second
+    end
+  end
+
+  def opponent_of(match, team)
+    team.id == match.home_team_id ? match.away_team : match.home_team
+  end
+
+  # Player upsert. Order:
+  #   1. exact lookup by api_football_player_id (persistent ID — bulletproof)
+  #   2. name fallback (diacritic + case insensitive) trying every plausible
+  #      form so existing rows (Messi, Ronaldo, etc.) get linked instead of
+  #      duplicated. On match we backfill api_football_player_id so step 1
+  #      catches them next time.
+  #   3. create a fresh row with the best canonical name we can compute.
+  def find_or_create_player(api_id, short_name, nationality_team)
+    return nil if short_name.to_s.strip.empty?
+
+    # Step 1 — persistent ID
+    if api_id && (existing = Player.kept.find_by(api_football_player_id: api_id))
+      return existing
+    end
+
+    info = api_id ? player_details_cached(api_id) : nil
+
+    # Step 2 — name fallback. Only forms that uniquely identify the player —
+    # the short broadcast name ("L. Messi"), api-football's curated `name`
+    # ("Cristiano Ronaldo"), and the firstname+lastname computed form. We
+    # intentionally exclude firstname alone because common compound first
+    # names like "Roberto Carlos" collide with unrelated legends.
+    names_to_try = [
+      short_name,
+      info&.dig(:api_name),
+      info&.dig(:computed_name)
+    ].compact.map(&:to_s).map(&:strip).reject(&:empty?).uniq
+
+    names_to_try.each do |n|
+      existing = lookup_player_by_name(n, nationality_team)
+      next unless existing
+      # Backfill the ID so this player is matched directly next time. Don't
+      # clobber a different id already set (could indicate a name collision
+      # with a different real person).
+      if api_id && existing.api_football_player_id.blank?
+        existing.update!(api_football_player_id: api_id)
+      end
+      return existing
+    end
+
+    # Step 3 — create
+    Player.create!(
+      name: info&.dig(:computed_name).presence || info&.dig(:api_name).presence || short_name,
+      birth_date: info&.dig(:birth_date),
+      nationality_team: nationality_team,
+      api_football_player_id: api_id
+    ).tap { @stats[:players_created] += 1 }
+  end
+
+  # Diacritic + case insensitive name match scoped to the player's
+  # nationality_team plus teamless players. Cross-team matches are NEVER
+  # returned — "Roberto Carlos" in BRA must not be matched as MEX's
+  # "Roberto Alvarado" when api-football lists his firstname as "Roberto
+  # Carlos". If the player isn't in the right team's roster (or teamless)
+  # we create a new row.
+  def lookup_player_by_name(name, nationality_team)
+    target = normalize_name(name)
+    return nil if target.empty? || nationality_team.nil?
+
+    candidates = Player.kept.where(nationality_team_id: [nationality_team.id, nil]).to_a
+    candidates.find { |p| normalize_name(p.name) == target }
+  end
+
+  # Strip diacritics + lowercase + squeeze whitespace. "García Hernández" →
+  # "garcia hernandez", so it matches "Garcia Hernandez".
+  def normalize_name(str)
+    str.to_s.unicode_normalize(:nfkd).gsub(/\p{Mn}/, "").downcase.gsub(/\s+/, " ").strip
+  end
+
+  # Memoised /players?id=N. Returns a hash with both the api-football "name"
+  # (often the common short form like "Cristiano Ronaldo") and a computed
+  # firstname-lastname form for cases like Spanish double surnames.
+  def player_details_cached(api_id)
+    @player_info_cache ||= {}
+    return @player_info_cache[api_id] if @player_info_cache.key?(api_id)
+
+    @player_info_cache[api_id] = fetch_player_details(api_id)
+  end
+
+  def fetch_player_details(api_id)
+    payload = @client.player_details(id: api_id, season: SEASON)
+    p = payload["response"]&.first&.dig("player")
+    return nil unless p
+
+    # First firstname + first lastname — sane default for Spanish names.
+    first_token = p["firstname"].to_s.strip.split.first
+    last_token  = p["lastname"].to_s.strip.split.first
+    computed = [first_token, last_token].compact.reject(&:empty?).join(" ")
+    birth    = p.dig("birth", "date")
+
+    {
+      api_name:      p["name"].to_s.strip.presence,        # e.g. "L. Messi", "Cristiano Ronaldo"
+      computed_name: computed.presence,                     # e.g. "Lionel Messi"
+      firstname:     p["firstname"].to_s.strip.presence,    # for extra-loose match
+      lastname_full: p["lastname"].to_s.strip.presence,
+      birth_date:    (Date.parse(birth) rescue nil)
+    }
+  rescue ApiFootballClient::Error => e
+    Rails.logger.warn("Wc2026Sync: player_details lookup failed for api_id=#{api_id}: #{e.message}")
+    nil
   end
 
   def determine_winner_id(match, attrs, new_type)

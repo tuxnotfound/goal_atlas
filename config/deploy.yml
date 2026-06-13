@@ -19,6 +19,10 @@ servers:
 proxy:
   ssl: true
   host: thegoalatlas.com
+  # Admin's "stylize portrait" hits OpenAI gpt-image-1 synchronously; that
+  # request takes 45-60s. Default kamal-proxy target-timeout (30s) returns
+  # 504. Bump to 120s so admin requests have headroom.
+  response_timeout: 120
   healthcheck:
     interval: 3
     timeout: 5
@@ -43,6 +47,12 @@ env:
     SOLID_QUEUE_IN_PUMA: true
     DB_HOST: goal_atlas-db        # name of the Postgres accessory below
     RAILS_LOG_LEVEL: info
+
+    # Thruster (HTTP proxy in front of Puma) defaults to 30s write timeout,
+    # which is shorter than OpenAI gpt-image-1's ~55s call. Bump so admin
+    # stylize requests aren't cut mid-response.
+    HTTP_IDLE_TIMEOUT: 180
+    HTTP_WRITE_TIMEOUT: 180
 
 aliases:
   console: app exec --interactive --reuse "bin/rails console"

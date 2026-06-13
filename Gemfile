@@ -55,6 +55,9 @@ gem "friendly_id", "~> 5.5"
 # Pagination for index pages with large collections (e.g. /goals)
 gem "pagy", "~> 9.0"
 
+# Headless Chrome via CDP for rendering per-page OG share images
+gem "ferrum", "~> 0.17"
+
 # Bundled with Ruby until 3.3; explicit since 3.4. Used by db/seeds/import.rb.
 gem "csv"
 

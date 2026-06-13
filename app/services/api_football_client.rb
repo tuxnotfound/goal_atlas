@@ -38,6 +38,18 @@ class ApiFootballClient
     get("/teams", { league: league, season: season })
   end
 
+  # GET /fixtures/events?fixture=<id> — goal/card/sub timeline for one fixture.
+  def fixture_events(fixture_id:)
+    get("/fixtures/events", { fixture: fixture_id })
+  end
+
+  # GET /players?id=<id>&season=<season> — full player details (firstname,
+  # lastname, birth date, photo). Used to upgrade short names like
+  # "J. Quinones" into the canonical "Julián Andrés Quiñones Quiñones".
+  def player_details(id:, season:)
+    get("/players", { id: id, season: season })
+  end
+
   private
 
   def get(path, params)

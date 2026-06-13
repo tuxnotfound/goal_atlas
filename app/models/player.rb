@@ -56,24 +56,26 @@ end
 #
 # Table name: players
 #
-#  id                  :bigint           not null, primary key
-#  birth_date          :date
-#  discarded_at        :datetime
-#  name                :string           not null
-#  name_local          :string
-#  position            :integer
-#  slug                :string           not null
-#  created_at          :datetime         not null
-#  updated_at          :datetime         not null
-#  nationality_team_id :bigint
+#  id                     :bigint           not null, primary key
+#  birth_date             :date
+#  discarded_at           :datetime
+#  name                   :string           not null
+#  name_local             :string
+#  position               :integer
+#  slug                   :string           not null
+#  created_at             :datetime         not null
+#  updated_at             :datetime         not null
+#  api_football_player_id :integer
+#  nationality_team_id    :bigint
 #
 # Indexes
 #
-#  index_players_on_discarded_at         (discarded_at)
-#  index_players_on_name                 (name)
-#  index_players_on_name_trgm            (name) USING gin
-#  index_players_on_nationality_team_id  (nationality_team_id)
-#  index_players_on_slug                 (slug) UNIQUE
+#  index_players_on_api_football_player_id  (api_football_player_id) UNIQUE WHERE (api_football_player_id IS NOT NULL)
+#  index_players_on_discarded_at            (discarded_at)
+#  index_players_on_name                    (name)
+#  index_players_on_name_trgm               (name) USING gin
+#  index_players_on_nationality_team_id     (nationality_team_id)
+#  index_players_on_slug                    (slug) UNIQUE
 #
 # Foreign Keys
 #

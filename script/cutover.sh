@@ -81,6 +81,11 @@ rsync -avhP \
   "$LOCAL_PORTRAITS" \
   "${REMOTE_HOST}:${REMOTE_VOLUME}"
 
+# The app container runs as uid 1000 (rails user); rsync as root preserves
+# the local owner instead, leaving the dir unwritable to the app. Re-chown so
+# PortraitStylizer can write new portraits.
+ssh -i "$SSH_KEY" "$REMOTE_HOST" "chown -R 1000:1000 '${REMOTE_VOLUME}'"
+
 # ---------- 5. Smoke test --------------------------------------------------
 echo ">>> Curling https://thegoalatlas.com/up"
 curl -sS -o /dev/null -w "HTTP %{http_code}\n" "https://thegoalatlas.com/up" || \
