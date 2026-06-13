@@ -39,7 +39,8 @@
       <%# Ball podium row — Silver | Golden (featured) | Bronze. Sizes tightened
           so the three feel like a single trio rather than a giant + two minis. %>
       <% if golden_ball || silver_ball || bronze_ball %>
-        <div class="flex items-end justify-center gap-6 sm:gap-10 mb-10 flex-wrap">
+        <div class="overflow-x-clip mb-10">
+        <div class="podium-fit flex items-end justify-center gap-6 sm:gap-10">
 
           <%# Silver Ball %>
           <% if silver_ball %>
@@ -75,6 +76,7 @@
               <%= render "players/card", player: bronze_ball.player, tournament: @tournament, size: 130 %>
             </div>
           <% end %>
+        </div>
         </div>
       <% end %>
 
@@ -126,7 +128,8 @@
            num_size: "text-4xl sm:text-5xl" }
        ] %>
 
-    <div class="flex items-end justify-center gap-4 sm:gap-8 max-w-4xl mx-auto">
+    <div class="overflow-x-clip">
+    <div class="podium-fit flex items-end justify-center gap-4 sm:gap-8 max-w-4xl mx-auto">
       <% podium_scorers.each do |slot| %>
         <% scorer = slot[:scorer] %>
         <% next unless scorer %>
@@ -150,6 +153,7 @@
           </div>
         </div>
       <% end %>
+    </div>
     </div>
 
   </section>

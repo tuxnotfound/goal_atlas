@@ -44,7 +44,7 @@
   <% trophy_asset = Rails.public_path.join("hero_trophy.png") %>
   <% if champion_count.positive? && File.exist?(trophy_asset) %>
     <%= image_tag "/hero_trophy.png", alt: "FIFA World Cup trophy",
-          class: "absolute -top-4 right-0 sm:right-4 h-[480px] w-auto pointer-events-none drop-shadow-2xl select-none" %>
+          class: "absolute -top-2 sm:-top-4 right-0 sm:right-4 h-[200px] sm:h-[320px] md:h-[480px] w-auto pointer-events-none drop-shadow-2xl select-none" %>
   <% end %>
 
   <div class="relative p-6 md:p-10">
@@ -166,7 +166,8 @@
            num_size: "text-4xl sm:text-5xl" }
        ] %>
 
-    <div class="flex items-end justify-center gap-4 sm:gap-8 max-w-4xl mx-auto">
+    <div class="overflow-x-clip">
+    <div class="podium-fit flex items-end justify-center gap-4 sm:gap-8 max-w-4xl mx-auto">
       <% podium_slots.each do |slot| %>
         <% scorer = slot[:scorer] %>
         <% next unless scorer %>
@@ -190,6 +191,7 @@
           </div>
         </div>
       <% end %>
+    </div>
     </div>
   </section>
 <% end %>
