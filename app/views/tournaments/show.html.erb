@@ -14,6 +14,14 @@
 
 <%= render "tournaments/hero" %>
 
+<section class="mb-10 max-w-3xl mx-auto">
+  <p class="font-serif text-base md:text-lg leading-relaxed text-[#0a3520]">
+    <%= tournament_lead(@tournament) %>
+  </p>
+</section>
+
+<%= render "shared/structured_data/tournament_faq", tournament: @tournament %>
+
 <%# === Tournament view (stage-by-stage) === %>
 <%= render "tournaments/tournament_view" %>
 
