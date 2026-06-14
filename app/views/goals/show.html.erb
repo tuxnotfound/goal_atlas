@@ -155,6 +155,21 @@
   </div>
 </section>
 
+<section class="mb-10 max-w-3xl mx-auto">
+  <p class="font-serif text-base md:text-lg leading-relaxed text-[#0a3520]">
+    <%= goal_lead(@goal,
+                  scoring_team: @scoring_team,
+                  opponent_team: @opponent_team,
+                  match: @match,
+                  tournament: @tournament) %>
+  </p>
+</section>
+
+<%= render "shared/structured_data/goal_faq",
+           goal: @goal, match: @match, scorer: @scorer,
+           scoring_team: @scoring_team, opponent_team: @opponent_team,
+           tournament: @tournament %>
+
 <%= render "video_links/video_links", links: @video_links, title: "Watch this goal" %>
 
 </div>

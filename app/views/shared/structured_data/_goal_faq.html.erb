@@ -1,0 +1,53 @@
+<%#
+  Emits schema.org FAQPage JSON-LD for a goal page.
+  Pass `goal:`, `match:`, `scorer:`, `scoring_team:`, `opponent_team:`, `tournament:`.
+%>
+<%
+  minute_str = goal.minute.to_s
+  minute_str += "+#{goal.stoppage_time}" if goal.stoppage_time
+  date_str = match.date.strftime("%-d %B %Y")
+  stage = match.stage.to_s.humanize
+  matchup = "#{scoring_team.name} vs #{opponent_team.name}"
+  year = tournament.year
+  type_phrase = case goal.goal_type.to_s
+                when "penalty"   then " from the penalty spot"
+                when "free_kick" then " from a free-kick"
+                when "own_goal"  then " (an own goal)"
+                else ""
+                end
+
+  faqs = [
+    {
+      q: "Who scored at #{minute_str}' in #{matchup} at the #{year} FIFA World Cup?",
+      a: "#{scorer.name} scored for #{scoring_team.name} at #{minute_str}'#{type_phrase} in the #{stage} on #{date_str}."
+    },
+    {
+      q: "When was #{scorer.name}'s goal in #{matchup} scored?",
+      a: "The goal was scored at #{minute_str}' on #{date_str} in the #{stage} of the #{tournament.name}."
+    },
+    {
+      q: "What was the score after #{scorer.name}'s goal?",
+      a: "#{match.home_team.name} #{goal.score_after_goal_home}–#{goal.score_after_goal_away} #{match.away_team.name}."
+    }
+  ]
+
+  if goal.assist_player_id && (assist = goal.assist_player)
+    faqs << {
+      q: "Who assisted #{scorer.name}'s goal in #{matchup}?",
+      a: "#{assist.name} assisted #{scorer.name}'s goal."
+    }
+  end
+
+  data = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "dateModified": goal.updated_at.iso8601,
+    "mainEntity": faqs.map { |f|
+      { "@type": "Question", "name": f[:q],
+        "acceptedAnswer": { "@type": "Answer", "text": f[:a] } }
+    }
+  }
+%>
+<% content_for :head do %>
+<script type="application/ld+json"><%= raw data.to_json %></script>
+<% end %>

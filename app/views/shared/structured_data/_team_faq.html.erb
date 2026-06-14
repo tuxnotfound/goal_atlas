@@ -1,0 +1,99 @@
+<%#
+  Emits schema.org FAQPage JSON-LD for a national team's page.
+  Pass `team:`, `records:` (TeamTournamentRecord array).
+%>
+<%
+  completed = records.reject { |r| r.matches_played.zero? }
+  faqs = []
+
+  if completed.any?
+    appearances = completed.size
+    champion_years = completed.select(&:champion?).map { |r| r.tournament.year }.sort
+    runner_up_years = completed.select(&:runner_up?).map { |r| r.tournament.year }.sort
+
+    faqs << {
+      q: "How many FIFA World Cups has #{team.name} played in?",
+      a: "#{team.name} have appeared in #{appearances} FIFA World Cups."
+    }
+
+    if champion_years.any?
+      faqs << {
+        q: "Has #{team.name} won the FIFA World Cup?",
+        a: "Yes — #{team.name} have won the FIFA World Cup #{champion_years.size} #{'time'.pluralize(champion_years.size)}, in #{champion_years.to_sentence}."
+      }
+    else
+      best = if runner_up_years.any?
+               "runner-up in #{runner_up_years.to_sentence}"
+             elsif (third_years = completed.select { |r| r.tournament.third_place_team_id == team.id }.map { |r| r.tournament.year }.sort).any?
+               "third place in #{third_years.to_sentence}"
+             else
+               deepest = completed.max_by { |r| Match.stages[r.deepest_stage] || -1 }
+               "the #{deepest.deepest_stage.to_s.humanize}" if deepest&.deepest_stage
+             end
+
+      if best
+        faqs << {
+          q: "Has #{team.name} won the FIFA World Cup?",
+          a: "No — #{team.name}'s best FIFA World Cup finish is #{best}."
+        }
+      end
+    end
+
+    total_wins = completed.sum(&:wins)
+    total_draws = completed.sum(&:draws)
+    total_losses = completed.sum(&:losses)
+    total_matches = total_wins + total_draws + total_losses
+    goals_for = completed.sum(&:goals_for)
+    goals_against = completed.sum(&:goals_against)
+
+    if total_matches.positive?
+      faqs << {
+        q: "What is #{team.name}'s all-time FIFA World Cup record?",
+        a: "#{team.name} have a record of #{total_wins} wins, #{total_draws} draws, and #{total_losses} losses across #{total_matches} FIFA World Cup matches, scoring #{goals_for} goals and conceding #{goals_against}."
+      }
+    end
+
+    most_recent = completed.max_by { |r| r.tournament.year }
+    if most_recent
+      ongoing = most_recent.tournament.end_date && most_recent.tournament.end_date > Date.current
+      verb_phrase =
+        if ongoing
+          "are currently competing"
+        elsif most_recent.champion?
+          "won the tournament"
+        elsif most_recent.runner_up?
+          "reached the final"
+        elsif most_recent.tournament.third_place_team_id == team.id
+          "finished third"
+        elsif most_recent.tournament.fourth_place_team_id == team.id
+          "finished fourth"
+        else
+          stage_label = most_recent.deepest_stage.to_s.humanize.downcase
+          case most_recent.deepest_stage
+          when :group_stage, :second_group_stage then "were eliminated in the #{stage_label}"
+          else "reached the #{stage_label}"
+          end
+        end
+
+      faqs << {
+        q: "When did #{team.name} last play at the FIFA World Cup?",
+        a: "#{team.name}'s most recent FIFA World Cup appearance #{ongoing ? 'is' : 'was'} at the #{most_recent.tournament.name}, where they #{verb_phrase}."
+      }
+    end
+  end
+
+  data = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "dateModified": team.updated_at.iso8601,
+    "mainEntity": faqs.map { |f|
+      { "@type": "Question", "name": f[:q],
+        "acceptedAnswer": { "@type": "Answer", "text": f[:a] } }
+    }
+  }
+%>
+<% if faqs.any? %>
+<% content_for :head do %>
+<script type="application/ld+json"><%= raw data.to_json %></script>
+<% end %>
+<% end %>

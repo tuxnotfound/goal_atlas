@@ -141,6 +141,17 @@
   </div>
 </section>
 
+<% lead_text = team_lead(@team, records: @tournament_records) %>
+<% if lead_text.present? %>
+  <section class="mb-10 max-w-3xl mx-auto">
+    <p class="font-serif text-base md:text-lg leading-relaxed text-[#0a3520]">
+      <%= lead_text %>
+    </p>
+  </section>
+<% end %>
+
+<%= render "shared/structured_data/team_faq", team: @team, records: @tournament_records %>
+
 <%# === All-time top scorers podium — same silver/gold/bronze step layout as
        the golden boot podium on the tournament page, but counting every goal
        the player has ever scored for this team across all World Cups. === %>
