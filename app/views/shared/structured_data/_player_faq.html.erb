@@ -1,0 +1,65 @@
+<%#
+  Emits schema.org FAQPage JSON-LD with the player's most-asked questions.
+  Pass `player:`, `tournament_records:` (array), `goals:` (collection).
+%>
+<%
+  p = player
+  goal_count = goals.size
+  records = tournament_records
+  years = records.map { |r| r.tournament.year }.sort
+  faqs = []
+
+  if records.any?
+    year_phrase = years.size == 1 ? "the #{years.first} FIFA World Cup" :
+                  "#{years.size} FIFA World Cups (#{years.to_sentence})"
+    nat = p.nationality_team ? " for #{p.nationality_team.name}" : ""
+
+    faqs << {
+      q: "How many World Cup goals has #{p.name} scored?",
+      a: "#{p.name} scored #{goal_count} #{'goal'.pluralize(goal_count)} across #{year_phrase}#{nat}."
+    }
+
+    faqs << {
+      q: "Which World Cups did #{p.name} play in?",
+      a: "#{p.name} played in #{years.to_sentence}."
+    }
+
+    if p.nationality_team_id
+      champion_years = records.select { |r| r.tournament.winner_team_id == p.nationality_team_id }
+                              .map { |r| r.tournament.year }.sort
+      if champion_years.any?
+        faqs << {
+          q: "Did #{p.name} win the FIFA World Cup?",
+          a: "Yes — #{p.name} won the World Cup with #{p.nationality_team.name} in #{champion_years.to_sentence}."
+        }
+      end
+    end
+
+    awards = records.flat_map(&:awards)
+    if awards.any?
+      award_phrases = awards.group_by(&:award_type).map do |type, list|
+        type_label = type.to_s.titleize
+        award_years = list.map { |a| a.tournament.year }.sort
+        "#{type_label} in #{award_years.to_sentence}"
+      end
+      faqs << {
+        q: "What awards has #{p.name} won at the FIFA World Cup?",
+        a: "#{p.name} has won the #{award_phrases.to_sentence}."
+      }
+    end
+  end
+
+  data = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map { |f|
+      { "@type": "Question", "name": f[:q],
+        "acceptedAnswer": { "@type": "Answer", "text": f[:a] } }
+    }
+  }
+%>
+<% if faqs.any? %>
+<% content_for :head do %>
+<script type="application/ld+json"><%= raw data.to_json %></script>
+<% end %>
+<% end %>

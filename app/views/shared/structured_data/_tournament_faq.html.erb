@@ -1,0 +1,68 @@
+<%#
+  Emits schema.org FAQPage JSON-LD with the tournament's most-asked questions.
+  Pass `tournament:` (Tournament instance).
+%>
+<%
+  t = tournament
+  year = t.year
+  hosts = t.host_countries.to_sentence
+  date_range =
+    if t.start_date && t.end_date
+      "from #{t.start_date.strftime('%-d %B')} to #{t.end_date.strftime('%-d %B %Y')}"
+    else
+      "in #{year}"
+    end
+
+  faqs = []
+
+  if t.winner_team
+    runner_phrase = t.runner_up_team ? ", beating #{t.runner_up_team.name} in the final" : ""
+    faqs << {
+      q: "Who won the #{year} FIFA World Cup?",
+      a: "#{t.winner_team.name} won the #{year} FIFA World Cup#{runner_phrase}."
+    }
+  end
+
+  faqs << {
+    q: "Where was the #{year} FIFA World Cup held?",
+    a: "The #{year} FIFA World Cup was hosted by #{hosts} #{date_range}."
+  }
+
+  golden_boot = t.tournament_awards.where(award_type: :golden_boot).first
+  if golden_boot
+    goal_count = Goal.kept.joins(:match).where(matches: { tournament_id: t.id }, player_id: golden_boot.player_id).count
+    boot_phrase = goal_count.positive? ? " with #{goal_count} goals" : ""
+    faqs << {
+      q: "Who was the top scorer at the #{year} FIFA World Cup?",
+      a: "#{golden_boot.player.name} won the Golden Boot#{boot_phrase}."
+    }
+  end
+
+  if t.third_place_team
+    faqs << {
+      q: "Who finished third at the #{year} FIFA World Cup?",
+      a: "#{t.third_place_team.name} finished in third place at the #{year} FIFA World Cup."
+    }
+  end
+
+  if t.total_matches && t.total_goals
+    faqs << {
+      q: "How many goals were scored at the #{year} FIFA World Cup?",
+      a: "#{t.total_goals} goals were scored across #{t.total_matches} matches at the #{year} FIFA World Cup."
+    }
+  end
+
+  data = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map { |f|
+      { "@type": "Question", "name": f[:q],
+        "acceptedAnswer": { "@type": "Answer", "text": f[:a] } }
+    }
+  }
+%>
+<% if faqs.any? %>
+<% content_for :head do %>
+<script type="application/ld+json"><%= raw data.to_json %></script>
+<% end %>
+<% end %>

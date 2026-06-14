@@ -1,0 +1,91 @@
+<%#
+  Emits schema.org FAQPage JSON-LD with the match's most-likely-asked questions.
+  Helps LLM crawlers (GPTBot, PerplexityBot, ClaudeBot) extract direct-answer
+  Q&A pairs for "who won?", "what was the score?", etc.
+  Pass `match:` (Match instance).
+%>
+<%
+  m = match
+  matchup = "#{m.home_team.name} vs #{m.away_team.name}"
+  year = m.tournament.year
+  stage = m.stage.to_s.humanize
+  date_str = m.date.strftime("%-d %B %Y")
+  venue_str = m.stadium ? "#{m.stadium.name} in #{m.stadium.city}" : nil
+
+  final_home = m.home_score_after_extra_time || m.home_score
+  final_away = m.away_score_after_extra_time || m.away_score
+  went_to_aet = !m.home_score_after_extra_time.nil?
+
+  faqs = []
+
+  if m.scheduled?
+    faqs << {
+      q: "When are #{matchup} scheduled to play at the #{year} FIFA World Cup?",
+      a: "#{matchup} are scheduled for #{date_str}#{venue_str ? " at #{venue_str}" : ""} in the #{stage} of the #{m.tournament.name}."
+    }
+  elsif m.home_penalties
+    pens_phrase = " (won #{m.home_penalties}–#{m.away_penalties} on penalties)"
+    winner = m.winner_team_id == m.home_team_id ? m.home_team.name : m.away_team.name
+    faqs << {
+      q: "Who won #{matchup} at the #{year} FIFA World Cup?",
+      a: "#{winner} won on penalties after a #{final_home}–#{final_away} draw#{went_to_aet ? ' after extra time' : ''} in the #{stage} of the #{m.tournament.name} on #{date_str}."
+    }
+    faqs << {
+      q: "What was the score in #{matchup} at the #{year} FIFA World Cup?",
+      a: "#{m.home_team.name} and #{m.away_team.name} drew #{final_home}–#{final_away}#{went_to_aet ? ' after extra time' : ''}. #{winner} won #{m.home_penalties}–#{m.away_penalties} on penalties."
+    }
+  elsif m.winner_team_id
+    winner = m.winner_team_id == m.home_team_id ? m.home_team.name : m.away_team.name
+    loser  = m.winner_team_id == m.home_team_id ? m.away_team.name : m.home_team.name
+    winner_score = m.winner_team_id == m.home_team_id ? final_home : final_away
+    loser_score  = m.winner_team_id == m.home_team_id ? final_away : final_home
+    aet_phrase = went_to_aet ? " after extra time" : ""
+
+    faqs << {
+      q: "Who won #{matchup} at the #{year} FIFA World Cup?",
+      a: "#{winner} beat #{loser} #{winner_score}–#{loser_score}#{aet_phrase} in the #{stage} of the #{m.tournament.name} on #{date_str}."
+    }
+    faqs << {
+      q: "What was the score in #{matchup} at the #{year} FIFA World Cup?",
+      a: "#{m.home_team.name} #{final_home}–#{final_away} #{m.away_team.name}#{aet_phrase}."
+    }
+  else
+    faqs << {
+      q: "What was the score in #{matchup} at the #{year} FIFA World Cup?",
+      a: "#{m.home_team.name} drew #{final_home}–#{final_away} with #{m.away_team.name} in the #{stage} of the #{m.tournament.name} on #{date_str}."
+    }
+  end
+
+  if venue_str
+    faqs << {
+      q: "Where was #{matchup} played at the #{year} FIFA World Cup?",
+      a: "The match was played at #{venue_str}."
+    }
+  end
+
+  faqs << {
+    q: "When did #{matchup} take place at the #{year} FIFA World Cup?",
+    a: "The match took place on #{date_str}."
+  }
+
+  goals_for_q = @goals&.to_a
+  if goals_for_q&.any?
+    scorers = goals_for_q.map { |g| "#{g.player.name} (#{g.minute}')" }.join(", ")
+    faqs << {
+      q: "Who scored in #{matchup} at the #{year} FIFA World Cup?",
+      a: "Goals were scored by #{scorers}."
+    }
+  end
+
+  data = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map { |f|
+      { "@type": "Question", "name": f[:q],
+        "acceptedAnswer": { "@type": "Answer", "text": f[:a] } }
+    }
+  }
+%>
+<% content_for :head do %>
+<script type="application/ld+json"><%= raw data.to_json %></script>
+<% end %>
