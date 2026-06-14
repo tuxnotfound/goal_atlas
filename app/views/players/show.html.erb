@@ -21,9 +21,11 @@
                    else
                      0
                    end
+  lead_text = player_lead(@player, tournament_records: @tournament_records, goals: @goals)
+  hero_corners = lead_text.present? ? "rounded-t-lg border-b-0" : "rounded-lg mb-10"
 %>
 
-<section class="relative overflow-hidden rounded-lg border-2 border-[#c89942]/70 shadow-xl shadow-black/30 mb-10"
+<section class="relative overflow-hidden border-2 border-[#c89942]/70 shadow-xl shadow-black/30 <%= hero_corners %>"
          style="background:#f5e7b8;">
 
   <%# World map watermark %>
@@ -148,18 +150,17 @@
       <% end %>
     </div>
   </div>
-
-  <% lead_text = player_lead(@player, tournament_records: @tournament_records, goals: @goals) %>
-  <% if lead_text.present? %>
-    <div class="relative border-t border-[#c89942]/40" style="background:#f5e7b8;">
-      <div class="relative px-6 md:px-10 py-4">
-        <p class="font-serif text-sm md:text-base leading-relaxed text-[#0a3520] max-w-3xl mx-auto">
-          <%= lead_text %>
-        </p>
-      </div>
-    </div>
-  <% end %>
 </section>
+
+<% if lead_text.present? %>
+  <section class="relative overflow-hidden rounded-b-lg border-2 border-[#c89942]/70 shadow-xl shadow-black/30 mb-10" style="background:#f5e7b8;">
+    <div class="px-6 md:px-10 py-4 md:py-5">
+      <p class="font-serif text-sm md:text-base leading-relaxed text-[#0a3520] max-w-3xl mx-auto">
+        <%= lead_text %>
+      </p>
+    </div>
+  </section>
+<% end %>
 
 <%= render "shared/structured_data/player_faq", player: @player, tournament_records: @tournament_records, goals: @goals %>
 

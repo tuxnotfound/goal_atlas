@@ -2,10 +2,11 @@
     its left/right edges align with every section below. Nav arrows are
     absolute-positioned OUTSIDE those edges — the only elements that
     "break" the page border. %>
-<div class="relative mb-20">
+<% flush_bottom = local_assigns.fetch(:flush_bottom, false) %>
+<div class="relative <%= flush_bottom ? '' : 'mb-20' %>">
 
   <%# === Hero === %>
-  <section class="relative overflow-hidden rounded-lg border-2 border-[#c89942]/70 shadow-xl shadow-black/30"
+  <section class="relative overflow-hidden border-2 border-[#c89942]/70 shadow-xl shadow-black/30 <%= flush_bottom ? 'rounded-t-lg border-b-0' : 'rounded-lg' %>"
            style="background:#f5e7b8;">
 
     <%# World map watermark %>
@@ -180,16 +181,6 @@
       <% end %>
     </div>
 
-    <% tournament_lead_text = tournament_lead(@tournament) %>
-    <% if tournament_lead_text.present? %>
-      <div class="relative border-t border-[#c89942]/40" style="background:#f5e7b8;">
-        <div class="relative px-6 md:px-10 py-4">
-          <p class="font-serif text-sm md:text-base leading-relaxed text-[#0a3520] max-w-3xl mx-auto">
-            <%= tournament_lead_text %>
-          </p>
-        </div>
-      </div>
-    <% end %>
   </section>
 
   <%# === Nav arrows — absolute-positioned outside the hero's left/right
