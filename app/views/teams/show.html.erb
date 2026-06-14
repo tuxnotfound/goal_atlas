@@ -139,16 +139,19 @@
       </div>
     </div>
   </div>
-</section>
 
-<% lead_text = team_lead(@team, records: @tournament_records) %>
-<% if lead_text.present? %>
-  <section class="mb-10 max-w-3xl mx-auto rounded-lg border border-[#c89942]/60 shadow-md shadow-black/15 px-5 md:px-6 py-4 md:py-5" style="background:#fdf6dc;">
-    <p class="font-serif text-base md:text-lg leading-relaxed text-[#0a3520]">
-      <%= lead_text %>
-    </p>
-  </section>
-<% end %>
+  <% lead_text = team_lead(@team, records: @tournament_records) %>
+  <% if lead_text.present? %>
+    <div class="relative border-t border-[#c89942]/40">
+      <div class="absolute inset-0 pointer-events-none bg-[#c89942]/10"></div>
+      <div class="relative px-6 md:px-10 py-4">
+        <p class="font-serif text-sm md:text-base leading-relaxed text-[#0a3520] max-w-3xl mx-auto">
+          <%= lead_text %>
+        </p>
+      </div>
+    </div>
+  <% end %>
+</section>
 
 <%= render "shared/structured_data/team_faq", team: @team, records: @tournament_records %>
 

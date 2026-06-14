@@ -155,16 +155,6 @@
   </div>
 </section>
 
-<section class="mb-10 max-w-3xl mx-auto rounded-lg border border-[#c89942]/60 shadow-md shadow-black/15 px-5 md:px-6 py-4 md:py-5" style="background:#fdf6dc;">
-  <p class="font-serif text-base md:text-lg leading-relaxed text-[#0a3520]">
-    <%= goal_lead(@goal,
-                  scoring_team: @scoring_team,
-                  opponent_team: @opponent_team,
-                  match: @match,
-                  tournament: @tournament) %>
-  </p>
-</section>
-
 <%= render "shared/structured_data/goal_faq",
            goal: @goal, match: @match, scorer: @scorer,
            scoring_team: @scoring_team, opponent_team: @opponent_team,
