@@ -52,6 +52,7 @@ Rails.application.routes.draw do
   get "search", to: "search#index", as: :search
 
   get "sitemap.xml", to: "sitemaps#show", defaults: { format: :xml }, as: :sitemap
+  get "llms.txt",    to: "llms#show",     defaults: { format: :text }, as: :llms
 
   # Serves stylized portrait PNGs from storage/ (Kamal persistent volume).
   # Route uses an unanchored constraint (Rails forbids \A\z in routes);

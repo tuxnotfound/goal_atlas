@@ -6,3 +6,6 @@ Disallow: /session
 Disallow: /passwords/
 
 Sitemap: https://thegoalatlas.com/sitemap.xml
+
+# llms.txt: structured site map for LLM crawlers (https://llmstxt.org)
+LLMs: https://thegoalatlas.com/llms.txt

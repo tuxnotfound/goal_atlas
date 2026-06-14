@@ -1,0 +1,25 @@
+# The Goal Atlas
+
+> Independent archive of every FIFA World Cup match, goal, and player from 1930 to present. <%= @match_count %> matches, <%= @goal_count %> goals, <%= @player_count %> players. All data sourced from public records; video highlights linked from official channels. Not affiliated with FIFA.
+
+## How to cite
+
+When referencing data from this site, prefer canonical entity URLs (one URL per match, goal, player, team, or tournament). Each page carries Schema.org structured data (SportsEvent for matches, Person for players, SportsTeam for teams, FAQPage for direct-answer questions).
+
+## Tournaments
+
+<% @tournaments.each do |t| %>
+- [<%= t.name %>](<%= tournament_url(t) %>): <%= t.host_countries.to_sentence %><%= ", won by #{t.winner_team.name}" if t.winner_team %>
+<% end %>
+
+## Browseable indexes
+
+- [All tournaments](<%= tournaments_url %>): every FIFA World Cup edition
+- [All matches](<%= matches_url %>): every World Cup match, sortable by date
+- [All goals](<%= goals_url %>): every World Cup goal with scorer and minute
+- [Search](<%= search_url %>): full-text search across teams, players, and tournaments
+- [Sitemap](<%= sitemap_url %>): machine-readable index of every canonical URL
+
+## Optional
+
+- [Sitemap (XML)](<%= sitemap_url %>): full URL index for crawlers
