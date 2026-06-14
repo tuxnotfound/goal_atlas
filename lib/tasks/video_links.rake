@@ -124,6 +124,109 @@ namespace :video_links do
     puts "Attached: #{attached} new match-level link(s). Skipped: #{skipped}."
   end
 
+  desc "Search YouTube broadly (no channel filter) with 'fifa YEAR highlights HOME AWAY' for every match in a tournament that lacks any YouTube link. ONE search per match (quota-efficient) — top result attached if title contains both team names. Apt for older tournaments (pre-2010) where FIFA's official channel doesn't archive everything. Usage: rake 'video_links:search_for_unlinked_matches[<year>,<mode=dry|apply>,<limit>]'"
+  task :search_for_unlinked_matches, [:year, :mode, :limit] => :environment do |_t, args|
+    abort "Usage: rake 'video_links:search_for_unlinked_matches[<year>,<mode=dry|apply>,<limit?>]'" unless args[:year]
+    mode = (args[:mode] || "dry").downcase
+    abort "mode must be 'dry' or 'apply'" unless %w[dry apply].include?(mode)
+    limit = args[:limit].to_i.zero? ? nil : args[:limit].to_i
+
+    tournament = Tournament.find_by!(year: args[:year].to_i)
+
+    # Matches without ANY kept YouTube link.
+    already_yt_ids = tournament.matches.kept.joins(:video_links)
+                               .where(video_links: { discarded_at: nil, is_active: true })
+                               .where("video_links.url LIKE ? OR video_links.url LIKE ?", *YOUTUBE_URL_LIKE)
+                               .distinct.pluck(:id)
+
+    scope = tournament.matches.kept.where.not(id: already_yt_ids)
+                      .where(video_scout_failed_at: nil)
+                      .includes(:home_team, :away_team)
+                      .order(:match_number)
+    scope = scope.limit(limit) if limit
+    matches = scope.to_a
+
+    puts "Tournament: #{tournament.year} #{tournament.name}  |  Mode: #{mode.upcase}"
+    puts "Matches without YouTube link: #{matches.size}"
+    puts "Estimated quota: ~#{matches.size * 100} units (1 search per match; daily cap 10000)"
+    puts ""
+
+    scout       = VideoLinkScout.new
+    attached    = 0
+    weak_result = 0
+    no_result   = 0
+
+    matches.each_with_index do |match, idx|
+      home = match.home_team.name
+      away = match.away_team.name
+      year = tournament.year
+      query = "fifa #{year} highlights #{home} #{away}"
+      label = "M#{match.match_number} #{home} v #{away}"
+
+      begin
+        results = with_rate_limit_retry { scout.search(query, max_results: 5, channel: nil) }
+      rescue VideoLinkScout::DailyQuotaExhausted => e
+        puts ""
+        puts "Stopping early: #{e.message}."
+        puts "Re-run the same task tomorrow (after the YouTube quota resets) to continue."
+        break
+      end
+
+      if results.empty?
+        puts "#{label}: NO RESULTS"
+        no_result += 1
+        sleep AUTOFETCH_SLEEP_SECONDS unless idx == matches.size - 1
+        next
+      end
+
+      # Score each result on title relevance and pick the best.
+      best = results.max_by do |r|
+        title = r[:title].to_s.downcase
+        s = 0
+        s += 3 if title.include?(home.downcase)
+        s += 3 if title.include?(away.downcase)
+        s += 2 if title.include?(year.to_s)
+        s += 1 if title.match?(/highlight|fifa|world cup|goals/)
+        s
+      end
+
+      title_lower = best[:title].to_s.downcase
+      both_teams_in_title = title_lower.include?(home.downcase) && title_lower.include?(away.downcase)
+
+      if !both_teams_in_title
+        puts "#{label}: WEAK (top: #{best[:title].to_s.slice(0, 70)} | #{best[:url]})"
+        weak_result += 1
+        sleep AUTOFETCH_SLEEP_SECONDS unless idx == matches.size - 1
+        next
+      end
+
+      puts "#{label}: -> #{best[:url]}"
+      puts "  title:   #{best[:title]}"
+      puts "  channel: #{best[:channel]}"
+
+      if mode == "apply"
+        link = match.video_links.find_or_initialize_by(url: best[:url])
+        if link.new_record?
+          link.assign_attributes(
+            source:        "other",
+            confidence:    :unverified,
+            language:      "en",
+            is_active:     true,
+            embed_allowed: false
+          )
+          link.save!
+          attached += 1
+        end
+      end
+
+      sleep AUTOFETCH_SLEEP_SECONDS unless idx == matches.size - 1
+    end
+
+    puts ""
+    puts "Attached: #{attached} | Weak (no team match in title): #{weak_result} | No results: #{no_result}"
+    puts "(Dry run — nothing written. Re-run with mode=apply to attach.)" if mode == "dry"
+  end
+
   desc "Auto-attach FIFA/broadcaster YouTube clips to GOALS in a tournament that lack any video link. Usage: rake video_links:autofetch_goals[<year>,<limit>]"
   task :autofetch_goals, [:year, :limit] => :environment do |_t, args|
     abort "Usage: rake video_links:autofetch_goals[<year>,<limit?>]" unless args[:year]
