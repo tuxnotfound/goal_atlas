@@ -67,7 +67,7 @@ module LeadParagraphHelper
     stage = match.stage.to_s.humanize
     tournament_link = link_to(tournament.name, tournament_path(tournament), class: link_class)
     type_phrase = goal_type_phrase(goal)
-    score_phrase = " making the score #{goal.score_after_goal_home}–#{goal.score_after_goal_away}"
+    score_phrase = "making the score #{goal.score_after_goal_home}–#{goal.score_after_goal_away}"
 
     body = "#{player_link(goal.player)} scored#{type_phrase} at #{minute_str}' for #{team_link(scoring_team)} " \
            "against #{team_link(opponent_team)} in the #{stage} of the #{tournament_link} on #{date_str}, " \
