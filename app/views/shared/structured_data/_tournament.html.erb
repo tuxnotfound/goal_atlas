@@ -10,6 +10,7 @@
     "name": t.name,
     "url": tournament_url(t),
     "sport": "Soccer",
+    "dateModified": t.updated_at.iso8601,
     "organizer": { "@type": "Organization", "name": "FIFA" }
   }
   data["startDate"] = t.start_date.iso8601 if t.start_date

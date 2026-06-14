@@ -8,7 +8,8 @@
     "@context": "https://schema.org",
     "@type": "Person",
     "name": p.name,
-    "url": player_url(p)
+    "url": player_url(p),
+    "dateModified": p.updated_at.iso8601
   }
   data["birthDate"] = p.birth_date.iso8601 if p.birth_date
   if p.nationality_team

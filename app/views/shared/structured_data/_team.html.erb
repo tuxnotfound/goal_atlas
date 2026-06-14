@@ -9,7 +9,8 @@
     "@type": "SportsTeam",
     "name": t.name,
     "url": team_url(t),
-    "sport": "Soccer"
+    "sport": "Soccer",
+    "dateModified": t.updated_at.iso8601
   }
   if t.country_code.present?
     data["memberOf"] = { "@type": "Country", "name": t.name, "alternateName": t.country_code }
