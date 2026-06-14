@@ -1,0 +1,40 @@
+<%#
+  Site-wide schema.org Organization + WebSite JSON-LD. Establishes the
+  publisher identity and SearchAction so Google/LLM crawlers can surface a
+  sitelinks search box and attribute citations to a coherent entity.
+%>
+<%
+  description = "Independent archive of every FIFA World Cup match, goal, and player from 1930 to present. " \
+                "Highlights linked from official sources, with timelines, awards, and search."
+  data = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "#{root_url}#organization",
+        "name": "The Goal Atlas",
+        "url": root_url,
+        "logo": "#{request.base_url}/icon.png",
+        "description": description,
+        "sameAs": [ "https://ko-fi.com/tux404" ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "#{root_url}#website",
+        "name": "The Goal Atlas",
+        "url": root_url,
+        "description": description,
+        "publisher": { "@id": "#{root_url}#organization" },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "#{search_url}?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  }
+%>
+<script type="application/ld+json"><%= raw data.to_json %></script>

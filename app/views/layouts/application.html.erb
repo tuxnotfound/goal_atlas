@@ -25,6 +25,10 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+    <% unless request.path.start_with?("/admin") %>
+      <%= render "shared/structured_data/site" %>
+    <% end %>
+
     <%= yield :head %>
 
     <link rel="icon" href="/icon.png" type="image/png">
