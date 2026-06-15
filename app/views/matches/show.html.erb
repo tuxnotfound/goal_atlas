@@ -158,10 +158,11 @@
                   <%= goal_minute_label(goal) %>
                 </span>
                 <span class="text-lg leading-none shrink-0"><%= goal.scoring_team.flag_emoji %></span>
-                <span class="flex-1 min-w-0">
-                  <span class="block font-serif font-bold text-[#0a3520] text-sm truncate leading-tight">
+                <span class="flex-1 min-w-0 flex items-center gap-2">
+                  <span class="font-serif font-bold text-[#0a3520] text-sm truncate leading-tight">
                     <%= goal.player.name %>
                   </span>
+                  <%= render "goals/video_badge", goal: goal %>
                 </span>
                 <span class="font-mono text-[11px] tabular-nums w-14 text-left shrink-0 font-semibold text-[#1c5c3f]">
                   <%= goal.score_after_goal_home %>&ndash;<%= goal.score_after_goal_away %>

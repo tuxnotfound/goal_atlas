@@ -3,7 +3,7 @@ class PlayersController < ApplicationController
     @player = Player.kept.friendly.find(params[:slug])
 
     @goals = Goal.kept.by_player(@player)
-                 .includes(:scoring_team, match: [:home_team, :away_team, :tournament])
+                 .includes(:scoring_team, :video_links, match: [:home_team, :away_team, :tournament])
                  .order("matches.date DESC, goals.minute ASC")
                  .references(:match)
 

@@ -15,7 +15,7 @@ class TeamsController < ApplicationController
     team_ids = @team.family_ids
 
     @goals = Goal.kept.where(scoring_team_id: team_ids)
-                 .includes(:player, match: [:home_team, :away_team, :tournament])
+                 .includes(:player, :video_links, match: [:home_team, :away_team, :tournament])
                  .order("matches.date DESC, goals.minute ASC")
                  .references(:match)
 

@@ -86,6 +86,15 @@ class Goal < ApplicationRecord
     video_links.kept.where.not(timestamp_validated_at: nil).exists? ? "✓" : ""
   end
 
+  # Boolean predicate for the public views: true when this goal has a video
+  # users can actually watch with a validated timestamp (kept + active +
+  # timestamp_validated_at). Filters in Ruby so it uses a preloaded
+  # video_links association (controllers `includes(:video_links)`) rather than
+  # firing a query per goal.
+  def video_validated?
+    video_links.any? { |v| !v.discarded? && v.is_active? && v.timestamp_validated_at.present? }
+  end
+
   # The team that did NOT score this goal (the other team in the match).
   # For own goals: this is the scorer's own nationality team.
   def opponent_team

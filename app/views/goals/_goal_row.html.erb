@@ -14,6 +14,7 @@
         </span>
         <span class="text-base leading-none shrink-0"><%= goal.scoring_team.flag_emoji %></span>
         <span class="font-serif font-bold text-[#0a3520] truncate"><%= goal.player.name %></span>
+        <%= render "goals/video_badge", goal: goal %>
       </div>
       <div class="text-[10px] uppercase tracking-[0.25em] text-[#c89942]/85 font-semibold truncate">
         <%= goal.scoring_team.name %>

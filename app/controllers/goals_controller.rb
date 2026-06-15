@@ -2,7 +2,7 @@ class GoalsController < ApplicationController
   FILTER_PARAMS = %i[type tag stage tournament].freeze
 
   def index
-    scope = Goal.kept.includes(:player, :scoring_team, :goal_tags, match: :tournament)
+    scope = Goal.kept.includes(:player, :scoring_team, :goal_tags, :video_links, match: :tournament)
 
     if params[:type].present? && Goal.goal_types.key?(params[:type])
       scope = scope.where(goal_type: params[:type])
