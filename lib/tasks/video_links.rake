@@ -131,6 +131,10 @@ namespace :video_links do
     abort "mode must be 'dry' or 'apply'" unless %w[dry apply].include?(mode)
     limit = args[:limit].to_i.zero? ? nil : args[:limit].to_i
 
+    # Without this, MRI buffers stdout until the process exits, so long-running
+    # batch runs over kamal/SSH show no progress until the very end.
+    $stdout.sync = true
+
     tournament = Tournament.find_by!(year: args[:year].to_i)
 
     # Matches without ANY kept YouTube link.
@@ -155,6 +159,40 @@ namespace :video_links do
     attached    = 0
     weak_result = 0
     no_result   = 0
+
+    # Returns lowercase aliases for a team name. Always includes the full
+    # name; multi-word names also include short forms / standalone tokens
+    # since YouTube titles commonly use "USA" or "Czech" or just "Trinidad".
+    team_aliases = ->(name) {
+      base = name.to_s.downcase
+      aliases = [base]
+      case base
+      when "united states"          then aliases += ["usa", "u.s.a.", "us"]
+      when "czech republic"         then aliases += ["czech"]
+      when "korea republic", "south korea" then aliases += ["korea", "south korea"]
+      when "north korea", "korea dpr" then aliases += ["dpr korea", "north korea"]
+      when "saudi arabia"           then aliases += ["saudi"]
+      when "ivory coast", "côte d'ivoire" then aliases += ["ivory coast", "côte d'ivoire", "cote d'ivoire", "ivory"]
+      when "trinidad and tobago"    then aliases += ["trinidad", "tobago", "trinidad & tobago"]
+      when "serbia and montenegro"  then aliases += ["serbia", "montenegro", "serbia & montenegro"]
+      when "bosnia and herzegovina" then aliases += ["bosnia", "herzegovina", "bosnia & herzegovina"]
+      when "united arab emirates"   then aliases += ["uae"]
+      when "republic of ireland"    then aliases += ["ireland"]
+      end
+      aliases.uniq
+    }
+
+    # Normalize titles so "&" matches "and" and the encoded `&amp;` flattens.
+    normalize_title = ->(t) {
+      t.to_s.downcase
+       .gsub("&amp;", "&")
+       .gsub(" & ", " and ")
+       .gsub(" & ", " and ")
+    }
+
+    team_in_title = ->(title_norm, name) {
+      team_aliases.call(name).any? { |a| title_norm.include?(a.gsub(" & ", " and ")) }
+    }
 
     matches.each_with_index do |match, idx|
       home = match.home_team.name
@@ -181,17 +219,17 @@ namespace :video_links do
 
       # Score each result on title relevance and pick the best.
       best = results.max_by do |r|
-        title = r[:title].to_s.downcase
+        title_norm = normalize_title.call(r[:title])
         s = 0
-        s += 3 if title.include?(home.downcase)
-        s += 3 if title.include?(away.downcase)
-        s += 2 if title.include?(year.to_s)
-        s += 1 if title.match?(/highlight|fifa|world cup|goals/)
+        s += 3 if team_in_title.call(title_norm, home)
+        s += 3 if team_in_title.call(title_norm, away)
+        s += 2 if title_norm.include?(year.to_s)
+        s += 1 if title_norm.match?(/highlight|fifa|world cup|goals/)
         s
       end
 
-      title_lower = best[:title].to_s.downcase
-      both_teams_in_title = title_lower.include?(home.downcase) && title_lower.include?(away.downcase)
+      best_title_norm = normalize_title.call(best[:title])
+      both_teams_in_title = team_in_title.call(best_title_norm, home) && team_in_title.call(best_title_norm, away)
 
       if !both_teams_in_title
         puts "#{label}: WEAK (top: #{best[:title].to_s.slice(0, 70)} | #{best[:url]})"
