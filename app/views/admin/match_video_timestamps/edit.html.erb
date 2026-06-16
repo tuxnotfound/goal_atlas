@@ -141,8 +141,11 @@
 
     function appendTimestamp(url, source, seconds) {
       var sep = url.indexOf("?") === -1 ? "?" : "&";
-      if (source === "youtube_official") return url + sep + "t=" + seconds;
-      if (source === "archive_org") return url + sep + "start=" + seconds;
+      // Detect by URL pattern, not source enum: many YouTube videos are
+      // attached as source="other" (broadcaster / fan re-uploads) but still
+      // need the &t=SECONDS suffix to seek.
+      if (/(?:youtube\.com|youtu\.be)/i.test(url)) return url + sep + "t=" + seconds;
+      if (source === "archive_org" || /archive\.org/i.test(url)) return url + sep + "start=" + seconds;
       return url;
     }
 
