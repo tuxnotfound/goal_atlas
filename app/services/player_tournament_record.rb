@@ -1,6 +1,9 @@
 # Aggregates a player's contributions across one tournament — goals, assists,
-# shootout kicks, awards. Goal Atlas doesn't track squad appearances, so this
-# is a "what we have evidence of" view rather than a complete record.
+# shootout kicks, awards. The set of tournaments is driven by the player's
+# recorded squad participations (TournamentParticipation), so a tournament the
+# player took part in but didn't score/assist/kick in still gets a record (with
+# zero counts). Evidence tournaments are unioned in as a safety net in case a
+# participation row is missing.
 #
 # Use PlayerTournamentRecord.for_player(player) to get the full set in one shot;
 # it issues a constant number of queries regardless of tournament count.
@@ -23,6 +26,7 @@ class PlayerTournamentRecord
     awards  = TournamentAward.where(player_id: player.id).includes(:tournament).to_a
 
     tournament_ids = (
+      player.tournament_participations.pluck(:tournament_id) +
       goals.map   { |g| g.match.tournament_id } +
       assists.map { |a| a.match.tournament_id } +
       kicks.map   { |k| k.match.tournament_id } +

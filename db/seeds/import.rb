@@ -134,7 +134,13 @@ goals_csv.each  { |r| player_nationality[r["player_id"]] ||= r["player_team_id"]
 pks_csv.each    { |r| player_nationality[r["player_id"]] ||= r["team_id"] }
 awards_csv.each { |r| player_nationality[r["player_id"]] ||= r["team_id"] if r["team_id"].present? }
 
-players_created = 0
+# year → Tournament, so jfjelstul's list_tournaments column maps onto the
+# tournaments we've seeded. Women's-edition years (1991, 1995, …) don't match a
+# men's tournament and are skipped automatically.
+tournaments_by_year = Tournament.kept.index_by(&:year)
+
+players_created        = 0
+participations_created = 0
 player_ids_we_need.each do |pid|
   meta = players_raw[pid] or next
   name = player_full_name(meta["given_name"], meta["family_name"])
@@ -152,8 +158,18 @@ player_ids_we_need.each do |pid|
     player.save!
     players_created += 1 if player.previously_new_record?
   end
+
+  # Squad participations: every World Cup this player was named in, not just the
+  # ones they scored in. list_tournaments is a comma-separated list of years.
+  next unless player.persisted?
+  meta["list_tournaments"].to_s.split(",").each do |token|
+    tournament = tournaments_by_year[token.strip.to_i] or next
+    tp = TournamentParticipation.find_or_create_by!(player: player, tournament: tournament)
+    participations_created += 1 if tp.previously_new_record?
+  end
 end
 puts "Players: #{Player.count} (imported batch added #{players_created})"
+puts "TournamentParticipations: #{TournamentParticipation.count} (from squad lists, added #{participations_created})"
 
 # ---------------------------------------------------------------------------
 # Matches
@@ -349,3 +365,29 @@ pks_by_match.each do |match_id, rows|
   end
 end
 puts "ShootoutKicks: #{ShootoutKick.count} (imported batch added #{kicks_created})"
+
+# ---------------------------------------------------------------------------
+# Participation backstop
+# ---------------------------------------------------------------------------
+# A player with a goal, assist, shootout kick or award in a tournament was, by
+# definition, part of that squad. Guarantee a participation row even if the
+# jfjelstul list_tournaments column happened to miss it, so the participations
+# table stays a true superset of our recorded evidence.
+
+evidence_pairs = []
+Goal.kept.joins(:match).distinct
+    .pluck(:player_id, "matches.tournament_id").each { |pid, tid| evidence_pairs << [pid, tid] }
+Goal.kept.where.not(assist_player_id: nil).joins(:match).distinct
+    .pluck(:assist_player_id, "matches.tournament_id").each { |pid, tid| evidence_pairs << [pid, tid] }
+ShootoutKick.kept.joins(:match).distinct
+    .pluck(:player_id, "matches.tournament_id").each { |pid, tid| evidence_pairs << [pid, tid] }
+TournamentAward.distinct
+    .pluck(:player_id, :tournament_id).each { |pid, tid| evidence_pairs << [pid, tid] }
+
+backfilled = 0
+evidence_pairs.uniq.each do |player_id, tournament_id|
+  next if player_id.nil? || tournament_id.nil?
+  tp = TournamentParticipation.find_or_create_by!(player_id: player_id, tournament_id: tournament_id)
+  backfilled += 1 if tp.previously_new_record?
+end
+puts "TournamentParticipations: #{TournamentParticipation.count} (evidence backstop added #{backfilled})"

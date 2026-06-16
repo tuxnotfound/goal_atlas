@@ -11,6 +11,7 @@ class Tournament < ApplicationRecord
 
   has_many :matches, dependent: :restrict_with_error
   has_many :tournament_awards, dependent: :destroy
+  has_many :tournament_participations, dependent: :destroy
 
   validates :year, presence: true, uniqueness: true,
                    numericality: { only_integer: true, greater_than: 1900, less_than: 2100 }

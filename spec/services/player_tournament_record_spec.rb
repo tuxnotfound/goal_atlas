@@ -33,6 +33,25 @@ RSpec.describe PlayerTournamentRecord, type: :service do
       create(:tournament_award, tournament: tournament_2022, player: player, award_type: :golden_glove)
       expect(described_class.for_player(player).size).to eq(1)
     end
+
+    it "includes a tournament the player participated in but recorded nothing" do
+      create(:tournament_participation, player: player, tournament: tournament_2018)
+      records = described_class.for_player(player)
+      expect(records.map { |r| r.tournament.year }).to eq([2018])
+      expect(records.first.goals_count).to eq(0)
+      expect(records.first).to be_empty
+    end
+
+    it "counts every participation alongside scoring tournaments, without duplicates" do
+      create(:tournament_participation, player: player, tournament: tournament_2018)
+      create(:tournament_participation, player: player, tournament: tournament_2022)
+      m22 = create(:match, tournament: tournament_2022, home_team: team, away_team: opponent)
+      create(:goal, match: m22, player: player, scoring_team: team)
+
+      records = described_class.for_player(player)
+      expect(records.map { |r| r.tournament.year }).to eq([2018, 2022])
+      expect(records.map(&:goals_count)).to eq([0, 1])
+    end
   end
 
   describe "counts" do

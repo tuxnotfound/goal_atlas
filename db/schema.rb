@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_11_220000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_16_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -275,6 +275,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_220000) do
     t.index ["tournament_id"], name: "index_tournament_awards_on_tournament_id"
   end
 
+  create_table "tournament_participations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "player_id", null: false
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["player_id", "tournament_id"], name: "index_tournament_participations_uniq", unique: true
+    t.index ["tournament_id"], name: "index_tournament_participations_on_tournament_id"
+  end
+
   create_table "tournaments", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "discarded_at"
@@ -359,6 +368,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_220000) do
   add_foreign_key "teams", "teams", column: "successor_team_id"
   add_foreign_key "tournament_awards", "players"
   add_foreign_key "tournament_awards", "tournaments"
+  add_foreign_key "tournament_participations", "players"
+  add_foreign_key "tournament_participations", "tournaments"
   add_foreign_key "tournaments", "teams", column: "fourth_place_team_id"
   add_foreign_key "tournaments", "teams", column: "runner_up_team_id"
   add_foreign_key "tournaments", "teams", column: "third_place_team_id"

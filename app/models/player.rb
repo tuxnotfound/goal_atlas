@@ -19,6 +19,8 @@ class Player < ApplicationRecord
   has_many :assisted_goals, class_name: "Goal", foreign_key: :assist_player_id, dependent: :nullify, inverse_of: :assist_player
   has_many :shootout_kicks, dependent: :restrict_with_error
   has_many :tournament_awards, dependent: :restrict_with_error
+  has_many :tournament_participations, dependent: :destroy
+  has_many :participated_tournaments, through: :tournament_participations, source: :tournament
   has_many :player_images, dependent: :destroy
   has_many :stylized_portraits, dependent: :destroy
 

@@ -39,6 +39,18 @@ RSpec.describe "Players", type: :request do
       expect(response.body).to include("No goals in our dataset yet")
     end
 
+    it "counts every World Cup the player took part in, not only scoring ones" do
+      create(:tournament_participation, player: messi, tournament: create(:tournament, year: 2018))
+      create(:tournament_participation, player: messi, tournament: create(:tournament, year: 2022))
+
+      get player_path(messi)
+      expect(response.body).to include("Tournaments")
+      expect(response.body).to include("World Cup history")
+      # Both participated years are listed even though Messi has no goals here.
+      expect(response.body).to include("2018")
+      expect(response.body).to include("2022")
+    end
+
     it "404s for unknown slug" do
       get "/players/no-such-player"
       expect(response).to have_http_status(:not_found)

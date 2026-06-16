@@ -12,10 +12,10 @@
 <%
   map_asset      = Rails.public_path.join("hero_world_map.png")
   trophy_asset   = Rails.public_path.join("hero_trophy.png")
-  # A player counts as a champion in a tournament if their nationality team
-  # was the winner that year and they have at least one record (goal, assist,
-  # kick or award) in our dataset for that tournament — we don't track squads,
-  # so "has any contribution" is the closest proxy to "was on the winning team".
+  # A player counts as a champion in a tournament if their nationality team won
+  # that year and they took part in it — @tournament_records spans every World
+  # Cup the player was named in (squad participations), not just the ones they
+  # scored in, so this now catches winners who didn't record a contribution.
   champion_count = if @player.nationality_team_id
                      @tournament_records.count { |r| r.tournament.winner_team_id == @player.nationality_team_id }
                    else
