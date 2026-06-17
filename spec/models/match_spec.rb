@@ -115,6 +115,7 @@ end
 #  home_penalties              :integer
 #  home_score                  :integer          default(0), not null
 #  home_score_after_extra_time :integer
+#  lineups_synced_at           :datetime
 #  match_number                :integer
 #  referee                     :string
 #  result_type                 :integer          default("regulation"), not null

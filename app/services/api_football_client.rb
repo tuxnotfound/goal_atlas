@@ -43,6 +43,12 @@ class ApiFootballClient
     get("/fixtures/events", { fixture: fixture_id })
   end
 
+  # GET /fixtures/lineups?fixture=<id> — starting XI + named substitutes for
+  # each team in one fixture. Used to record who took part beyond just scorers.
+  def fixture_lineups(fixture_id:)
+    get("/fixtures/lineups", { fixture: fixture_id })
+  end
+
   # GET /players?id=<id>&season=<season> — full player details (firstname,
   # lastname, birth date, photo). Used to upgrade short names like
   # "J. Quinones" into the canonical "Julián Andrés Quiñones Quiñones".

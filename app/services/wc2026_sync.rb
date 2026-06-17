@@ -1,7 +1,11 @@
 # Pulls WC2026 fixtures from api-football and upserts scores + result_type
 # onto matching Match rows. After a match flips to a "finished" status the
-# sync also fetches the goal-event timeline and upserts Goal rows + creates
-# Player rows for any scorers/assists we don't already have.
+# sync also:
+#   * fetches the goal-event timeline — upserts Goal rows + creates Player
+#     rows for any scorers/assists we don't already have; and
+#   * fetches the lineups — records a TournamentParticipation for every player
+#     who appeared and is ALREADY in our DB, so non-scoring squad members
+#     (who leave no goal/assist trace) still count toward participation stats.
 #
 # Usage:
 #   Wc2026Sync.new.call
@@ -33,7 +37,8 @@ class Wc2026Sync
 
   def initialize(client: ApiFootballClient.new)
     @client = client
-    @stats  = { fetched: 0, updated: 0, skipped: 0, goals_synced: 0, players_created: 0, no_match: [] }
+    @stats  = { fetched: 0, updated: 0, skipped: 0, goals_synced: 0,
+                players_created: 0, participations_synced: 0, no_match: [] }
   end
 
   def call
@@ -80,6 +85,7 @@ class Wc2026Sync
     # backfill the goal events for it (e.g. a previous run failed mid-flight).
     if match.result_type != "scheduled"
       sync_goals_for(match, fx, team_map) if match.goals.kept.empty?
+      sync_participations_for(match, fx, team_map)
       @stats[:skipped] += 1
       return
     end
@@ -121,6 +127,50 @@ class Wc2026Sync
     # which is normally right at FT. Pull them now so the match doesn't sit
     # showing a final score with no scorer info.
     sync_goals_for(match, fx, team_map)
+    sync_participations_for(match, fx, team_map)
+  end
+
+  # After a match is played, record a TournamentParticipation for every player
+  # who appeared in either lineup and is ALREADY in our database. Non-scorers
+  # leave no goal/assist trace, so without this they'd never count toward the
+  # "tournaments played" stat. We never create Player rows here — only squad
+  # members we already curate get linked, matching the historical "existing
+  # players only" participation policy.
+  #
+  # `lineups_synced_at` guards re-runs: the 15-minute sync would otherwise
+  # re-pull every finished fixture's lineup forever. We stamp it on any
+  # successful fetch (so a genuinely empty lineup isn't retried) but leave it
+  # unset on an API error, so transient failures are retried next run.
+  def sync_participations_for(match, fx, team_map)
+    return if match.lineups_synced_at?
+
+    fixture_id = fx.dig("fixture", "id")
+    return unless fixture_id
+
+    lineups = @client.fixture_lineups(fixture_id: fixture_id)["response"]
+
+    Array(lineups).each do |lineup|
+      team = team_map[lineup.dig("team", "id")]
+      next unless team
+
+      roster = Array(lineup["startXI"]) + Array(lineup["substitutes"])
+      roster.each do |slot|
+        info = slot["player"]
+        next unless info
+
+        player = find_existing_player(info["id"], info["name"], team)
+        next unless player
+
+        record = TournamentParticipation
+                 .where(player_id: player.id, tournament_id: match.tournament_id)
+                 .first_or_create!
+        @stats[:participations_synced] += 1 if record.previously_new_record?
+      end
+    end
+
+    match.update_column(:lineups_synced_at, Time.current)
+  rescue ApiFootballClient::Error => e
+    Rails.logger.warn("Wc2026Sync: lineup fetch failed for fixture #{fixture_id}: #{e.message}")
   end
 
   # Fetches goal events for one fixture and upserts a Goal row per event.
@@ -197,14 +247,33 @@ class Wc2026Sync
     team.id == match.home_team_id ? match.away_team : match.home_team
   end
 
-  # Player upsert. Order:
+  # Player upsert: link an existing row (see find_existing_player) or, only
+  # when no match is found, create a fresh one with the best canonical name we
+  # can compute. Used for scorers/assists, who must always end up as a Player.
+  def find_or_create_player(api_id, short_name, nationality_team)
+    return nil if short_name.to_s.strip.empty?
+
+    existing = find_existing_player(api_id, short_name, nationality_team)
+    return existing if existing
+
+    info = api_id ? player_details_cached(api_id) : nil
+    Player.create!(
+      name: info&.dig(:display_name).presence || info&.dig(:api_name).presence || short_name,
+      birth_date: info&.dig(:birth_date),
+      nationality_team: nationality_team,
+      api_football_player_id: api_id
+    ).tap { @stats[:players_created] += 1 }
+  end
+
+  # Lookup half of the player upsert — returns an existing Player or nil,
+  # NEVER creating one. Used directly for lineup participants (we only link
+  # squad members already in our DB). Order:
   #   1. exact lookup by api_football_player_id (persistent ID — bulletproof)
   #   2. name fallback (diacritic + case insensitive) trying every plausible
   #      form so existing rows (Messi, Ronaldo, etc.) get linked instead of
   #      duplicated. On match we backfill api_football_player_id so step 1
   #      catches them next time.
-  #   3. create a fresh row with the best canonical name we can compute.
-  def find_or_create_player(api_id, short_name, nationality_team)
+  def find_existing_player(api_id, short_name, nationality_team)
     return nil if short_name.to_s.strip.empty?
 
     # Step 1 — persistent ID
@@ -241,13 +310,7 @@ class Wc2026Sync
       return existing
     end
 
-    # Step 3 — create
-    Player.create!(
-      name: info&.dig(:display_name).presence || info&.dig(:api_name).presence || short_name,
-      birth_date: info&.dig(:birth_date),
-      nationality_team: nationality_team,
-      api_football_player_id: api_id
-    ).tap { @stats[:players_created] += 1 }
+    nil
   end
 
   # Diacritic + case insensitive name match scoped to the player's

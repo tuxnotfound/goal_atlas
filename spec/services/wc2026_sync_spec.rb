@@ -52,4 +52,65 @@ RSpec.describe Wc2026Sync, type: :service do
       expect(existing.reload.api_football_player_id).to eq(154)
     end
   end
+
+  describe "lineup participation (#sync_participations_for)" do
+    # Stub client: returns canned /fixtures/lineups + (empty) /players details.
+    class LineupClient
+      def initialize(lineups:, details: {})
+        @lineups = lineups
+        @details = details
+      end
+
+      def fixture_lineups(fixture_id:) = { "response" => @lineups }
+      def player_details(id:, season:) = { "response" => [{ "player" => @details[id] }] }
+    end
+
+    let(:tournament) { create(:tournament, :wc_2026_joint_host) }
+    let(:portugal)   { create(:team, name: "Portugal", fifa_code: "POR") }
+    let(:morocco)    { create(:team, name: "Morocco",  fifa_code: "MAR") }
+    let(:match) do
+      create(:match, tournament: tournament, home_team: portugal, away_team: morocco,
+                     result_type: :regulation, date: Date.new(2026, 6, 18))
+    end
+    let(:fx)       { { "fixture" => { "id" => 5000 } } }
+    let(:team_map) { { 1 => portugal, 2 => morocco } }
+
+    def lineup(api_team_id, players)
+      { "team" => { "id" => api_team_id },
+        "startXI" => players.map { |p| { "player" => p } },
+        "substitutes" => [] }
+    end
+
+    def run_participation_sync(lineups, details: {})
+      described_class.new(client: LineupClient.new(lineups: lineups, details: details))
+                     .send(:sync_participations_for, match, fx, team_map)
+    end
+
+    it "records participation for an existing non-scorer who appeared" do
+      ronaldo = create(:player, name: "Cristiano Ronaldo", nationality_team: portugal,
+                       api_football_player_id: 874)
+
+      expect { run_participation_sync([lineup(1, [{ "id" => 874, "name" => "Cristiano Ronaldo" }])]) }
+        .to change { TournamentParticipation.where(player_id: ronaldo.id, tournament_id: tournament.id).count }.by(1)
+    end
+
+    it "never creates a Player for a squad member we don't already have" do
+      create(:player, name: "Cristiano Ronaldo", nationality_team: portugal, api_football_player_id: 874)
+      lineups = [lineup(1, [{ "id" => 874, "name" => "Cristiano Ronaldo" },
+                            { "id" => 99_999, "name" => "Unknown Newcomer" }]),
+                 lineup(2, [{ "id" => 88_888, "name" => "Some Moroccan" }])]
+
+      expect { run_participation_sync(lineups) }.not_to change(Player, :count)
+      expect(TournamentParticipation.count).to eq(1) # only the existing player
+    end
+
+    it "is idempotent and stamps lineups_synced_at to skip re-runs" do
+      create(:player, name: "Cristiano Ronaldo", nationality_team: portugal, api_football_player_id: 874)
+      lineups = [lineup(1, [{ "id" => 874, "name" => "Cristiano Ronaldo" }])]
+
+      run_participation_sync(lineups)
+      expect(match.reload.lineups_synced_at).to be_present
+      expect { run_participation_sync(lineups) }.not_to change(TournamentParticipation, :count)
+    end
+  end
 end

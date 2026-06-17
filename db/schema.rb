@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_16_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_17_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -81,6 +81,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_16_000000) do
     t.integer "home_score", default: 0, null: false
     t.integer "home_score_after_extra_time"
     t.bigint "home_team_id", null: false
+    t.datetime "lineups_synced_at"
     t.integer "match_number"
     t.string "referee"
     t.bigint "replay_of_match_id"

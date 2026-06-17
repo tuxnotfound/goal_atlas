@@ -16,6 +16,7 @@ namespace :wc2026 do
     puts "  skipped:         #{stats[:skipped]}"
     puts "  goals_synced:    #{stats[:goals_synced]}"
     puts "  players_created: #{stats[:players_created]}"
+    puts "  participations:  #{stats[:participations_synced]}"
     if stats[:no_match].any?
       puts "  no-match fixtures (api-football side):"
       stats[:no_match].each { |line| puts "    #{line}" }
