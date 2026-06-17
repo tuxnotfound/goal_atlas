@@ -215,11 +215,15 @@ class Wc2026Sync
     info = api_id ? player_details_cached(api_id) : nil
 
     # Step 2 — name fallback. Only forms that uniquely identify the player —
-    # the short broadcast name ("L. Messi"), api-football's curated `name`
-    # ("Cristiano Ronaldo"), and the firstname+lastname computed form. We
-    # intentionally exclude firstname alone because common compound first
-    # names like "Roberto Carlos" collide with unrelated legends.
+    # the expanded display name ("Lionel Messi"), the short broadcast name
+    # ("L. Messi"), api-football's curated `name` ("Cristiano Ronaldo"), and the
+    # firstname+lastname computed form. display_name goes first because it's the
+    # canonical known name our existing rows are stored under, so it links
+    # legends already in the DB instead of duplicating them. We intentionally
+    # exclude firstname alone because common compound first names like "Roberto
+    # Carlos" collide with unrelated legends.
     names_to_try = [
+      info&.dig(:display_name),
       short_name,
       info&.dig(:api_name),
       info&.dig(:computed_name)
@@ -284,22 +288,31 @@ class Wc2026Sync
     api_name    = p["name"].to_s.strip
     first_token = p["firstname"].to_s.strip.split.first
     last_name   = p["lastname"].to_s.strip
-    # firstname: first given name only — drops secondary given names
-    # ("Julián Andrés" → "Julián"). lastname: kept IN FULL — taking only the
-    # first word mangles compound surnames ("van Dijk" → "van", "Braut
-    # Haaland" → "Braut").
-    computed = [first_token, last_name].compact.reject(&:empty?).join(" ")
+    computed    = [first_token, last_name].reject { |s| s.to_s.empty? }.join(" ") # firstname + full lastname
 
-    # Best display name: api-football's curated `name` is the common/known form
-    # ("Aymen Hussein", "Cristiano Ronaldo") and beats firstname+lastname —
-    # firstname+lastname would have mangled Aymen Hussein into "Aymen Ghadhban".
-    # EXCEPT when `name` is the abbreviated broadcast form ("E. Haaland", "L.
-    # Østigård"); there we fall back to firstname + FULL lastname. Either way we
-    # never emit a truncated surname again. Marquee names with a middle name in
-    # the lastname field (Haaland: "Braut Haaland") still want a manual polish.
-    abbreviated = api_name.match?(/\A\p{Lu}\.\s/)
-    display     = (!api_name.empty? && !abbreviated) ? api_name : computed
-    birth       = p.dig("birth", "date")
+    # api-football's `name` is the common/known form, but usually abbreviates the
+    # given name to an initial ("L. Messi", "E. Haaland", "V. van Dijk"). Expand
+    # that leading initial back to the real first name and we get the name people
+    # actually use — and, crucially, the SAME string our existing rows are stored
+    # under, so the name-match in step 2 links instead of spawning a "Lionel
+    # Messi Cuccittini" twin:
+    #   "L. Messi"      + firstname "Lionel Andrés" -> "Lionel Messi"
+    #   "E. Haaland"    + firstname "Erling"        -> "Erling Haaland"
+    #   "Aymen Hussein" (no initial)                -> "Aymen Hussein" (as-is)
+    # `name` also already drops middle names buried in the lastname field
+    # ("Braut Haaland", "dos Santos Aveiro") that firstname+lastname can't. Only
+    # when `name` is blank do we fall back to firstname + full lastname.
+    name_tokens = api_name.split
+    lead_inits  = name_tokens.take_while { |t| t.match?(/\A\p{Lu}\.\z/) }
+    display =
+      if lead_inits.any?
+        [first_token, name_tokens.drop(lead_inits.size).join(" ")].reject { |s| s.to_s.empty? }.join(" ")
+      elsif !api_name.empty?
+        api_name
+      else
+        computed
+      end
+    birth = p.dig("birth", "date")
 
     {
       api_name:      api_name.presence,                     # e.g. "L. Messi", "Cristiano Ronaldo"
