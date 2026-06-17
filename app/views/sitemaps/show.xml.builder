@@ -6,7 +6,7 @@ xml.urlset xmlns: "http://www.sitemaps.org/schemas/sitemap/0.9" do
     xml.priority "1.0"
   end
 
-  [tournaments_url, matches_url, goals_url].each do |loc|
+  [tournaments_url, matches_url, goals_url, records_url].each do |loc|
     xml.url do
       xml.loc loc
       xml.changefreq "weekly"

@@ -49,7 +49,8 @@ Rails.application.routes.draw do
   resources :goals,       only: [:index, :show], param: :slug
   resources :teams,       only: [:show],         param: :slug
   resources :players,     only: [:show],         param: :slug
-  get "search", to: "search#index", as: :search
+  get "records", to: "records#index", as: :records
+  get "search",  to: "search#index", as: :search
 
   get "sitemap.xml", to: "sitemaps#show", defaults: { format: :xml }, as: :sitemap
   get "llms.txt",    to: "llms#show",     defaults: { format: :text }, as: :llms

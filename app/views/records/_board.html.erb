@@ -1,0 +1,48 @@
+<%# A single all-time leaderboard card — parchment table styled like the team
+    page's "World Cup history" panel. The leader's row is enlarged and gilded.
+
+    Locals:
+      board: AllTimeRecords::Board (title, note, entries)
+      kind:  :player | :team — picks the link target and which flag to show
+%>
+<section class="rounded border border-[#c89942]/70 shadow-md shadow-black/20 overflow-hidden flex flex-col"
+         style="background:#fdf6dc;">
+
+  <div class="px-3 py-2 border-b border-[#c89942]/40" style="background:#f5e7b8;">
+    <h3 class="font-serif text-base font-bold text-[#0a3520] leading-tight"><%= board.title %></h3>
+    <p class="text-[9px] uppercase tracking-[0.22em] text-[#c89942] font-semibold mt-0.5"><%= board.note %></p>
+  </div>
+
+  <% if board.entries.any? %>
+    <ol>
+      <% board.entries.each_with_index do |entry, i| %>
+        <% rank   = i + 1 %>
+        <% entity = entry.entity %>
+        <% path   = kind == :player ? player_path(entity) : team_path(entity) %>
+        <% flag   = kind == :player ? entity.nationality_team&.flag_emoji : entity.flag_emoji %>
+        <% leader = rank == 1 %>
+
+        <li class="border-b border-[#c89942]/15 last:border-b-0 <%= "bg-[#f5e7b8]/50" if leader %>">
+          <%= link_to path, class: "flex items-center gap-3 px-3 py-1.5 hover:bg-[#f5e7b8] transition text-[#0a3520]" do %>
+            <span class="font-mono text-[11px] w-5 text-right shrink-0 tabular-nums <%= leader ? "text-[#c89942] font-bold" : "text-[#c89942]/70" %>">
+              <%= rank %>
+            </span>
+            <% if flag.present? %>
+              <span class="<%= leader ? "text-xl" : "text-base" %> leading-none shrink-0"><%= flag %></span>
+            <% end %>
+            <span class="font-serif font-bold truncate flex-1 min-w-0 <%= leader ? "text-[15px]" : "text-sm" %>">
+              <%= entity.name %>
+            </span>
+            <span class="font-serif font-bold tabular-nums shrink-0 <%= leader ? "text-xl text-[#1c5c3f]" : "text-base text-[#0a3520]" %>">
+              <%= entry.count %>
+            </span>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  <% else %>
+    <p class="px-3 py-8 text-center text-xs text-[#c89942] uppercase tracking-[0.25em] font-semibold">
+      No data yet
+    </p>
+  <% end %>
+</section>

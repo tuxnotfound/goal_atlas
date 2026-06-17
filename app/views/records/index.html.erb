@@ -1,0 +1,43 @@
+<% seo_for title: "All-Time World Cup Records",
+           description: "All-time FIFA World Cup leaderboards: most goals, most appearances, " \
+                        "most titles, most hat-tricks, and team records across every tournament since 1930." %>
+
+<div class="max-w-6xl mx-auto">
+  <%= render "shared/breadcrumbs", crumbs: [["All-time records", nil]] %>
+
+  <header class="mb-10 text-center">
+    <h1 class="font-serif text-4xl md:text-5xl font-bold text-[#f0c870]">All-Time Records</h1>
+    <p class="text-[#8aa898] mt-2 max-w-2xl mx-auto leading-relaxed">
+      Career leaderboards across every FIFA World Cup — the players and nations
+      at the top of the all-time charts.
+    </p>
+  </header>
+
+  <section class="mb-14">
+    <div class="flex items-center gap-3 mb-5">
+      <h2 class="font-serif text-2xl text-[#f0c870] shrink-0">Players</h2>
+      <span class="h-px flex-1 bg-[#c89942]/30"></span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+      <% @records.player_boards.each do |board| %>
+        <%= render "records/board", board: board, kind: :player %>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="mb-12">
+    <div class="flex items-center gap-3 mb-5">
+      <h2 class="font-serif text-2xl text-[#f0c870] shrink-0">Teams</h2>
+      <span class="h-px flex-1 bg-[#c89942]/30"></span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+      <% @records.team_boards.each do |board| %>
+        <%= render "records/board", board: board, kind: :team %>
+      <% end %>
+    </div>
+
+    <p class="text-[10px] text-[#8aa898] mt-5 text-center uppercase tracking-[0.2em]">
+      Predecessor nations counted with their successor · scheduled 2026 fixtures excluded
+    </p>
+  </section>
+</div>
