@@ -104,6 +104,16 @@ RSpec.describe Wc2026Sync, type: :service do
       expect(TournamentParticipation.count).to eq(1) # only the existing player
     end
 
+    it "matches an existing player by abbreviated name once the surname is in our roster, backfilling the id" do
+      bruno   = create(:player, name: "Bruno Fernandes", nationality_team: portugal) # no api id yet
+      details = { 999 => { "name" => "B. Fernandes", "firstname" => "Bruno", "lastname" => "Fernandes" } }
+      lineups = [lineup(1, [{ "id" => 999, "name" => "B. Fernandes" }])]
+
+      expect { run_participation_sync(lineups, details: details) }
+        .to change { TournamentParticipation.where(player_id: bruno.id, tournament_id: tournament.id).count }.by(1)
+      expect(bruno.reload.api_football_player_id).to eq(999)
+    end
+
     it "is idempotent and stamps lineups_synced_at to skip re-runs" do
       create(:player, name: "Cristiano Ronaldo", nationality_team: portugal, api_football_player_id: 874)
       lineups = [lineup(1, [{ "id" => 874, "name" => "Cristiano Ronaldo" }])]

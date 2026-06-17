@@ -137,10 +137,17 @@ class Wc2026Sync
   # members we already curate get linked, matching the historical "existing
   # players only" participation policy.
   #
+  # api-football's lineups give abbreviated names ("C. Ronaldo"), so matching
+  # an existing row needs the /players detail call that expands them. To avoid
+  # spending one of those on each of the ~25 debutants per match who aren't in
+  # our DB at all, we first cheaply check (locally) that the name's surname is
+  # even present in that nation's roster — see match_squad_member.
+  #
   # `lineups_synced_at` guards re-runs: the 15-minute sync would otherwise
   # re-pull every finished fixture's lineup forever. We stamp it on any
   # successful fetch (so a genuinely empty lineup isn't retried) but leave it
-  # unset on an API error, so transient failures are retried next run.
+  # unset on an API error, so a transient failure (incl. a rate-limit 429) is
+  # retried next run.
   def sync_participations_for(match, fx, team_map)
     return if match.lineups_synced_at?
 
@@ -158,7 +165,7 @@ class Wc2026Sync
         info = slot["player"]
         next unless info
 
-        player = find_existing_player(info["id"], info["name"], team)
+        player = match_squad_member(info["id"], info["name"], team)
         next unless player
 
         record = TournamentParticipation
@@ -171,6 +178,33 @@ class Wc2026Sync
     match.update_column(:lineups_synced_at, Time.current)
   rescue ApiFootballClient::Error => e
     Rails.logger.warn("Wc2026Sync: lineup fetch failed for fixture #{fixture_id}: #{e.message}")
+  end
+
+  # Resolves a lineup entry to an existing Player, spending an api /players
+  # detail call ONLY when worthwhile. Matches the persistent id for free, then
+  # gates the (expensive) name resolution behind a local check that the
+  # abbreviated lineup name's surname actually appears in this nation's roster.
+  # Debutants we don't track have no matching surname, so they cost no API call.
+  def match_squad_member(api_id, lineup_name, team)
+    if api_id && (existing = Player.kept.find_by(api_football_player_id: api_id))
+      return existing
+    end
+
+    tokens = normalize_name(lineup_name).split
+    return nil if tokens.empty? || tokens.none? { |t| squad_surnames(team).include?(t) }
+
+    find_existing_player(api_id, lineup_name, team)
+  end
+
+  # Normalized name tokens of every player already on this nation's roster
+  # (plus teamless players), memoised per run. Used to skip detail lookups for
+  # lineup names whose surname we've never recorded.
+  def squad_surnames(team)
+    (@squad_surnames ||= {})[team.id] ||=
+      Player.kept.where(nationality_team_id: [team.id, nil])
+            .pluck(:name)
+            .flat_map { |name| normalize_name(name).split }
+            .to_set
   end
 
   # Fetches goal events for one fixture and upserts a Goal row per event.
