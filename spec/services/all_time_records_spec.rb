@@ -26,6 +26,30 @@ RSpec.describe AllTimeRecords, type: :service do
         .to eq([["Veteran", 2], ["Rookie", 1]])
     end
 
+    it "counts a tournament where the player scored but has no squad participation row" do
+      t2022 = create(:tournament, year: 2022)
+      t2026 = create(:tournament, year: 2026)
+      star  = create(:player, name: "Star", nationality_team: brazil)
+      create(:tournament_participation, player: star, tournament: t2022)
+      # No 2026 squad row seeded yet, but he scored in 2026 — it must still count.
+      m = create(:match, tournament: t2026, home_team: brazil, away_team: france)
+      create(:goal, match: m, player: star, scoring_team: brazil)
+
+      board = board_for(described_class.new.player_boards, :participations)
+      expect(board.entries.find { |e| e.entity == star }.count).to eq(2)
+    end
+
+    it "does not double-count a tournament with both a squad row and a goal" do
+      t = create(:tournament, year: 2022)
+      star = create(:player, name: "Star", nationality_team: brazil)
+      create(:tournament_participation, player: star, tournament: t)
+      m = create(:match, tournament: t, home_team: brazil, away_team: france)
+      create(:goal, match: m, player: star, scoring_team: brazil)
+
+      board = board_for(described_class.new.player_boards, :participations)
+      expect(board.entries.find { |e| e.entity == star }.count).to eq(1)
+    end
+
     it "counts only the tournaments a player won with their nation" do
       wc1954 = create(:tournament, year: 1954, winner_team: west_germany)
       wc2014 = create(:tournament, year: 2014, winner_team: germany)

@@ -37,7 +37,7 @@ class AllTimeRecords
       board(:titles, "Most tournaments won",
             "World Cups won with their nation", player_title_entries),
       board(:goals, "Most goals",
-            "Career World Cup goals (own goals excluded)", player_goal_entries),
+            "Career World Cup goals", player_goal_entries),
       board(:hat_tricks, "Most hat-tricks",
             "Matches with three or more goals", hat_trick_entries)
     ]
@@ -68,11 +68,61 @@ class AllTimeRecords
 
   # ---- Player boards -----------------------------------------------------
 
+  # "Tournaments played" counts every World Cup a player appears in: squad
+  # participations plus any tournament where they scored, assisted, took a
+  # shootout kick, or won an award. This mirrors PlayerTournamentRecord (the
+  # player page's own definition), so the number here always matches a player's
+  # page — and it stays right for an in-progress tournament whose squad lists
+  # aren't seeded yet. A 2026 goalscorer counts 2026 without a participation row.
   def participation_entries
-    ranked_players(
-      Player.kept.joins(:tournament_participations),
-      count: "COUNT(tournament_participations.id)"
-    )
+    rows = appearance_counts
+    players = Player.kept.where(id: rows.map(&:first)).preload(:nationality_team).index_by(&:id)
+    rows.filter_map do |player_id, count|
+      player = players[player_id]
+      Entry.new(entity: player, count: count) if player
+    end
+  end
+
+  # Returns [[player_id, tournament_count], ...] for the top `limit` players,
+  # ordered by count desc then name. UNION (not UNION ALL) collapses the five
+  # evidence sources to distinct (player, tournament) pairs first, so a player
+  # with both a squad row and a goal in one tournament still counts it once.
+  # The interpolated values are integer constants from our own code.
+  def appearance_counts
+    own_goal = OWN_GOAL.to_i
+    top_n    = limit.to_i
+
+    sql = <<~SQL.squish
+      SELECT a.player_id, COUNT(DISTINCT a.tournament_id) AS stat_count
+      FROM (
+        SELECT player_id, tournament_id FROM tournament_participations
+        UNION
+        SELECT g.player_id, m.tournament_id
+          FROM goals g JOIN matches m ON m.id = g.match_id
+          WHERE g.discarded_at IS NULL AND m.discarded_at IS NULL
+            AND g.goal_type <> #{own_goal}
+        UNION
+        SELECT g.assist_player_id, m.tournament_id
+          FROM goals g JOIN matches m ON m.id = g.match_id
+          WHERE g.discarded_at IS NULL AND m.discarded_at IS NULL
+            AND g.assist_player_id IS NOT NULL
+        UNION
+        SELECT k.player_id, m.tournament_id
+          FROM shootout_kicks k JOIN matches m ON m.id = k.match_id
+          WHERE k.discarded_at IS NULL AND m.discarded_at IS NULL
+        UNION
+        SELECT player_id, tournament_id FROM tournament_awards
+      ) a
+      JOIN players p     ON p.id = a.player_id     AND p.discarded_at IS NULL
+      JOIN tournaments t ON t.id = a.tournament_id AND t.discarded_at IS NULL
+      GROUP BY a.player_id, p.name
+      ORDER BY COUNT(DISTINCT a.tournament_id) DESC, p.name ASC
+      LIMIT #{top_n}
+    SQL
+
+    ApplicationRecord.connection.select_all(sql).to_a.map do |row|
+      [row["player_id"].to_i, row["stat_count"].to_i]
+    end
   end
 
   def player_title_entries
