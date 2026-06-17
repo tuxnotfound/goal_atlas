@@ -239,7 +239,7 @@ class Wc2026Sync
 
     # Step 3 — create
     Player.create!(
-      name: info&.dig(:computed_name).presence || info&.dig(:api_name).presence || short_name,
+      name: info&.dig(:display_name).presence || info&.dig(:api_name).presence || short_name,
       birth_date: info&.dig(:birth_date),
       nationality_team: nationality_team,
       api_football_player_id: api_id
@@ -281,15 +281,30 @@ class Wc2026Sync
     p = payload["response"]&.first&.dig("player")
     return nil unless p
 
-    # First firstname + first lastname — sane default for Spanish names.
+    api_name    = p["name"].to_s.strip
     first_token = p["firstname"].to_s.strip.split.first
-    last_token  = p["lastname"].to_s.strip.split.first
-    computed = [first_token, last_token].compact.reject(&:empty?).join(" ")
-    birth    = p.dig("birth", "date")
+    last_name   = p["lastname"].to_s.strip
+    # firstname: first given name only — drops secondary given names
+    # ("Julián Andrés" → "Julián"). lastname: kept IN FULL — taking only the
+    # first word mangles compound surnames ("van Dijk" → "van", "Braut
+    # Haaland" → "Braut").
+    computed = [first_token, last_name].compact.reject(&:empty?).join(" ")
+
+    # Best display name: api-football's curated `name` is the common/known form
+    # ("Aymen Hussein", "Cristiano Ronaldo") and beats firstname+lastname —
+    # firstname+lastname would have mangled Aymen Hussein into "Aymen Ghadhban".
+    # EXCEPT when `name` is the abbreviated broadcast form ("E. Haaland", "L.
+    # Østigård"); there we fall back to firstname + FULL lastname. Either way we
+    # never emit a truncated surname again. Marquee names with a middle name in
+    # the lastname field (Haaland: "Braut Haaland") still want a manual polish.
+    abbreviated = api_name.match?(/\A\p{Lu}\.\s/)
+    display     = (!api_name.empty? && !abbreviated) ? api_name : computed
+    birth       = p.dig("birth", "date")
 
     {
-      api_name:      p["name"].to_s.strip.presence,        # e.g. "L. Messi", "Cristiano Ronaldo"
-      computed_name: computed.presence,                     # e.g. "Lionel Messi"
+      api_name:      api_name.presence,                     # e.g. "L. Messi", "Cristiano Ronaldo"
+      computed_name: computed.presence,                     # firstname + full lastname
+      display_name:  display.presence,                      # best name for a new row
       firstname:     p["firstname"].to_s.strip.presence,    # for extra-loose match
       lastname_full: p["lastname"].to_s.strip.presence,
       birth_date:    (Date.parse(birth) rescue nil)
