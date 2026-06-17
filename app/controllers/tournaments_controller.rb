@@ -19,10 +19,13 @@ class TournamentsController < ApplicationController
                              .ordered_by_date
                              .group_by(&:stage)
 
+    # Golden Boot leaderboard — own goals credit the opponent, so they must be
+    # excluded or a defender's own goals could inflate (even top) the ranking.
     @top_scorers = Player
       .joins(goals: :match)
       .where(matches: { tournament_id: @tournament.id, discarded_at: nil })
       .where(goals:   { discarded_at: nil })
+      .where.not(goals: { goal_type: Goal::GOAL_TYPES[:own_goal] })
       .group("players.id")
       .order(Arel.sql("COUNT(goals.id) DESC, players.name ASC"))
       .limit(TOP_SCORERS_LIMIT)

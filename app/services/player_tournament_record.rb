@@ -20,7 +20,9 @@ class PlayerTournamentRecord
   end
 
   def self.for_player(player)
-    goals   = player.goals.kept.includes(match: :tournament).to_a
+    # Own goals credit the opposing team, so they never count toward this
+    # player's goals_count (nor appear in their per-tournament goal list).
+    goals   = player.goals.kept.excluding_own_goals.includes(match: :tournament).to_a
     assists = Goal.kept.where(assist_player_id: player.id).includes(match: :tournament).to_a
     kicks   = ShootoutKick.kept.where(player_id: player.id).includes(match: :tournament).to_a
     awards  = TournamentAward.where(player_id: player.id).includes(:tournament).to_a

@@ -87,6 +87,19 @@ RSpec.describe Goal, type: :model do
     end
   end
 
+  describe "excluding_own_goals scope" do
+    it "drops own goals so they never count toward a player's tally" do
+      match    = create(:match, :final_2022)
+      defender = create(:player, name: "Some Argentine", nationality_team: match.home_team)
+
+      open_play = create(:goal, match: match, player: defender, scoring_team: match.home_team)
+      create(:goal, :own_goal, match: match, player: defender, scoring_team: match.away_team, minute: 70)
+
+      expect(Goal.by_player(defender).count).to eq(2)
+      expect(Goal.by_player(defender).excluding_own_goals).to contain_exactly(open_play)
+    end
+  end
+
   describe "enums" do
     it "exposes period values" do
       expect(Goal.periods.keys).to contain_exactly(

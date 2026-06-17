@@ -39,6 +39,7 @@ class TeamsController < ApplicationController
       .joins(goals: :match)
       .where(goals:   { scoring_team_id: team_ids, discarded_at: nil })
       .where(matches: { discarded_at: nil })
+      .where.not(goals: { goal_type: Goal::GOAL_TYPES[:own_goal] }) # own goals are scored by an opponent, not this team's player
       .group("players.id")
       .order(Arel.sql("COUNT(goals.id) DESC, players.name ASC"))
       .limit(TOP_SCORERS_LIMIT)

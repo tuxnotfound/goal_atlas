@@ -63,6 +63,12 @@ class Goal < ApplicationRecord
   scope :by_team,        ->(team)       { where(scoring_team_id: team.id) }
   scope :by_player,      ->(player)     { where(player_id: player.id) }
   scope :in_tournament,  ->(tournament) { joins(:match).where(matches: { tournament_id: tournament.id }) }
+
+  # Own goals are credited to the opposing team, never to the player who put
+  # the ball into their own net. They must never count toward (or appear in) a
+  # player's personal scoring record — otherwise a defender's own goals would
+  # inflate their tally and could even top a Golden Boot leaderboard.
+  scope :excluding_own_goals, -> { where.not(goal_type: GOAL_TYPES[:own_goal]) }
   scope :against_team, ->(team) {
     joins(:match)
       .where("matches.home_team_id = :id OR matches.away_team_id = :id", id: team.id)

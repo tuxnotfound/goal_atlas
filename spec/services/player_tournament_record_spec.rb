@@ -73,5 +73,16 @@ RSpec.describe PlayerTournamentRecord, type: :service do
       expect(record.awards.size).to eq(1)
       expect(record.has_award?).to be true
     end
+
+    it "excludes own goals from goals_count (an own goal credits the opponent)" do
+      m = create(:match, tournament: tournament_2022, home_team: team, away_team: opponent)
+      create(:goal, match: m, player: player, scoring_team: team)
+      # Messi puts one into his own net — credited to France, must not count for him.
+      create(:goal, :own_goal, match: m, player: player, scoring_team: opponent, minute: 70)
+
+      record = described_class.for_player(player).first
+      expect(record.goals_count).to eq(1)
+      expect(record.goals.map(&:goal_type)).to all(eq("open_play"))
+    end
   end
 end
