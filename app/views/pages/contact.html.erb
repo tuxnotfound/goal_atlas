@@ -1,0 +1,39 @@
+<% seo_for title: "Contact",
+           description: "Contact The Goal Atlas — send corrections, missing video links, or "  \
+                        "feedback about the World Cup archive." %>
+
+<div class="max-w-3xl mx-auto">
+  <%= render "shared/breadcrumbs", crumbs: [["Contact", nil]] %>
+
+  <header class="mb-8">
+    <h1 class="font-serif text-4xl md:text-5xl font-bold text-[#f0c870]">Contact</h1>
+    <p class="text-[#8aa898] mt-3 leading-relaxed">
+      The Goal Atlas is a one-person project, and feedback genuinely makes it better.
+    </p>
+  </header>
+
+  <div class="space-y-4 text-[#e8d99c]/90 leading-relaxed">
+    <p>The best way to reach us is by email:</p>
+    <p>
+      <a href="mailto:tuxnotfound@cioga.eu"
+         class="inline-flex items-center gap-2 text-lg text-[#c89942] hover:text-[#f0c870] underline transition">
+        tuxnotfound@cioga.eu
+      </a>
+    </p>
+
+    <p>We're especially glad to hear about:</p>
+    <ul class="list-disc pl-6 space-y-1">
+      <li><strong class="text-[#e8d99c]">Corrections</strong> — a wrong scoreline, scorer, minute, or squad detail.</li>
+      <li><strong class="text-[#e8d99c]">Missing video links</strong> — an official highlight we haven't linked yet.</li>
+      <li><strong class="text-[#e8d99c]">Suggestions</strong> — features, data, or tournaments you'd like to see.</li>
+      <li><strong class="text-[#e8d99c]">Privacy questions</strong> — anything covered in our
+        <%= link_to "Privacy Policy", privacy_path, class: "text-[#c89942] hover:text-[#f0c870] underline transition" %>.</li>
+    </ul>
+
+    <p class="text-[#8aa898]">
+      If you'd like to support the project, you can also
+      <a href="https://ko-fi.com/tux404" target="_blank" rel="noopener"
+         class="text-[#c89942] hover:text-[#f0c870] underline transition">buy a coffee on Ko-fi</a>. Thank you.
+    </p>
+  </div>
+</div>

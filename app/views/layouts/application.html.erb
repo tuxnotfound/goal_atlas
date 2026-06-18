@@ -81,14 +81,16 @@
       <div class="max-w-7xl mx-auto px-6 py-6 leading-relaxed flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div class="max-w-3xl space-y-2">
           <p>
-            This is an independent football history project. Videos are linked or embedded
+            This is an independent football history project. Videos are linked
             from official/public sources where available. All trademarks, footage, and media
             belong to their respective owners. Not affiliated with FIFA.
           </p>
-          <p>
-            Contact:
-            <a href="mailto:tuxnotfound@cioga.eu" class="text-[#c89942] hover:text-[#f0c870] transition">tuxnotfound@cioga.eu</a>
-          </p>
+          <nav class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[#c89942]">
+            <%= link_to "About",          about_path,   class: "hover:text-[#f0c870] transition" %>
+            <%= link_to "Privacy Policy", privacy_path, class: "hover:text-[#f0c870] transition" %>
+            <%= link_to "Contact",        contact_path, class: "hover:text-[#f0c870] transition" %>
+            <a href="mailto:tuxnotfound@cioga.eu" class="hover:text-[#f0c870] transition">tuxnotfound@cioga.eu</a>
+          </nav>
         </div>
         <a href="https://ko-fi.com/tux404" target="_blank" rel="noopener"
            class="shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-[#c89942]/40 text-[#f0c870] hover:text-[#fef0c8] hover:border-[#c89942] transition">

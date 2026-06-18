@@ -14,6 +14,14 @@ xml.urlset xmlns: "http://www.sitemaps.org/schemas/sitemap/0.9" do
     end
   end
 
+  [about_url, privacy_url, contact_url].each do |loc|
+    xml.url do
+      xml.loc loc
+      xml.changefreq "yearly"
+      xml.priority "0.3"
+    end
+  end
+
   @tournaments.each do |t|
     xml.url do
       xml.loc tournament_url(t)

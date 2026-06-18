@@ -52,6 +52,10 @@ Rails.application.routes.draw do
   get "records", to: "records#index", as: :records
   get "search",  to: "search#index", as: :search
 
+  get "about",   to: "pages#about",   as: :about
+  get "privacy", to: "pages#privacy", as: :privacy
+  get "contact", to: "pages#contact", as: :contact
+
   get "sitemap.xml", to: "sitemaps#show", defaults: { format: :xml }, as: :sitemap
   get "llms.txt",    to: "llms#show",     defaults: { format: :text }, as: :llms
 

@@ -1,0 +1,60 @@
+<% seo_for title: "About",
+           description: "About The Goal Atlas — an independent, ad-supported archive of every "  \
+                        "FIFA World Cup match, goal, and player, with timelines, records, and "  \
+                        "links to official highlights." %>
+
+<div class="max-w-3xl mx-auto">
+  <%= render "shared/breadcrumbs", crumbs: [["About", nil]] %>
+
+  <header class="mb-8">
+    <h1 class="font-serif text-4xl md:text-5xl font-bold text-[#f0c870]">About The Goal Atlas</h1>
+    <p class="text-[#8aa898] mt-3 leading-relaxed">
+      An independent labour of love for the history of the World Cup.
+    </p>
+  </header>
+
+  <div class="space-y-4 text-[#e8d99c]/90 leading-relaxed">
+    <p>
+      <strong class="text-[#f0c870]">The Goal Atlas</strong> is an interactive archive of every
+      FIFA World Cup since 1930 — every tournament, match, team, player, and goal, organised so
+      you can move from a final scoreline down to a single goal and back out to a player's whole
+      career in a few clicks. Where an official or public highlight exists, we link to it and mark
+      the moment in the match timeline, so you can jump straight to the play rather than scrubbing
+      through a full replay.
+    </p>
+    <p>
+      The project is built and maintained by a single football supporter, independently and in
+      spare time. It is not affiliated with, endorsed by, or connected to FIFA or any football
+      federation. All trademarks, footage, and media belong to their respective owners; we host no
+      video ourselves and link only to material already published by its rights holders.
+    </p>
+
+    <h2 class="font-serif text-2xl text-[#f0c870] pt-6">Where the data comes from</h2>
+    <p>
+      Match results, line-ups, goals, and squads are built on open, publicly available World Cup
+      datasets, then cleaned, cross-checked, and enriched by hand — adding goal timelines, video
+      links, player biographies, and the all-time
+      <%= link_to "records", records_path, class: "text-[#c89942] hover:text-[#f0c870] underline transition" %>
+      and leaderboards you won't find pre-assembled anywhere else. Mistakes are inevitable across a
+      century of football; if you spot one, please tell us.
+    </p>
+
+    <h2 class="font-serif text-2xl text-[#f0c870] pt-6">How the site is funded</h2>
+    <p>
+      The Goal Atlas is free to use and supported by advertising and by readers. Running the site
+      costs money, and ads help keep it online and growing. If you'd rather support it directly,
+      you can
+      <a href="https://ko-fi.com/tux404" target="_blank" rel="noopener"
+         class="text-[#c89942] hover:text-[#f0c870] underline transition">buy a coffee on Ko-fi</a>.
+      How we handle advertising and your data is set out in our
+      <%= link_to "Privacy Policy", privacy_path, class: "text-[#c89942] hover:text-[#f0c870] underline transition" %>.
+    </p>
+
+    <h2 class="font-serif text-2xl text-[#f0c870] pt-6">Get in touch</h2>
+    <p>
+      Corrections, missing video links, and feedback are always welcome — see the
+      <%= link_to "Contact", contact_path, class: "text-[#c89942] hover:text-[#f0c870] underline transition" %>
+      page.
+    </p>
+  </div>
+</div>
