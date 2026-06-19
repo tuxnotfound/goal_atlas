@@ -265,6 +265,172 @@ namespace :video_links do
     puts "(Dry run — nothing written. Re-run with mode=apply to attach.)" if mode == "dry"
   end
 
+  # The @worldcupgoals4585 fan channel titles every upload in a rigid format:
+  #   "<YEAR> FIFA World Cup <Host>™ - Match N - <Stage> - 🇩🇪 Germany 4 x 2 Costa Rica 🇨🇷"
+  # We enumerate the channel's uploads ONCE (1 quota unit per 50-video page, far
+  # cheaper and more reliable than per-match search, which YouTube orders
+  # non-deterministically) and match each DB match to a video by the two team
+  # names in the scoreline segment (the part after the final " - "). The host
+  # country lives in the prefix, so restricting to the scoreline avoids the host
+  # name ("Germany™", "Korea & Japan™") matching every title. NOTE: the channel's
+  # own "Match N" label does NOT track FIFA's official match numbers, so we match
+  # on team names + year, never on the number.
+  WORLDCUPGOALS_API = "https://www.googleapis.com".freeze
+
+  # Aliases bridging our team names and the channel's spelling. Names are compared
+  # after transliteration (Côte d'Ivoire -> cote d ivoire) and alphanumeric
+  # squashing, so only genuinely different wordings need an entry here.
+  WORLDCUPGOALS_ALIASES = {
+    "united states"       => ["usa", "united states"],
+    "south korea"         => ["korea republic", "south korea"],
+    "ivory coast"         => ["ivory coast", "cote d ivoire"],
+    "republic of ireland" => ["republic of ireland", "rep of ireland"],
+    "china pr"            => ["china pr", "china"]
+  }.freeze
+
+  desc "Attach @worldcupgoals4585 fan-channel MATCH highlight reels. Enumerates the channel once, matches each tournament match by team names in the title's scoreline, and attaches the hit as a source=:other match video. Skips matches that already have a FIFA-official (youtube_official) link or a link already pointing at that channel. Usage: rake 'video_links:scout_worldcupgoals[<year>,<mode=dry|apply>,<limit?>]'"
+  task :scout_worldcupgoals, [:year, :mode, :limit] => :environment do |_t, args|
+    require "net/http"
+    require "json"
+
+    abort "Usage: rake 'video_links:scout_worldcupgoals[<year>,<mode=dry|apply>,<limit?>]'" unless args[:year]
+    mode = (args[:mode] || "dry").downcase
+    abort "mode must be 'dry' or 'apply'" unless %w[dry apply].include?(mode)
+    limit   = args[:limit].to_i.zero? ? nil : args[:limit].to_i
+    api_key = ENV["YOUTUBE_API_KEY"]
+    abort "Set YOUTUBE_API_KEY env var (see app/services/video_link_scout.rb)" if api_key.to_s.empty?
+
+    $stdout.sync = true
+
+    tournament = Tournament.find_by!(year: args[:year].to_i)
+    channel_id = VideoLinkScout::CHANNELS.fetch(:worldcupgoals)
+
+    # --- helpers -----------------------------------------------------------
+    norm = lambda do |s|
+      ActiveSupport::Inflector.transliterate(s.to_s).downcase
+        .gsub("&amp;", "&").gsub(/[^a-z0-9 ]/, " ").squeeze(" ").strip
+    end
+    team_keys = lambda { |name| WORLDCUPGOALS_ALIASES[norm.call(name)] || [norm.call(name)] }
+    stage_word = {
+      "round_of_16" => "round of 16", "round_of_32" => "round of 32",
+      "quarter_final" => "quarter", "semi_final" => "semi",
+      "third_place_playoff" => "third", "final" => "final"
+    }
+
+    # --- enumerate the channel's uploads -----------------------------------
+    get_json = lambda do |path, params|
+      uri = URI("#{WORLDCUPGOALS_API}#{path}")
+      uri.query = URI.encode_www_form(params.merge(key: api_key))
+      resp = Net::HTTP.get_response(uri)
+      abort "YouTube API error #{resp.code}: #{resp.body}" unless resp.is_a?(Net::HTTPSuccess)
+      JSON.parse(resp.body)
+    end
+
+    uploads = get_json.call("/youtube/v3/channels",
+                            part: "contentDetails", id: channel_id)
+                      .dig("items", 0, "contentDetails", "relatedPlaylists", "uploads")
+    abort "Could not resolve uploads playlist for #{channel_id}" if uploads.to_s.empty?
+
+    videos = []          # [{ year:, score:, title:, url: }]
+    channel_urls = []    # every channel video URL (for idempotency check)
+    page = nil
+    loop do
+      params = { part: "snippet", playlistId: uploads, maxResults: 50 }
+      params[:pageToken] = page if page
+      data = get_json.call("/youtube/v3/playlistItems", params)
+      data.fetch("items", []).each do |item|
+        title = item.dig("snippet", "title").to_s
+        vid   = item.dig("snippet", "resourceId", "videoId")
+        next if vid.to_s.empty?
+        url = "https://www.youtube.com/watch?v=#{vid}"
+        channel_urls << url
+        next unless title =~ /(\d{4}) FIFA World Cup/
+        videos << { year: $1.to_i, score: title.split(" - ").last.to_s, title: title, url: url }
+      end
+      page = data["nextPageToken"]
+      break unless page
+    end
+    channel_url_set = channel_urls.to_set
+    pool = videos.select { |v| v[:year] == tournament.year }
+
+    puts "Tournament: #{tournament.year} #{tournament.name}  |  Mode: #{mode.upcase}"
+    puts "Channel: @worldcupgoals4585 (#{channel_id}) — #{channel_urls.size} uploads, #{pool.size} for #{tournament.year}"
+    puts ""
+
+    matches = tournament.matches.kept
+                        .includes(:home_team, :away_team, :video_links)
+                        .order(:match_number).to_a
+
+    attached    = 0
+    skipped_off = 0   # already has a FIFA-official link
+    skipped_wcg = 0   # already has a worldcupgoals link
+    no_video    = 0   # channel has no reel for this fixture
+    updated     = []
+
+    matches.each do |match|
+      break if limit && updated.size >= limit
+
+      links = match.video_links.select { |l| l.discarded_at.nil? && l.is_active? }
+      label = "M#{match.match_number} #{match.home_team.name} v #{match.away_team.name}"
+
+      if links.any? { |l| l.source == "youtube_official" }
+        skipped_off += 1
+        next
+      end
+      if links.any? { |l| channel_url_set.include?(l.url) }
+        skipped_wcg += 1
+        next
+      end
+
+      cands = pool.select do |v|
+        score = norm.call(v[:score])
+        team_keys.call(match.home_team.name).any? { |k| score.include?(k) } &&
+          team_keys.call(match.away_team.name).any? { |k| score.include?(k) }
+      end
+
+      if cands.empty?
+        no_video += 1
+        next
+      end
+
+      # Two teams can meet twice in one tournament (group + knockout); if the
+      # team-name match is ambiguous, prefer the candidate whose title carries
+      # this match's stage word.
+      if cands.size > 1 && (sw = stage_word[match.stage.to_s])
+        narrowed = cands.select { |v| norm.call(v[:title]).include?(sw) }
+        cands = narrowed unless narrowed.empty?
+      end
+      hit = cands.first
+      puts "#{label}: -> #{hit[:url]}#{cands.size > 1 ? "  (⚠ #{cands.size} candidates)" : ''}"
+      puts "  title: #{hit[:title]}"
+
+      if mode == "apply"
+        link = match.video_links.find_or_initialize_by(url: hit[:url])
+        if link.new_record?
+          link.assign_attributes(
+            source:        :other,
+            confidence:    :unverified,
+            language:      "en",
+            is_active:     true,
+            embed_allowed: VideoLinkScout.youtube_embeddable?(hit[:url])
+          )
+          link.save!
+          attached += 1
+        end
+      end
+      updated << "#{label} — #{hit[:url]}"
+    end
+
+    puts ""
+    puts "── #{tournament.year} summary ──"
+    puts "Attached: #{attached} | No channel video: #{no_video}"
+    puts "Skipped (FIFA-official link): #{skipped_off} | Skipped (already worldcupgoals): #{skipped_wcg}"
+    puts ""
+    puts "Matches #{mode == 'apply' ? 'UPDATED' : 'that WOULD be updated'} (#{updated.size}):"
+    updated.each { |u| puts "  • #{u}" }
+    puts "(Dry run — nothing written. Re-run with mode=apply to attach.)" if mode == "dry"
+  end
+
   desc "Auto-attach FIFA/broadcaster YouTube clips to GOALS in a tournament that lack any video link. Usage: rake video_links:autofetch_goals[<year>,<limit>]"
   task :autofetch_goals, [:year, :limit] => :environment do |_t, args|
     abort "Usage: rake video_links:autofetch_goals[<year>,<limit?>]" unless args[:year]

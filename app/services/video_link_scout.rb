@@ -31,7 +31,8 @@ class VideoLinkScout
     tf1:            "UC26vXhYofHiZDM2ar1zUuwQ", # @TF1             (verified 2026-05-27)
     bbc_sport:      "UCW6-BQWFA70Dyyc7ZpZ9Xlg", # @bbcsport        (verified 2026-05-27)
     rtp_noticias:   "UCIM-wfyv9hg2oEiA81mQc2A", # @RTPNoticias     (verified 2026-05-27)
-    british_pathe:  "UCGp4u0WHLsK8OAxnvwiTyhA"  # @BritishPathe    (verified 2026-05-30)
+    british_pathe:  "UCGp4u0WHLsK8OAxnvwiTyhA", # @BritishPathe    (verified 2026-05-30)
+    worldcupgoals:  "UC45Vp_sf8RUNhSPNUNMoyLg"  # @worldcupgoals4585 — fan archive, full match highlights 1966–2022 (verified 2026-06-18)
     # When adding a new tournament source:
     #   1. Add a Source record in db/seeds/sources.rb (with channel ID in notes)
     #   2. Mirror the channel ID here so the scout can filter searches to it
@@ -45,7 +46,8 @@ class VideoLinkScout
     tf1:            :broadcaster,
     bbc_sport:      :broadcaster,
     rtp_noticias:   :broadcaster,
-    british_pathe:  :broadcaster
+    british_pathe:  :broadcaster,
+    worldcupgoals:  :other
   }.freeze
 
   # Default priority order for find_best_for_goal: try FIFA first, then
