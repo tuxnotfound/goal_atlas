@@ -123,4 +123,39 @@ RSpec.describe Wc2026Sync, type: :service do
       expect { run_participation_sync(lineups) }.not_to change(TournamentParticipation, :count)
     end
   end
+
+  describe "bracket populate hook (#call)" do
+    let(:client) { instance_double(ApiFootballClient) }
+    subject(:sync) { described_class.new(client: client) }
+
+    before do
+      create(:tournament, :wc_2026_joint_host)
+      allow(client).to receive(:teams).and_return({ "response" => [] })
+    end
+
+    it "does not re-populate the bracket when nothing changed" do
+      allow(client).to receive(:fixtures).and_return({ "response" => [] })
+      expect(Wc2026BracketPopulator).not_to receive(:call)
+      expect(sync.call[:bracket]).to be_nil
+    end
+
+    it "re-populates the bracket after a result changes, surfacing its stats" do
+      allow(client).to receive(:fixtures).and_return({ "response" => [{}] })
+      allow(sync).to receive(:sync_fixture) { sync.stats[:updated] += 1 }
+      populator_stats = { filled: 16, cleared: 0, unchanged: 0 }
+      expect(Wc2026BracketPopulator).to receive(:call).and_return(populator_stats)
+
+      expect(sync.call[:bracket]).to eq(populator_stats)
+    end
+
+    it "never lets a bracket failure break the result sync" do
+      allow(client).to receive(:fixtures).and_return({ "response" => [{}] })
+      allow(sync).to receive(:sync_fixture) { sync.stats[:updated] += 1 }
+      allow(Wc2026BracketPopulator).to receive(:call).and_raise(StandardError, "boom")
+
+      result = nil
+      expect { result = sync.call }.not_to raise_error
+      expect(result[:bracket]).to eq({ error: "boom" })
+    end
+  end
 end

@@ -17,6 +17,9 @@ namespace :wc2026 do
     puts "  goals_synced:    #{stats[:goals_synced]}"
     puts "  players_created: #{stats[:players_created]}"
     puts "  participations:  #{stats[:participations_synced]}"
+    if (b = stats[:bracket])
+      puts "  bracket:         #{b[:error] ? "error: #{b[:error]}" : "R32 filled #{b[:filled]}, changed #{b[:filled] + b[:cleared]}"}"
+    end
     if stats[:no_match].any?
       puts "  no-match fixtures (api-football side):"
       stats[:no_match].each { |line| puts "    #{line}" }

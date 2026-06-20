@@ -38,7 +38,7 @@ class Wc2026Sync
   def initialize(client: ApiFootballClient.new)
     @client = client
     @stats  = { fetched: 0, updated: 0, skipped: 0, goals_synced: 0,
-                players_created: 0, participations_synced: 0, no_match: [] }
+                players_created: 0, participations_synced: 0, bracket: nil, no_match: [] }
   end
 
   def call
@@ -51,10 +51,22 @@ class Wc2026Sync
       sync_fixture(tournament, fx, team_map)
     end
 
+    # A changed result can reshuffle the group standings, so re-derive the
+    # provisional Round-of-32 from them. Only when something actually moved,
+    # and never let a bracket hiccup fail the result sync.
+    @stats[:bracket] = populate_bracket if @stats[:updated].positive?
+
     stats
   end
 
   private
+
+  def populate_bracket
+    Wc2026BracketPopulator.call
+  rescue => e
+    Rails.logger.error("[Wc2026Sync] bracket populate failed: #{e.class}: #{e.message}")
+    { error: e.message }
+  end
 
   def sync_fixture(tournament, fx, team_map)
     status = fx.dig("fixture", "status", "short")
