@@ -35,8 +35,8 @@
   slot_h        = 84
   left_pad      = 24
 
-  round_match_count = { round_of_16: 8, quarter_final: 4, semi_final: 2, final: 1, group_outcome: 2 }
-  pillable_rounds   = [:round_of_16, :quarter_final, :semi_final, :final]
+  round_match_count = { round_of_32: 16, round_of_16: 8, quarter_final: 4, semi_final: 2, final: 1, group_outcome: 2 }
+  pillable_rounds   = [:round_of_32, :round_of_16, :quarter_final, :semi_final, :final]
 
   if @bracket
     rounds_in_bracket = @bracket[:rounds]
@@ -66,6 +66,7 @@
     panel_h = @bracket[:third_place] ? [total_h, third_card_y + card_h / 2.0 + 16].max : total_h
 
     cells_by_round = {
+      round_of_32:    @bracket[:round_of_32],
       round_of_16:    @bracket[:round_of_16],
       quarter_final:  @bracket[:quarters],
       semi_final:     @bracket[:semis],

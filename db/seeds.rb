@@ -15,6 +15,7 @@ require_relative "seeds/sources"
 require_relative "seeds/tournament_awards"
 require_relative "seeds/video_links"
 require_relative "seeds/wc2026"
+require_relative "seeds/wc2026_knockout"
 require_relative "seeds/admin_user"
 
 puts "Seed run complete."

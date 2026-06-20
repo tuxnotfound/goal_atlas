@@ -49,6 +49,11 @@ class TournamentsController < ApplicationController
   # replays) stops the climb so those matches fall back to a standalone panel.
   # Returns nil for tournaments without at least SF+F (e.g. 1974/1978).
   def build_bracket(matches_by_stage)
+    # WC2026-style placeholder brackets carry source labels ("W74", "1E", …)
+    # and may have no winners yet, so they can't be ordered by winner-tracing.
+    # Order them structurally from the fixed match-number feeder map instead.
+    return build_structured_bracket(matches_by_stage) if structured_knockout?(matches_by_stage)
+
     final    = matches_by_stage["final"]&.first
     semis    = dedupe_replays(matches_by_stage["semi_final"]    || [])
     quarters = dedupe_replays(matches_by_stage["quarter_final"] || [])
@@ -92,6 +97,61 @@ class TournamentsController < ApplicationController
       group_outcomes: [],               # only populated on the GS2→Final path
       rounds:         rounds            # left-to-right: which columns the view should render
     }
+  end
+
+  # True when the knockout matches were seeded as placeholders with source
+  # labels (the WC2026 bracket) rather than as decided games with winners.
+  def structured_knockout?(matches_by_stage)
+    Match::KNOCKOUT_STAGES.any? do |stage|
+      (matches_by_stage[stage] || []).any? { |m| m.home_source_label.present? }
+    end
+  end
+
+  # Builds the ordered knockout tree from the fixed match-number feeder map by
+  # expanding top-down from the Final via each side's "W##" source label. Each
+  # match yields [home_feeder, away_feeder], so collecting level by level leaves
+  # every round's cells already arranged as cells[2i]/cells[2i+1] → cells[i] above.
+  # Returns the same shape as build_bracket, plus :round_of_32.
+  def build_structured_bracket(matches_by_stage)
+    final = matches_by_stage["final"]&.first
+    return nil unless final
+
+    third     = matches_by_stage["third_place_playoff"]&.first
+    by_number = matches_by_stage.values_at(*Match::KNOCKOUT_STAGES).compact.flatten
+                                .index_by(&:match_number)
+
+    parent_of = { semi_final: :final, quarter_final: :semi_final,
+                  round_of_16: :quarter_final, round_of_32: :round_of_16 }
+    levels = { final: [final] }
+    [:semi_final, :quarter_final, :round_of_16, :round_of_32].each do |round|
+      levels[round] = levels[parent_of[round]].flat_map { |m| structured_feeders(m, by_number) }
+    end
+
+    expected = { round_of_32: 16, round_of_16: 8, quarter_final: 4, semi_final: 2 }
+    rounds   = [:final]
+    [:semi_final, :quarter_final, :round_of_16, :round_of_32].each do |r|
+      break unless matches_by_stage[r.to_s]&.any? && levels[r].compact.size == expected[r]
+      rounds.unshift(r)
+    end
+
+    {
+      final:          final,
+      third_place:    third,
+      semis:          levels[:semi_final],
+      quarters:       levels[:quarter_final],
+      round_of_16:    levels[:round_of_16],
+      round_of_32:    levels[:round_of_32],
+      group_outcomes: [],
+      rounds:         rounds
+    }
+  end
+
+  # The two matches that feed a match's home/away sides, parsed from "W##"
+  # source labels (nil for a side fed by a group position or not yet linked).
+  def structured_feeders(match, by_number)
+    [match&.home_source_label, match&.away_source_label].map do |label|
+      label =~ /\AW(\d+)\z/ ? by_number[$1.to_i] : nil
+    end
   end
 
   # Fits R16 matches under the 4 ordered QFs, allowing one or more byes for
@@ -170,53 +230,22 @@ class TournamentsController < ApplicationController
 
     post_stages = case stage_key
                   when "group_stage"
-                    %w[second_group_stage round_of_16 quarter_final semi_final third_place_playoff final]
+                    %w[second_group_stage round_of_32 round_of_16 quarter_final semi_final third_place_playoff final]
                   when "second_group_stage"
-                    %w[round_of_16 quarter_final semi_final third_place_playoff final]
+                    %w[round_of_32 round_of_16 quarter_final semi_final third_place_playoff final]
                   else
                     []
                   end
 
     advancing_team_ids = post_stages.flat_map { |s| matches_by_stage[s] || [] }
                                      .flat_map { |m| [m.home_team_id, m.away_team_id] }
+                                     .compact
                                      .to_set
 
-    groups = Hash.new { |h, k| h[k] = {} }
-
-    group_matches.each do |match|
-      letter = match.group_letter.to_s
-
-      [[match.home_team, match.home_score, match.away_score],
-       [match.away_team, match.away_score, match.home_score]].each do |team, gf, ga|
-        row = (groups[letter][team.id] ||= {
-          team: team, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0
-        })
-
-        # Scheduled fixtures keep the team in the group standings (so the card
-        # renders) but don't contribute to W/D/L/GF/GA/Pts.
-        next if match.scheduled?
-
-        row[:p]  += 1
-        row[:gf] += gf
-        row[:ga] += ga
-
-        if match.winner_team_id == team.id
-          row[:w]   += 1
-          row[:pts] += 3
-        elsif match.winner_team_id.present?
-          row[:l] += 1
-        else
-          row[:d]   += 1
-          row[:pts] += 1
-        end
-      end
+    GroupStandings.call(group_matches).transform_values do |rows|
+      rows.each { |r| r[:advanced] = advancing_team_ids.include?(r[:team].id) }
+      rows
     end
-
-    groups.transform_values do |rows|
-      sorted = rows.values.sort_by { |r| [-r[:pts], -(r[:gf] - r[:ga]), -r[:gf], r[:team].name] }
-      sorted.each { |r| r[:advanced] = advancing_team_ids.include?(r[:team].id) }
-      sorted
-    end.sort.to_h
   end
 
   # Folds knockout replays into a single slot: matches between the same pair

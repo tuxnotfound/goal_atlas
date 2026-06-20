@@ -54,7 +54,7 @@ export default class extends Controller {
       }
     }
 
-    const bracketStages = ["round_of_16", "quarter_final", "semi_final", "final"]
+    const bracketStages = ["round_of_32", "round_of_16", "quarter_final", "semi_final", "final"]
     const isBracketStage = bracketStages.includes(stage)
 
     if (isBracketStage && this.hasBracketTrackTarget && this.hasOffsetsValue) {

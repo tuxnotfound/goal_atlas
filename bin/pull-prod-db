@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Pulls the production Postgres into the local development database.
+#
+#   bin/pull-prod-db
+#
+# Dumps goal_atlas_production from the on-box Postgres accessory container over
+# SSH and restores it into local goal_atlas_development. This DROPS and replaces
+# all local development data (--clean --if-exists). Schema-only objects Rails
+# manages (ar_internal_metadata etc.) come along in the dump.
+#
+# Requires: SSH access to the Hetzner box and a local `goal_atlas_development`
+# database that already exists (bin/rails db:create).
+set -euo pipefail
+
+PROD_HOST="5.161.109.253"
+SSH_KEY="$HOME/.ssh/id_ed25519_tuxnotfound"
+DB_CONTAINER="goal_atlas-db"
+PROD_DB="goal_atlas_production"
+PROD_USER="goal_atlas"
+LOCAL_DB="goal_atlas_development"
+
+echo "==> Dumping ${PROD_DB} from ${PROD_HOST} and restoring into ${LOCAL_DB}…"
+echo "    (this replaces all local development data)"
+
+ssh -i "$SSH_KEY" -o ConnectTimeout=15 "root@${PROD_HOST}" \
+  "docker exec ${DB_CONTAINER} pg_dump -U ${PROD_USER} -d ${PROD_DB} --no-owner --no-acl --clean --if-exists" \
+  | psql "$LOCAL_DB"
+
+echo "==> Done. Local ${LOCAL_DB} now mirrors production."

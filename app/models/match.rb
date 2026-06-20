@@ -32,13 +32,18 @@ class Match < ApplicationRecord
     estimated: 3
   }.freeze
 
+  # Knockout rounds whose matches may be seeded as placeholders before their
+  # teams are known (the WC2026 bracket): such rows carry source labels instead
+  # of teams. See #knockout_placeholder?.
+  KNOCKOUT_STAGES = %w[round_of_32 round_of_16 quarter_final semi_final third_place_playoff final].freeze
+
   enum :stage, STAGES
   enum :result_type, RESULT_TYPES
   enum :data_confidence, DATA_CONFIDENCES, prefix: :confidence
 
   belongs_to :tournament
-  belongs_to :home_team, class_name: "Team"
-  belongs_to :away_team, class_name: "Team"
+  belongs_to :home_team, class_name: "Team", optional: true
+  belongs_to :away_team, class_name: "Team", optional: true
   belongs_to :stadium, optional: true
   belongs_to :winner_team, class_name: "Team", optional: true
   belongs_to :replay_of_match, class_name: "Match", optional: true
@@ -53,8 +58,17 @@ class Match < ApplicationRecord
   validates :slug, presence: true, uniqueness: true
   validate :distinct_teams
   validate :winner_is_one_of_the_teams
+  validate :teams_present_unless_placeholder
 
   scope :ordered_by_date, -> { order(date: :asc, id: :asc) }
+
+  # True for a knockout slot still awaiting a team — a scheduled match in a
+  # knockout round with a source label standing in for the missing team(s).
+  def knockout_placeholder?
+    KNOCKOUT_STAGES.include?(stage.to_s) && scheduled? &&
+      (home_team.blank? || away_team.blank?) &&
+      (home_source_label.present? || away_source_label.present?)
+  end
 
   # Compact checkmark string for the admin Matches index — Administrate
   # renders Field::Boolean as "Yes"/"No" text, so we use a String column
@@ -71,7 +85,13 @@ class Match < ApplicationRecord
   end
 
   def slug_candidates
-    base = "#{home_team&.slug}-vs-#{away_team&.slug}-#{date&.year}"
+    # Teamless knockout placeholders (WC2026 bracket) have no team slugs to
+    # build from, so fall back to a stable tournament+match-number slug.
+    if home_team.nil? || away_team.nil?
+      return ["#{tournament&.year}-match-#{match_number}", "#{tournament&.year}-#{stage}-match-#{match_number}"]
+    end
+
+    base = "#{home_team.slug}-vs-#{away_team.slug}-#{date&.year}"
     base = base.sub(/-+/, "-")
     [base, "#{base}-#{stage}"]
   end
@@ -81,6 +101,14 @@ class Match < ApplicationRecord
   def distinct_teams
     return if home_team_id.blank? || away_team_id.blank?
     errors.add(:away_team_id, "must differ from home team") if home_team_id == away_team_id
+  end
+
+  # Every match needs two teams — except a knockout placeholder, which may have
+  # one or both sides still TBD (described by a source label instead).
+  def teams_present_unless_placeholder
+    return if knockout_placeholder?
+    errors.add(:home_team, "can't be blank") if home_team.blank?
+    errors.add(:away_team, "can't be blank") if away_team.blank?
   end
 
   def winner_is_one_of_the_teams
@@ -99,6 +127,7 @@ end
 #  away_penalties              :integer
 #  away_score                  :integer          default(0), not null
 #  away_score_after_extra_time :integer
+#  away_source_label           :string
 #  data_confidence             :integer          default("likely"), not null
 #  date                        :date             not null
 #  discarded_at                :datetime
@@ -106,6 +135,7 @@ end
 #  home_penalties              :integer
 #  home_score                  :integer          default(0), not null
 #  home_score_after_extra_time :integer
+#  home_source_label           :string
 #  lineups_synced_at           :datetime
 #  match_number                :integer
 #  referee                     :string
@@ -117,8 +147,8 @@ end
 #  video_scout_failed_at       :datetime
 #  created_at                  :datetime         not null
 #  updated_at                  :datetime         not null
-#  away_team_id                :bigint           not null
-#  home_team_id                :bigint           not null
+#  away_team_id                :bigint
+#  home_team_id                :bigint
 #  replay_of_match_id          :bigint
 #  stadium_id                  :bigint
 #  tournament_id               :bigint           not null

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_17_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_19_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -71,7 +71,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_000000) do
     t.integer "away_penalties"
     t.integer "away_score", default: 0, null: false
     t.integer "away_score_after_extra_time"
-    t.bigint "away_team_id", null: false
+    t.string "away_source_label"
+    t.bigint "away_team_id"
     t.datetime "created_at", null: false
     t.integer "data_confidence", default: 1, null: false
     t.date "date", null: false
@@ -80,7 +81,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_000000) do
     t.integer "home_penalties"
     t.integer "home_score", default: 0, null: false
     t.integer "home_score_after_extra_time"
-    t.bigint "home_team_id", null: false
+    t.string "home_source_label"
+    t.bigint "home_team_id"
     t.datetime "lineups_synced_at"
     t.integer "match_number"
     t.string "referee"

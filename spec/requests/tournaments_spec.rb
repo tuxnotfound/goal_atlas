@@ -119,4 +119,31 @@ RSpec.describe "Tournaments", type: :request do
       expect(response).to have_http_status(:not_found)
     end
   end
+
+  describe "GET /world-cups/2026 placeholder knockout bracket" do
+    let!(:tournament) { create(:tournament, year: 2026, name: "FIFA World Cup 2026", host_countries: ["United States"]) }
+
+    before do
+      # Full 32-match knockout skeleton (as seeded in production), all teams TBD…
+      YAML.load_file(Rails.root.join("db/data/wc2026/knockout.yml"), permitted_classes: [Date]).each do |e|
+        create(:match, tournament: tournament, stage: e["stage"], result_type: :scheduled,
+                       match_number: e["match_number"], date: e["date"],
+                       home_team: nil, away_team: nil,
+                       home_source_label: e["home"], away_source_label: e["away"])
+      end
+      # …then fill one R32 slot, as the populator would.
+      ger = create(:team, name: "Germany", fifa_code: "GER")
+      mar = create(:team, name: "Morocco", fifa_code: "MAR")
+      Match.find_by(tournament: tournament, match_number: 74).update!(home_team: ger, away_team: mar)
+    end
+
+    it "renders the full R32→Final bracket with filled and TBD slots" do
+      get "/world-cups/2026"
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("R32")             # stage pill
+      expect(response.body).to include("GER")             # filled R32 team
+      expect(response.body).to include("Winner Match 74")  # TBD R16 slot label
+      expect(response.body).to include("3rd: C/D/F/G/H")   # still-TBD R32 third-place slot label (match 77)
+    end
+  end
 end

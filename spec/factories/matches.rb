@@ -54,6 +54,7 @@ end
 #  away_penalties              :integer
 #  away_score                  :integer          default(0), not null
 #  away_score_after_extra_time :integer
+#  away_source_label           :string
 #  data_confidence             :integer          default("likely"), not null
 #  date                        :date             not null
 #  discarded_at                :datetime
@@ -61,6 +62,7 @@ end
 #  home_penalties              :integer
 #  home_score                  :integer          default(0), not null
 #  home_score_after_extra_time :integer
+#  home_source_label           :string
 #  lineups_synced_at           :datetime
 #  match_number                :integer
 #  referee                     :string
@@ -72,8 +74,8 @@ end
 #  video_scout_failed_at       :datetime
 #  created_at                  :datetime         not null
 #  updated_at                  :datetime         not null
-#  away_team_id                :bigint           not null
-#  home_team_id                :bigint           not null
+#  away_team_id                :bigint
+#  home_team_id                :bigint
 #  replay_of_match_id          :bigint
 #  stadium_id                  :bigint
 #  tournament_id               :bigint           not null

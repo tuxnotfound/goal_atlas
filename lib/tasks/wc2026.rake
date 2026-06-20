@@ -22,4 +22,14 @@ namespace :wc2026 do
       stats[:no_match].each { |line| puts "    #{line}" }
     end
   end
+
+  desc "Fill WC2026 Round-of-32 placeholders from current group standings"
+  task populate_bracket: :environment do
+    stats = Wc2026BracketPopulator.call
+
+    puts "WC2026 populate_bracket:"
+    puts "  filled:    #{stats[:filled]}"
+    puts "  cleared:   #{stats[:cleared]}"
+    puts "  unchanged: #{stats[:unchanged]}"
+  end
 end

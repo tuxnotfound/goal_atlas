@@ -1,0 +1,47 @@
+# WC2026 knockout bracket — all 32 matches (73–104), seeded as scheduled
+# placeholders before teams are known. Dates/venues from the official FIFA
+# schedule (see db/seeds/wc2026_knockout.rb).
+#
+# Source codes (home/away):
+#   1X  = winner of group X            2X = runner-up of group X
+#   3<set> = best third-placed team from that set of groups (resolved via the
+#            official allocation table, db/data/wc2026/third_place_allocation.csv)
+#   W<n> = winner of match n           L<n> = loser of match n
+#
+# Round of 32 (73–88)
+- { match_number: 73, stage: round_of_32, date: 2026-06-28, stadium: "SoFi Stadium",            home: "2A",     away: "2B" }
+- { match_number: 74, stage: round_of_32, date: 2026-06-29, stadium: "Gillette Stadium",        home: "1E",     away: "3ABCDF" }
+- { match_number: 75, stage: round_of_32, date: 2026-06-29, stadium: "Estadio BBVA",            home: "1F",     away: "2C" }
+- { match_number: 76, stage: round_of_32, date: 2026-06-29, stadium: "NRG Stadium",             home: "1C",     away: "2F" }
+- { match_number: 77, stage: round_of_32, date: 2026-06-30, stadium: "MetLife Stadium",         home: "1I",     away: "3CDFGH" }
+- { match_number: 78, stage: round_of_32, date: 2026-06-30, stadium: "AT&T Stadium",            home: "2E",     away: "2I" }
+- { match_number: 79, stage: round_of_32, date: 2026-06-30, stadium: "Estadio Azteca",          home: "1A",     away: "3CEFHI" }
+- { match_number: 80, stage: round_of_32, date: 2026-07-01, stadium: "Mercedes-Benz Stadium",   home: "1L",     away: "3EHIJK" }
+- { match_number: 81, stage: round_of_32, date: 2026-07-01, stadium: "Levi's Stadium",          home: "1D",     away: "3BEFIJ" }
+- { match_number: 82, stage: round_of_32, date: 2026-07-01, stadium: "Lumen Field",             home: "1G",     away: "3AEHIJ" }
+- { match_number: 83, stage: round_of_32, date: 2026-07-02, stadium: "BMO Field",               home: "2K",     away: "2L" }
+- { match_number: 84, stage: round_of_32, date: 2026-07-02, stadium: "SoFi Stadium",            home: "1H",     away: "2J" }
+- { match_number: 85, stage: round_of_32, date: 2026-07-02, stadium: "BC Place",                home: "1B",     away: "3EFGIJ" }
+- { match_number: 86, stage: round_of_32, date: 2026-07-03, stadium: "Hard Rock Stadium",       home: "1J",     away: "2H" }
+- { match_number: 87, stage: round_of_32, date: 2026-07-03, stadium: "Arrowhead Stadium",       home: "1K",     away: "3DEIJL" }
+- { match_number: 88, stage: round_of_32, date: 2026-07-03, stadium: "AT&T Stadium",            home: "2D",     away: "2G" }
+# Round of 16 (89–96)
+- { match_number: 89, stage: round_of_16, date: 2026-07-04, stadium: "Lincoln Financial Field", home: "W74",    away: "W77" }
+- { match_number: 90, stage: round_of_16, date: 2026-07-04, stadium: "NRG Stadium",             home: "W73",    away: "W75" }
+- { match_number: 91, stage: round_of_16, date: 2026-07-05, stadium: "MetLife Stadium",         home: "W76",    away: "W78" }
+- { match_number: 92, stage: round_of_16, date: 2026-07-05, stadium: "Estadio Azteca",          home: "W79",    away: "W80" }
+- { match_number: 93, stage: round_of_16, date: 2026-07-06, stadium: "AT&T Stadium",            home: "W83",    away: "W84" }
+- { match_number: 94, stage: round_of_16, date: 2026-07-06, stadium: "Lumen Field",             home: "W81",    away: "W82" }
+- { match_number: 95, stage: round_of_16, date: 2026-07-07, stadium: "Mercedes-Benz Stadium",   home: "W86",    away: "W88" }
+- { match_number: 96, stage: round_of_16, date: 2026-07-07, stadium: "BC Place",                home: "W85",    away: "W87" }
+# Quarter-finals (97–100)
+- { match_number: 97,  stage: quarter_final, date: 2026-07-09, stadium: "Gillette Stadium",      home: "W89",   away: "W90" }
+- { match_number: 98,  stage: quarter_final, date: 2026-07-10, stadium: "SoFi Stadium",          home: "W93",   away: "W94" }
+- { match_number: 99,  stage: quarter_final, date: 2026-07-11, stadium: "Hard Rock Stadium",     home: "W91",   away: "W92" }
+- { match_number: 100, stage: quarter_final, date: 2026-07-11, stadium: "Arrowhead Stadium",     home: "W95",   away: "W96" }
+# Semi-finals (101–102)
+- { match_number: 101, stage: semi_final, date: 2026-07-14, stadium: "AT&T Stadium",            home: "W97",    away: "W98" }
+- { match_number: 102, stage: semi_final, date: 2026-07-15, stadium: "Mercedes-Benz Stadium",   home: "W99",    away: "W100" }
+# Third-place playoff (103) & Final (104)
+- { match_number: 103, stage: third_place_playoff, date: 2026-07-18, stadium: "Hard Rock Stadium", home: "L101", away: "L102" }
+- { match_number: 104, stage: final,               date: 2026-07-19, stadium: "MetLife Stadium",   home: "W101", away: "W102" }

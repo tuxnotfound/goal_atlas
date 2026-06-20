@@ -97,6 +97,44 @@ RSpec.describe Match, type: :model do
       expect(Match.kept).not_to include(match)
     end
   end
+
+  describe "knockout placeholders" do
+    def placeholder(**overrides)
+      build(:match, {
+        stage: :round_of_32, result_type: :scheduled, match_number: 74,
+        home_team: nil, away_team: nil,
+        home_source_label: "1E", away_source_label: "3ABCDF"
+      }.merge(overrides))
+    end
+
+    it "is valid with no teams when it's a scheduled knockout slot with source labels" do
+      match = placeholder
+      expect(match).to be_valid
+      expect(match).to be_knockout_placeholder
+    end
+
+    it "requires both teams when it's not a placeholder (no source labels)" do
+      match = build(:match, home_team: nil, away_team: nil)
+      expect(match).not_to be_valid
+      expect(match.errors[:home_team]).to include("can't be blank")
+      expect(match.errors[:away_team]).to include("can't be blank")
+    end
+
+    it "falls back to a tournament+match-number slug when teams are TBD" do
+      tournament = create(:tournament, year: 2026)
+      match = placeholder(tournament: tournament)
+      match.save!
+      expect(match.slug).to eq("2026-match-74")
+    end
+
+    it "stops being a placeholder once both teams are filled in" do
+      home = create(:team, name: "Germany")
+      away = create(:team, name: "Morocco")
+      match = placeholder(home_team: home, away_team: away)
+      expect(match).not_to be_knockout_placeholder
+      expect(match).to be_valid
+    end
+  end
 end
 
 # == Schema Information
@@ -108,6 +146,7 @@ end
 #  away_penalties              :integer
 #  away_score                  :integer          default(0), not null
 #  away_score_after_extra_time :integer
+#  away_source_label           :string
 #  data_confidence             :integer          default("likely"), not null
 #  date                        :date             not null
 #  discarded_at                :datetime
@@ -115,6 +154,7 @@ end
 #  home_penalties              :integer
 #  home_score                  :integer          default(0), not null
 #  home_score_after_extra_time :integer
+#  home_source_label           :string
 #  lineups_synced_at           :datetime
 #  match_number                :integer
 #  referee                     :string
@@ -126,8 +166,8 @@ end
 #  video_scout_failed_at       :datetime
 #  created_at                  :datetime         not null
 #  updated_at                  :datetime         not null
-#  away_team_id                :bigint           not null
-#  home_team_id                :bigint           not null
+#  away_team_id                :bigint
+#  home_team_id                :bigint
 #  replay_of_match_id          :bigint
 #  stadium_id                  :bigint
 #  tournament_id               :bigint           not null
