@@ -251,6 +251,15 @@ class Wc2026Sync
       player        = find_or_create_player(ev.dig("player", "id"), ev.dig("player", "name"), scorer_nationality)
       assist_player = ev.dig("assist", "id") && find_or_create_player(ev.dig("assist", "id"), ev.dig("assist", "name"), scoring_team)
 
+      # api-football occasionally reports the same player as both scorer and
+      # assister (e.g. rebound off a defender credited as a pass to self).
+      # The Goal model validates against this, so drop the assist rather
+      # than crash the sync for the whole tournament.
+      if assist_player && player && assist_player.id == player.id
+        Rails.logger.warn("Wc2026Sync: dropping self-assist for #{player.name} on fixture #{fixture_id}")
+        assist_player = nil
+      end
+
       # Running tally so score_after_goal_* reflects the state right after this goal.
       if scoring_team.id == match.home_team_id
         running_home += 1
