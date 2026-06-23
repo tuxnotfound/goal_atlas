@@ -228,7 +228,12 @@ class Wc2026Sync
     return unless fixture_id
 
     events = @client.fixture_events(fixture_id: fixture_id)["response"]
-    goal_events = events.select { |e| e["type"] == "Goal" }
+    # api-football's "Goal" type covers missed penalties and other non-scoring
+    # incidents too; only accept events whose `detail` is one of the actual
+    # goal-scoring values mapped in GOAL_TYPE_MAP.
+    goal_events = events.select { |e|
+      e["type"] == "Goal" && GOAL_TYPE_MAP.key?(e["detail"].to_s)
+    }
     return if goal_events.empty?
 
     running_home = 0
@@ -238,8 +243,9 @@ class Wc2026Sync
       scoring_team = team_map[ev.dig("team", "id")]
       next unless scoring_team  # team mapping failure already logged
 
-      detail     = ev["detail"].to_s
-      goal_type  = GOAL_TYPE_MAP[detail] || :open_play
+      detail    = ev["detail"].to_s
+      goal_type = GOAL_TYPE_MAP[detail]
+      next unless goal_type  # paranoia: filter above should already exclude these
       minute     = ev.dig("time", "elapsed")
       stoppage   = ev.dig("time", "extra")
       next unless minute.is_a?(Integer) && minute.between?(0, 120)  # skip shootout/garbage
