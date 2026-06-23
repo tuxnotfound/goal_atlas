@@ -267,6 +267,23 @@ class Wc2026Sync
         running_away += 1
       end
 
+      # api-football sometimes emits a "Goal" event that was later disallowed
+      # (VAR cancellation, offside) without removing it from the events feed.
+      # If the running tally would exceed the recorded final score, this goal
+      # is almost certainly that ghost event — skip it instead of poisoning
+      # the goal count.
+      if match.home_score && match.away_score &&
+         (running_home > match.home_score || running_away > match.away_score)
+        Rails.logger.warn("Wc2026Sync: skipping disallowed/ghost goal in fixture #{fixture_id} (#{minute}' #{player.name}, running #{running_home}-#{running_away} exceeds final #{match.home_score}-#{match.away_score})")
+        # Roll back the tally so a later real goal lands on the right score
+        if scoring_team.id == match.home_team_id
+          running_home -= 1
+        else
+          running_away -= 1
+        end
+        next
+      end
+
       Goal.where(
         match_id:    match.id,
         period:      Goal.periods[period],
