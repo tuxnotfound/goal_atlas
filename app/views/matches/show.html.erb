@@ -149,27 +149,53 @@
         <div class="text-[10px] uppercase tracking-[0.35em] text-[#c89942] font-semibold text-center mb-3">
           Goals
         </div>
+        <%# Each row mirrors the hero scoreline: home side | running score | away
+            side, on a 1fr_auto_1fr grid so the score sits on the same central
+            axis as the final score above. The scorer + flag hang on the side of
+            the team credited with the goal; the minute is pinned far left
+            (absolute, so it never nudges the score off-centre). %>
         <ol>
           <% @goals.each do |goal| %>
+            <% home_scored = goal.scoring_team_id == @match.home_team_id %>
             <li>
               <%= link_to goal_path(goal),
-                          class: "flex items-center gap-3 py-2 border-t border-[#c89942]/15 first:border-t-0 hover:bg-[#f5e7b8] transition rounded" do %>
-                <span class="font-mono text-[11px] tabular-nums w-14 text-right text-[#c89942] shrink-0">
+                          class: "relative grid grid-cols-[1fr_auto_1fr] items-center gap-4 md:gap-10 py-2 border-t border-[#c89942]/15 first:border-t-0 hover:bg-[#f5e7b8] transition rounded" do %>
+
+                <%# Minute — pinned far left, right-aligned, kept out of the grid
+                    flow so the running score stays centred. %>
+                <span class="absolute left-0 inset-y-0 w-12 flex items-center justify-end font-mono text-[11px] tabular-nums text-[#c89942]">
                   <%= goal_minute_label(goal) %>
                 </span>
-                <span class="text-lg leading-none shrink-0"><%= goal.scoring_team.flag_emoji %></span>
-                <span class="flex-1 min-w-0 flex items-center gap-2">
-                  <span class="font-serif font-bold text-[#0a3520] text-sm truncate leading-tight">
-                    <%= goal.player.name %>
-                    <% if goal.own_goal? %>
-                      <span class="font-sans font-normal text-[11px] text-[#b91c1c] normal-case">(<%= goal.opponent_team.name %>)</span>
-                    <% end %>
-                  </span>
-                  <%= render "goals/own_goal_badge", goal: goal %>
-                  <%= render "goals/video_badge", goal: goal %>
+
+                <%# Home side — scorer + flag hugging the score, only when the
+                    home team is credited. pl-14 reserves room for the minute. %>
+                <span class="min-w-0 flex items-center justify-end gap-2 pl-14">
+                  <% if home_scored %>
+                    <span class="font-serif font-bold text-[#0a3520] text-sm truncate leading-tight">
+                      <%= goal.player.name %>
+                    </span>
+                    <%= render "goals/own_goal_badge", goal: goal %>
+                    <%= render "goals/video_badge", goal: goal %>
+                    <span class="text-lg leading-none shrink-0"><%= goal.scoring_team.flag_emoji %></span>
+                  <% end %>
                 </span>
-                <span class="font-mono text-[11px] tabular-nums w-14 text-left shrink-0 font-semibold text-[#1c5c3f]">
+
+                <%# Running score — centred, aligned with the final score above. %>
+                <span class="font-mono text-xs tabular-nums font-bold text-[#1c5c3f] text-center shrink-0">
                   <%= goal.score_after_goal_home %>&ndash;<%= goal.score_after_goal_away %>
+                </span>
+
+                <%# Away side — flag + scorer hugging the score, only when the
+                    away team is credited. %>
+                <span class="min-w-0 flex items-center justify-start gap-2 pr-2">
+                  <% unless home_scored %>
+                    <span class="text-lg leading-none shrink-0"><%= goal.scoring_team.flag_emoji %></span>
+                    <%= render "goals/own_goal_badge", goal: goal %>
+                    <%= render "goals/video_badge", goal: goal %>
+                    <span class="font-serif font-bold text-[#0a3520] text-sm truncate leading-tight">
+                      <%= goal.player.name %>
+                    </span>
+                  <% end %>
                 </span>
               <% end %>
             </li>
