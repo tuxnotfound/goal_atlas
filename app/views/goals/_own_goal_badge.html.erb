@@ -1,0 +1,10 @@
+<%# Compact "OG" badge marking an own goal so users immediately see the scorer
+    put the ball into their own net (the goal is credited to the opposing team,
+    not to the player's nationality team). Renders nothing for normal goals.
+    Locals: goal (Goal); size (optional Tailwind text class, default text-[9px]) %>
+<% if goal.own_goal? %>
+  <span class="shrink-0 inline-flex items-center rounded-sm bg-[#b91c1c] text-[#fdf6dc]! font-mono font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 leading-none <%= local_assigns.fetch(:size, "text-[9px]") %>"
+        title="Own goal" aria-label="Own goal">
+    OG
+  </span>
+<% end %>

@@ -161,7 +161,11 @@
                 <span class="flex-1 min-w-0 flex items-center gap-2">
                   <span class="font-serif font-bold text-[#0a3520] text-sm truncate leading-tight">
                     <%= goal.player.name %>
+                    <% if goal.own_goal? %>
+                      <span class="font-sans font-normal text-[11px] text-[#b91c1c] normal-case">(<%= goal.opponent_team.name %>)</span>
+                    <% end %>
                   </span>
+                  <%= render "goals/own_goal_badge", goal: goal %>
                   <%= render "goals/video_badge", goal: goal %>
                 </span>
                 <span class="font-mono text-[11px] tabular-nums w-14 text-left shrink-0 font-semibold text-[#1c5c3f]">

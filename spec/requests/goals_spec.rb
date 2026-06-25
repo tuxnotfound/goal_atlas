@@ -129,6 +129,34 @@ RSpec.describe "Goals", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
+    context "own goals" do
+      # Own goal: the away GK (nationality = away/France team) puts it into
+      # their own net, so it is credited to the home/Argentina team.
+      let(:own_goal_scorer) { create(:player, name: "Hugo Lloris", nationality_team: match.away_team) }
+      let!(:own_goal) do
+        create(:goal, :own_goal,
+               match: match, player: own_goal_scorer, scoring_team: match.home_team,
+               minute: 10, period: :first_half,
+               score_after_goal_home: 1, score_after_goal_away: 0)
+      end
+
+      it "labels the goal page as an own goal and names the scorer's real team" do
+        get goal_path(own_goal)
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Own Goal")
+        # Scorer's actual side and the credited side are both named explicitly.
+        expect(response.body).to include("Own goal by")
+        expect(response.body).to include(match.away_team.name) # scorer's real team
+        expect(response.body).to include("credited to")
+      end
+
+      it "marks the own goal in the match score rows with an OG badge" do
+        get match_path(match)
+        expect(response.body).to include("Own goal") # badge title/aria
+        expect(response.body).to include(own_goal_scorer.name)
+      end
+    end
+
     context "goal tags" do
       it "renders tag chips when tags are applied" do
         long_range = GoalTag.create!(name: "Long Range")

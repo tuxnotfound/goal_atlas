@@ -94,21 +94,46 @@
           <%= goal_minute_label(@goal) %>
         </div>
 
-        <%# Scorer name + flag. %>
+        <%# Own-goal banner — bold red pill so it is unmistakable that the
+            scorer put the ball into their own net. The goal is credited to
+            the opposing team (the flag/score above), not the scorer's side. %>
+        <% if @goal.own_goal? %>
+          <div class="flex items-center justify-center sm:justify-start gap-2 mb-3">
+            <span class="inline-flex items-center rounded bg-[#b91c1c] text-[#fdf6dc]! font-mono font-bold uppercase tracking-[0.2em] text-xs px-2.5 py-1 leading-none">
+              Own Goal
+            </span>
+          </div>
+        <% end %>
+
+        <%# Scorer name + flag. For an own goal the flag is the team the goal is
+            CREDITED to, so we show the scorer's own flag alongside the name to
+            avoid implying the scorer plays for the crediting team. %>
         <div class="flex items-center justify-center sm:justify-start gap-3 mb-4">
-          <span class="text-3xl leading-none"><%= @scoring_team.flag_emoji %></span>
+          <span class="text-3xl leading-none"><%= @goal.own_goal? ? @opponent_team.flag_emoji : @scoring_team.flag_emoji %></span>
           <%= link_to @scorer.name, player_path(@scorer),
                       class: "font-serif font-bold text-2xl md:text-3xl text-[#0a3520] hover:text-[#f0c870] transition leading-tight" %>
         </div>
 
         <%# Scoring team vs opponent. %>
-        <div class="text-[11px] uppercase tracking-[0.3em] text-[#c89942] font-semibold mb-5">
+        <div class="text-[11px] uppercase tracking-[0.3em] text-[#c89942] font-semibold <%= @goal.own_goal? ? "mb-3" : "mb-5" %>">
           <%= link_to @scoring_team.name, team_path(@scoring_team),
                       class: "hover:text-[#f0c870] transition" %>
           <span class="text-[#c89942]/60">vs</span>
           <%= link_to @opponent_team.name, team_path(@opponent_team),
                       class: "hover:text-[#f0c870] transition" %>
         </div>
+
+        <%# Plain-language own-goal explainer so a reader who does not know the
+            player can tell exactly what happened and who it counted for. %>
+        <% if @goal.own_goal? %>
+          <div class="text-sm text-[#1c5c3f] font-serif mb-5">
+            Own goal by
+            <%= link_to @scorer.name, player_path(@scorer), class: "font-bold hover:text-[#c89942] transition" %>
+            (<%= link_to @opponent_team.name, team_path(@opponent_team), class: "font-bold hover:text-[#c89942] transition" %>),
+            credited to
+            <%= link_to @scoring_team.name, team_path(@scoring_team), class: "font-bold hover:text-[#c89942] transition" %>.
+          </div>
+        <% end %>
 
         <%# Score after goal — single data-strip in the gold/forest rhythm. %>
         <div class="flex flex-wrap justify-center sm:justify-start gap-x-6 gap-y-3 text-[11px] uppercase tracking-[0.25em] text-[#c89942] font-semibold">
