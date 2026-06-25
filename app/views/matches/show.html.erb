@@ -149,54 +149,82 @@
         <div class="text-[10px] uppercase tracking-[0.35em] text-[#c89942] font-semibold text-center mb-3">
           Goals
         </div>
-        <%# Each row mirrors the hero scoreline: home side | running score | away
-            side, on a 1fr_auto_1fr grid so the score sits on the same central
-            axis as the final score above. The scorer + flag hang on the side of
-            the team credited with the goal; the minute is pinned far left
-            (absolute, so it never nudges the score off-centre). %>
+        <%# Desktop rows mirror the hero scoreline: home side | running score |
+            away side on a 1fr_auto_1fr grid, the score centred under the final
+            score above. On phones that grid squeezes names to nothing, so
+            mobile gets a stacked two-line row instead: minute · score · flag up
+            top, the full (untruncated) scorer name beneath. %>
         <ol>
           <% @goals.each do |goal| %>
             <% home_scored = goal.scoring_team_id == @match.home_team_id %>
             <li>
               <%= link_to goal_path(goal),
-                          class: "relative grid grid-cols-[1fr_auto_1fr] items-center gap-4 md:gap-10 py-2 border-t border-[#c89942]/15 first:border-t-0 hover:bg-[#f5e7b8] transition rounded" do %>
+                          class: "block py-2 border-t border-[#c89942]/15 first:border-t-0 hover:bg-[#f5e7b8] transition rounded" do %>
 
-                <%# Minute — pinned far left, right-aligned, kept out of the grid
-                    flow so the running score stays centred. %>
-                <span class="absolute left-0 inset-y-0 w-12 flex items-center justify-end font-mono text-[11px] tabular-nums text-[#c89942]">
-                  <%= goal_minute_label(goal) %>
-                </span>
-
-                <%# Home side — scorer + flag hugging the score, only when the
-                    home team is credited. pl-14 reserves room for the minute. %>
-                <span class="min-w-0 flex items-center justify-end gap-2 pl-14">
-                  <% if home_scored %>
-                    <span class="font-serif font-bold text-[#0a3520] text-sm truncate leading-tight">
+                <%# Mobile (< sm): two lines. Line 1 = minute (top-left) · score
+                    (centred) · flag on the scoring team's side. Line 2 = the full
+                    scorer name, anchored to that same side so it reads under the
+                    team that scored, exactly like the desktop grid. %>
+                <div class="sm:hidden px-1">
+                  <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                    <span class="flex items-center gap-2 justify-start font-mono text-[11px] tabular-nums text-[#c89942]">
+                      <%= goal_minute_label(goal) %>
+                      <% if home_scored %>
+                        <span class="text-lg leading-none"><%= goal.scoring_team.flag_emoji %></span>
+                      <% end %>
+                    </span>
+                    <span class="font-mono text-xs tabular-nums font-bold text-[#1c5c3f] text-center">
+                      <%= goal.score_after_goal_home %>&ndash;<%= goal.score_after_goal_away %>
+                    </span>
+                    <span class="flex items-center justify-end">
+                      <% unless home_scored %>
+                        <span class="text-lg leading-none"><%= goal.scoring_team.flag_emoji %></span>
+                      <% end %>
+                    </span>
+                  </div>
+                  <div class="mt-1 flex items-center flex-wrap gap-x-2 gap-y-1 <%= home_scored ? "justify-start text-left" : "justify-end text-right" %>">
+                    <span class="font-serif font-bold text-[#0a3520] text-sm leading-tight">
                       <%= goal.player.name %>
                     </span>
                     <%= render "goals/own_goal_badge", goal: goal %>
                     <%= render "goals/video_badge", goal: goal %>
-                    <span class="text-lg leading-none shrink-0"><%= goal.scoring_team.flag_emoji %></span>
-                  <% end %>
-                </span>
+                  </div>
+                </div>
 
-                <%# Running score — centred, aligned with the final score above. %>
-                <span class="font-mono text-xs tabular-nums font-bold text-[#1c5c3f] text-center shrink-0">
-                  <%= goal.score_after_goal_home %>&ndash;<%= goal.score_after_goal_away %>
-                </span>
+                <%# Desktop (>= sm): single-line hero-style grid. The minute is
+                    pinned far left (absolute) so it never nudges the centred
+                    score; scorer + flag hang on the credited team's side. %>
+                <div class="relative hidden sm:grid grid-cols-[1fr_auto_1fr] items-center gap-4 md:gap-10">
+                  <span class="absolute left-0 inset-y-0 w-12 flex items-center justify-end font-mono text-[11px] tabular-nums text-[#c89942]">
+                    <%= goal_minute_label(goal) %>
+                  </span>
 
-                <%# Away side — flag + scorer hugging the score, only when the
-                    away team is credited. %>
-                <span class="min-w-0 flex items-center justify-start gap-2 pr-2">
-                  <% unless home_scored %>
-                    <span class="text-lg leading-none shrink-0"><%= goal.scoring_team.flag_emoji %></span>
-                    <%= render "goals/own_goal_badge", goal: goal %>
-                    <%= render "goals/video_badge", goal: goal %>
-                    <span class="font-serif font-bold text-[#0a3520] text-sm truncate leading-tight">
-                      <%= goal.player.name %>
-                    </span>
-                  <% end %>
-                </span>
+                  <span class="min-w-0 flex items-center justify-end gap-2 pl-14">
+                    <% if home_scored %>
+                      <span class="font-serif font-bold text-[#0a3520] text-sm truncate leading-tight">
+                        <%= goal.player.name %>
+                      </span>
+                      <%= render "goals/own_goal_badge", goal: goal %>
+                      <%= render "goals/video_badge", goal: goal %>
+                      <span class="text-lg leading-none shrink-0"><%= goal.scoring_team.flag_emoji %></span>
+                    <% end %>
+                  </span>
+
+                  <span class="font-mono text-xs tabular-nums font-bold text-[#1c5c3f] text-center shrink-0">
+                    <%= goal.score_after_goal_home %>&ndash;<%= goal.score_after_goal_away %>
+                  </span>
+
+                  <span class="min-w-0 flex items-center justify-start gap-2 pr-2">
+                    <% unless home_scored %>
+                      <span class="text-lg leading-none shrink-0"><%= goal.scoring_team.flag_emoji %></span>
+                      <%= render "goals/own_goal_badge", goal: goal %>
+                      <%= render "goals/video_badge", goal: goal %>
+                      <span class="font-serif font-bold text-[#0a3520] text-sm truncate leading-tight">
+                        <%= goal.player.name %>
+                      </span>
+                    <% end %>
+                  </span>
+                </div>
               <% end %>
             </li>
           <% end %>
