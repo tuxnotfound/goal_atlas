@@ -142,7 +142,7 @@ RSpec.describe Wc2026Sync, type: :service do
     it "re-populates the bracket after a result changes, surfacing its stats" do
       allow(client).to receive(:fixtures).and_return({ "response" => [{}] })
       allow(sync).to receive(:sync_fixture) { sync.stats[:updated] += 1 }
-      populator_stats = { filled: 16, cleared: 0, unchanged: 0 }
+      populator_stats = { changed: 1, filled: 17, total: 32 }
       expect(Wc2026BracketPopulator).to receive(:call).and_return(populator_stats)
 
       expect(sync.call[:bracket]).to eq(populator_stats)

@@ -44,6 +44,8 @@ RSpec.describe Wc2026BracketPopulator do
 
   def r32 = Match.where(tournament: tournament, stage: :round_of_32).index_by(&:match_number)
 
+  def r16(n) = Match.find_by(tournament: tournament, stage: :round_of_16, match_number: n)
+
   it "fills all 16 Round-of-32 matches with two teams each" do
     described_class.call
     matches = r32.values
@@ -88,5 +90,25 @@ RSpec.describe Wc2026BracketPopulator do
 
     described_class.call
     expect(Match.find(r32[74].id).home_team).to eq(@teams["E1"])
+  end
+
+  it "advances a decided match's winner into the next round's slot, per side" do
+    # R16 match 90 = Winner Match 73 vs Winner Match 75.
+    create(:match, tournament: tournament, stage: :round_of_16, result_type: :scheduled,
+                   match_number: 90, date: Date.new(2026, 7, 4),
+                   home_source_label: "W73", away_source_label: "W75",
+                   home_team: nil, away_team: nil)
+
+    described_class.call
+    expect(r16(90).home_team).to be_nil # match 73 not decided yet
+
+    # Decide match 73; match 75 stays scheduled.
+    m73 = r32[73]
+    m73.update!(home_score: 2, away_score: 1, result_type: :regulation, winner_team: m73.home_team)
+
+    described_class.call
+    expect(r16(90).home_team).to eq(m73.home_team) # winner took the W73 slot
+    expect(r16(90).away_team).to be_nil            # W75 still TBD
+    expect(r16(90)).to be_valid
   end
 end

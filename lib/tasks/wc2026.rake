@@ -18,7 +18,7 @@ namespace :wc2026 do
     puts "  players_created: #{stats[:players_created]}"
     puts "  participations:  #{stats[:participations_synced]}"
     if (b = stats[:bracket])
-      puts "  bracket:         #{b[:error] ? "error: #{b[:error]}" : "R32 filled #{b[:filled]}, changed #{b[:filled] + b[:cleared]}"}"
+      puts "  bracket:         #{b[:error] ? "error: #{b[:error]}" : "changed #{b[:changed]}, filled #{b[:filled]}/#{b[:total]}"}"
     end
     if stats[:no_match].any?
       puts "  no-match fixtures (api-football side):"
@@ -26,13 +26,12 @@ namespace :wc2026 do
     end
   end
 
-  desc "Fill WC2026 Round-of-32 placeholders from current group standings"
+  desc "Fill WC2026 knockout placeholders from current standings + advance winners"
   task populate_bracket: :environment do
     stats = Wc2026BracketPopulator.call
 
     puts "WC2026 populate_bracket:"
-    puts "  filled:    #{stats[:filled]}"
-    puts "  cleared:   #{stats[:cleared]}"
-    puts "  unchanged: #{stats[:unchanged]}"
+    puts "  changed: #{stats[:changed]}"
+    puts "  filled:  #{stats[:filled]}/#{stats[:total]}"
   end
 end
