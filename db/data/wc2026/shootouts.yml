@@ -1,0 +1,40 @@
+# WC2026 penalty shootouts — kick-by-kick, in the order taken (home team first).
+#
+# api-football exposes only the aggregate shootout score (home_penalties /
+# away_penalties), never the individual kicks, so these are recorded by hand.
+# Each kicker is keyed by their api-football player id (`api`) so the loader
+# resolves to the exact player — surname matching is unsafe here (e.g. Justin
+# vs Patrick Kluivert, Quinten Timber, the "Mauricio" mononym). Players missing
+# from the DB are created from `name` + `api` under the kicking team.
+#
+# Sources: shootout sequences from the Wikipedia 2026 knockout-stage match
+# boxes, cross-checked against the aggregate scores and match reports
+# (Al Jazeera / ESPN). Full names + api ids from the api-football lineups.
+
+- match_number: 74   # Germany 1-1 Paraguay (Paraguay won 4-3 on pens)
+  kicks:
+    - { team: GER, api: 978,    name: "Kai Havertz",      scored: false }
+    - { team: PAR, api: 106485, name: "Mauricio",         scored: true  }
+    - { team: GER, api: 502,    name: "Joshua Kimmich",   scored: true  }
+    - { team: PAR, api: 2502,   name: "Gustavo Gómez",    scored: true  }
+    - { team: GER, api: 181812, name: "Jamal Musiala",    scored: true  }
+    - { team: PAR, api: 305832, name: "Matías Galarza",   scored: true  }
+    - { team: GER, api: 158054, name: "Nick Woltemade",   scored: false }
+    - { team: PAR, api: 2522,   name: "Antonio Sanabria", scored: false }
+    - { team: GER, api: 714,    name: "Nadiem Amiri",     scored: true  }
+    - { team: PAR, api: 2500,   name: "Fabián Balbuena",  scored: false }
+    - { team: GER, api: 972,    name: "Jonathan Tah",     scored: false }
+    - { team: PAR, api: 70732,  name: "José Canale",      scored: true  }
+
+- match_number: 75   # Netherlands 1-1 Morocco (Morocco won 3-2 on pens)
+  kicks:
+    - { team: NED, api: 36899,  name: "Teun Koopmeiners",     scored: true  }
+    - { team: MAR, api: 277003, name: "Neil El Aynaoui",      scored: false }
+    - { team: NED, api: 792,    name: "Justin Kluivert",      scored: false }
+    - { team: MAR, api: 36579,  name: "Soufiane Rahimi",      scored: true  }
+    - { team: NED, api: 25416,  name: "Wout Weghorst",        scored: true  }
+    - { team: MAR, api: 336659, name: "Chemsdine Talbi",      scored: true  }
+    - { team: NED, api: 38747,  name: "Quinten Timber",       scored: false }
+    - { team: MAR, api: 9,      name: "Achraf Hakimi",        scored: false }
+    - { team: NED, api: 37724,  name: "Crysencio Summerville", scored: false }
+    - { team: MAR, api: 161897, name: "Ismael Saibari",       scored: true  }
