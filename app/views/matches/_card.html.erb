@@ -2,8 +2,8 @@
     Card height is stable whether the match has an AET/Pens stamp or not —
     the stamp slot always renders so cards in a grid line up.
     Locals: match (Match) %>
-<% home_winner = match.winner_team_id == match.home_team_id %>
-<% away_winner = match.winner_team_id == match.away_team_id %>
+<% home_winner = match.winner_team_id && match.winner_team_id == match.home_team_id %>
+<% away_winner = match.winner_team_id && match.winner_team_id == match.away_team_id %>
 <% score = if match.scheduled?
              "–"
            elsif match.home_score_after_extra_time
@@ -21,18 +21,20 @@
       <span class="text-[#c89942]/75"><%= match.tournament.year %></span>
     </div>
 
+    <%# A side may be a TBD knockout placeholder (WC2026 bracket) — render its
+        source label ("Winner Group E", "Winner Match 89") instead of a team. %>
     <div class="flex items-center gap-2">
-      <span class="text-lg leading-none shrink-0"><%= match.home_team.flag_emoji %></span>
-      <span class="font-serif font-bold truncate flex-1 min-w-0 <%= home_winner ? "text-[#0a3520]" : "text-[#6e7d6e]" %>">
-        <%= match.home_team.name %>
+      <span class="text-lg leading-none shrink-0"><%= match.home_team&.flag_emoji || "⚪" %></span>
+      <span class="font-serif font-bold truncate flex-1 min-w-0 <%= match.home_team.nil? ? "text-[#a08a5a] italic text-sm" : (home_winner ? "text-[#0a3520]" : "text-[#6e7d6e]") %>">
+        <%= match.home_team&.name || knockout_source_label(match.home_source_label) %>
       </span>
       <span class="font-serif font-bold tabular-nums text-[#0a3520] text-base shrink-0">
         <%= score %>
       </span>
-      <span class="font-serif font-bold truncate flex-1 min-w-0 text-right <%= away_winner ? "text-[#0a3520]" : "text-[#6e7d6e]" %>">
-        <%= match.away_team.name %>
+      <span class="font-serif font-bold truncate flex-1 min-w-0 text-right <%= match.away_team.nil? ? "text-[#a08a5a] italic text-sm" : (away_winner ? "text-[#0a3520]" : "text-[#6e7d6e]") %>">
+        <%= match.away_team&.name || knockout_source_label(match.away_source_label) %>
       </span>
-      <span class="text-lg leading-none shrink-0"><%= match.away_team.flag_emoji %></span>
+      <span class="text-lg leading-none shrink-0"><%= match.away_team&.flag_emoji || "⚪" %></span>
     </div>
 
     <%# Result-type stamp slot — fixed height + line-height so the card has

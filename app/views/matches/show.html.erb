@@ -257,7 +257,12 @@
               <%# Home kicker — name then verdict, hugging the centre %>
               <span class="min-w-0 flex items-center justify-end gap-2">
                 <% if home %>
-                  <span class="font-serif font-bold text-[#0a3520] text-sm truncate leading-tight"><%= home.player.name %></span>
+                  <span class="min-w-0 text-right">
+                    <span class="block font-serif font-bold text-[#0a3520] text-sm truncate leading-tight"><%= home.player.name %></span>
+                    <% if home.notes.present? %>
+                      <span class="block text-[9px] uppercase tracking-[0.15em] text-[#c89942]/80 truncate leading-tight"><%= home.notes %></span>
+                    <% end %>
+                  </span>
                   <%= render "matches/shootout_verdict", kick: home %>
                 <% end %>
               </span>
@@ -267,7 +272,12 @@
               <span class="min-w-0 flex items-center justify-start gap-2">
                 <% if away %>
                   <%= render "matches/shootout_verdict", kick: away %>
-                  <span class="font-serif font-bold text-[#0a3520] text-sm truncate leading-tight"><%= away.player.name %></span>
+                  <span class="min-w-0 text-left">
+                    <span class="block font-serif font-bold text-[#0a3520] text-sm truncate leading-tight"><%= away.player.name %></span>
+                    <% if away.notes.present? %>
+                      <span class="block text-[9px] uppercase tracking-[0.15em] text-[#c89942]/80 truncate leading-tight"><%= away.notes %></span>
+                    <% end %>
+                  </span>
                 <% end %>
               </span>
             </li>

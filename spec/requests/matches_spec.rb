@@ -17,6 +17,19 @@ RSpec.describe "Matches", type: :request do
       get matches_path
       expect(response).to have_http_status(:ok)
     end
+
+    it "renders TBD knockout placeholders (nil teams) without error" do
+      create(:match,
+             stage: :round_of_16, result_type: :scheduled, match_number: 89,
+             group_letter: nil, date: Date.new(2026, 7, 4),
+             home_team: nil, away_team: nil,
+             home_source_label: "W74", away_source_label: "W77")
+
+      get matches_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Winner Match 74")
+    end
   end
 
   describe "GET /matches/:slug" do
