@@ -1,6 +1,9 @@
 <%# GOAL (green) / MISS (red) outcome label for one penalty shootout kick.
-    Sized + spaced for legibility — MISS especially needs to read clearly. %>
-<span class="font-mono text-[11px] sm:text-xs uppercase font-bold tracking-wider shrink-0
-             <%= kick.was_scored ? "text-[#1c5c3f]" : "text-[#b91c1c]" %>">
-  <%= kick.was_scored ? "Goal" : "Miss" %>
-</span>
+    Each branch keeps its colour as a STATIC class literal so Tailwind reliably
+    generates the rule — an arbitrary colour tucked inside an ERB ternary isn't
+    always picked up by the content scanner. %>
+<% if kick.was_scored %>
+  <span class="font-mono text-[11px] sm:text-xs uppercase font-bold tracking-wider shrink-0 text-[#1c5c3f]">Goal</span>
+<% else %>
+  <span class="font-mono text-[11px] sm:text-xs uppercase font-bold tracking-wider shrink-0 text-[#b91c1c]">Miss</span>
+<% end %>
