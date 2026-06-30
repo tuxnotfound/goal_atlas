@@ -60,9 +60,9 @@
       <nav class="mt-10 flex items-center justify-between text-[10px] uppercase tracking-[0.3em] text-[#c89942] font-semibold">
         <div>
           Showing
-          <span class="font-mono text-[#0a3520] tabular-nums tracking-normal text-sm"><%= @pagy.from %>&ndash;<%= @pagy.to %></span>
+          <span class="font-mono text-[#f0c870] tabular-nums tracking-normal text-sm"><%= @pagy.from %>&ndash;<%= @pagy.to %></span>
           of
-          <span class="font-mono text-[#0a3520] tabular-nums tracking-normal text-sm"><%= @pagy.count %></span>
+          <span class="font-mono text-[#f0c870] tabular-nums tracking-normal text-sm"><%= @pagy.count %></span>
         </div>
         <div class="flex items-center gap-3">
           <% if @pagy.prev %>
@@ -70,8 +70,8 @@
                         class: "px-3 py-1.5 rounded-full border border-[#c89942]/45 hover:border-[#f0c870] hover:text-[#f0c870] transition" %>
           <% end %>
           <span class="text-[#c89942]/75 tracking-normal normal-case">
-            Page <span class="font-mono text-[#0a3520] tabular-nums text-sm"><%= @pagy.page %></span>
-            of <span class="font-mono text-[#0a3520] tabular-nums text-sm"><%= @pagy.pages %></span>
+            Page <span class="font-mono text-[#f0c870] tabular-nums text-sm"><%= @pagy.page %></span>
+            of <span class="font-mono text-[#f0c870] tabular-nums text-sm"><%= @pagy.pages %></span>
           </span>
           <% if @pagy.next %>
             <%= link_to "Next →", url_for(request.query_parameters.merge(page: @pagy.next)),
