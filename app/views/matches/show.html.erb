@@ -237,31 +237,38 @@
       pens. Same transparent-with-gold-tint treatment as the goals shelf so
       the map watermark continues underneath. %>
   <% if @shootout_kicks.any? %>
+    <%# Pair each round's two kicks onto one row — home kicker on the left,
+        away kicker on the right, names anchored to their team's side like the
+        scoreline above. A round may hold a single kick (sudden death / the
+        shootout ending mid-round), in which case only that side renders. %>
+    <% home_kicks = @shootout_kicks.select { |k| k.team_id == @match.home_team_id } %>
+    <% away_kicks = @shootout_kicks.select { |k| k.team_id == @match.away_team_id } %>
+    <% round_count = [home_kicks.size, away_kicks.size].max %>
     <div class="relative border-t border-[#c89942]/40">
       <div class="absolute inset-0 pointer-events-none bg-[#c89942]/10"></div>
       <div class="relative px-6 md:px-10 py-4">
         <div class="text-[10px] uppercase tracking-[0.35em] text-[#c89942] font-semibold text-center mb-3">
           Penalty shootout
         </div>
-        <ol>
-          <% @shootout_kicks.each do |kick| %>
-            <li class="flex items-center gap-3 px-14 sm:px-24 py-2 border-t border-[#c89942]/15 first:border-t-0">
-              <span class="font-mono text-[11px] tabular-nums w-8 text-right text-[#c89942] shrink-0">
-                <%= kick.kick_order %>
-              </span>
-              <span class="text-lg leading-none shrink-0"><%= kick.team.flag_emoji %></span>
-              <span class="flex-1 min-w-0">
-                <span class="block font-serif font-bold text-[#0a3520] text-sm truncate leading-tight">
-                  <%= kick.player.name %>
-                </span>
-                <% if kick.notes.present? %>
-                  <span class="block text-[10px] uppercase tracking-[0.2em] text-[#c89942]/80 truncate">
-                    <%= kick.notes %>
-                  </span>
+        <ol class="max-w-xl mx-auto">
+          <% (0...round_count).each do |i| %>
+            <% home = home_kicks[i]; away = away_kicks[i] %>
+            <li class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4 py-2 border-t border-[#c89942]/15 first:border-t-0">
+              <%# Home kicker — name then verdict, hugging the centre %>
+              <span class="min-w-0 flex items-center justify-end gap-2">
+                <% if home %>
+                  <span class="font-serif font-bold text-[#0a3520] text-sm truncate leading-tight"><%= home.player.name %></span>
+                  <%= render "matches/shootout_verdict", kick: home %>
                 <% end %>
               </span>
-              <span class="font-mono text-[10px] uppercase tracking-[0.25em] shrink-0 font-bold <%= kick.was_scored ? "text-[#1c5c3f]" : "text-[#b91c1c]" %>">
-                <%= kick.was_scored ? "Goal" : "Miss" %>
+              <%# Round number %>
+              <span class="font-mono text-[11px] tabular-nums text-[#c89942] text-center shrink-0 w-5"><%= i + 1 %></span>
+              <%# Away kicker — verdict then name %>
+              <span class="min-w-0 flex items-center justify-start gap-2">
+                <% if away %>
+                  <%= render "matches/shootout_verdict", kick: away %>
+                  <span class="font-serif font-bold text-[#0a3520] text-sm truncate leading-tight"><%= away.player.name %></span>
+                <% end %>
               </span>
             </li>
           <% end %>
