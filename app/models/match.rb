@@ -115,6 +115,17 @@ class Match < ApplicationRecord
     [base, "#{base}-#{stage}"]
   end
 
+  # By default friendly_id only regenerates the slug when it's nil. For
+  # knockout placeholders that got a "YEAR-match-N" slug while teamless,
+  # we want the slug to roll over to the proper "home-vs-away-YEAR" form
+  # as soon as the bracket populator fills the teams in.
+  def should_generate_new_friendly_id?
+    return true if slug.blank?
+    slug.match?(/\A\d{4}-(?:[a-z_]+-)?match-\d+\z/) &&
+      home_team_id.present? &&
+      away_team_id.present?
+  end
+
   private
 
   def distinct_teams
