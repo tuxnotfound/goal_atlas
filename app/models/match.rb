@@ -70,6 +70,25 @@ class Match < ApplicationRecord
       (home_source_label.present? || away_source_label.present?)
   end
 
+  # Display label for each side: the team name, or a human reading of the
+  # source label when a knockout slot is still undecided ("Winner Group E",
+  # "Winner Match 74"). Lets views render placeholder matches without nil teams.
+  def home_label = home_team&.name || self.class.humanize_source_label(home_source_label)
+  def away_label = away_team&.name || self.class.humanize_source_label(away_source_label)
+
+  # Humanizes a knockout placeholder source code ("1E", "2B", "3ABCDF", "W74",
+  # "L101") into a readable slot label. "TBD" for anything unrecognized/blank.
+  def self.humanize_source_label(code)
+    case code.to_s
+    when /\A1([A-L])\z/     then "Winner Group #{$1}"
+    when /\A2([A-L])\z/     then "Runner-up Group #{$1}"
+    when /\A3([A-L]{2,})\z/ then "3rd: #{$1.chars.join('/')}"
+    when /\AW(\d+)\z/       then "Winner Match #{$1}"
+    when /\AL(\d+)\z/       then "Loser Match #{$1}"
+    else                         "TBD"
+    end
+  end
+
   # Compact checkmark string for the admin Matches index — Administrate
   # renders Field::Boolean as "Yes"/"No" text, so we use a String column
   # instead with an explicit ✓ glyph.

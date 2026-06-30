@@ -1,6 +1,6 @@
 <%
   score_segment = @match.scheduled? ? "vs" : "#{@match.home_score}-#{@match.away_score}"
-  match_title   = "#{@match.home_team.name} #{score_segment} #{@match.away_team.name}"
+  match_title   = "#{@match.home_label} #{score_segment} #{@match.away_label}"
   stage_label   = @match.stage.to_s.humanize
   date_label    = @match.date&.strftime("%-d %b %Y")
   tournament_label = @match.tournament&.name
@@ -26,8 +26,8 @@
        world map watermark, soft paper texture, decorative inner frame. The score
        is the visual anchor; team names flank it, stage/date/venue trail beneath
        in serif eyebrows. === %>
-<% home_winner = @match.winner_team_id == @match.home_team_id %>
-<% away_winner = @match.winner_team_id == @match.away_team_id %>
+<% home_winner = @match.winner_team_id && @match.winner_team_id == @match.home_team_id %>
+<% away_winner = @match.winner_team_id && @match.winner_team_id == @match.away_team_id %>
 <% map_asset   = Rails.public_path.join("hero_world_map.png") %>
 
 <section class="relative overflow-hidden rounded-lg border-2 border-[#c89942]/70 shadow-xl shadow-black/30 mb-10"
@@ -71,10 +71,14 @@
     <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-4 md:gap-10">
 
       <div class="text-right min-w-0">
-        <div class="text-5xl md:text-6xl leading-none mb-3"><%= @match.home_team.flag_emoji %></div>
-        <%= link_to team_path(@match.home_team),
-                    class: "block font-serif font-bold text-xl md:text-2xl leading-tight hover:text-[#f0c870] transition #{home_winner ? "text-[#0a3520]" : "text-[#6e7d6e]"}" do %>
-          <%= @match.home_team.name %>
+        <div class="text-5xl md:text-6xl leading-none mb-3"><%= @match.home_team&.flag_emoji || "⚪" %></div>
+        <% if @match.home_team %>
+          <%= link_to team_path(@match.home_team),
+                      class: "block font-serif font-bold text-xl md:text-2xl leading-tight hover:text-[#f0c870] transition #{home_winner ? "text-[#0a3520]" : "text-[#6e7d6e]"}" do %>
+            <%= @match.home_team.name %>
+          <% end %>
+        <% else %>
+          <span class="block font-serif font-bold italic text-lg md:text-xl leading-tight text-[#6e7d6e]"><%= @match.home_label %></span>
         <% end %>
         <% if home_winner %>
           <div class="text-[9px] uppercase tracking-[0.35em] text-[#c89942] font-bold mt-2 flex items-center justify-end gap-1.5">
@@ -105,10 +109,14 @@
       </div>
 
       <div class="text-left min-w-0">
-        <div class="text-5xl md:text-6xl leading-none mb-3"><%= @match.away_team.flag_emoji %></div>
-        <%= link_to team_path(@match.away_team),
-                    class: "block font-serif font-bold text-xl md:text-2xl leading-tight hover:text-[#f0c870] transition #{away_winner ? "text-[#0a3520]" : "text-[#6e7d6e]"}" do %>
-          <%= @match.away_team.name %>
+        <div class="text-5xl md:text-6xl leading-none mb-3"><%= @match.away_team&.flag_emoji || "⚪" %></div>
+        <% if @match.away_team %>
+          <%= link_to team_path(@match.away_team),
+                      class: "block font-serif font-bold text-xl md:text-2xl leading-tight hover:text-[#f0c870] transition #{away_winner ? "text-[#0a3520]" : "text-[#6e7d6e]"}" do %>
+            <%= @match.away_team.name %>
+          <% end %>
+        <% else %>
+          <span class="block font-serif font-bold italic text-lg md:text-xl leading-tight text-[#6e7d6e]"><%= @match.away_label %></span>
         <% end %>
         <% if away_winner %>
           <div class="text-[9px] uppercase tracking-[0.35em] text-[#c89942] font-bold mt-2 flex items-center gap-1.5">

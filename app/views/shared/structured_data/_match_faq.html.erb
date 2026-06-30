@@ -6,7 +6,7 @@
 %>
 <%
   m = match
-  matchup = "#{m.home_team.name} vs #{m.away_team.name}"
+  matchup = "#{m.home_label} vs #{m.away_label}"
   year = m.tournament.year
   stage = m.stage.to_s.humanize
   date_str = m.date.strftime("%-d %B %Y")

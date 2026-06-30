@@ -27,17 +27,9 @@ module MatchesHelper
   end
 
   # Humanizes a knockout placeholder source code into a short slot label, for
-  # bracket cards whose team is still TBD. Examples:
-  #   "1E" -> "Winner Group E"   "2B" -> "Runner-up Group B"
-  #   "3ABCDF" -> "3rd: A/B/C/D/F"  "W74" -> "Winner Match 74"  "L101" -> "Loser Match 101"
+  # bracket/match cards whose team is still TBD. Delegates to the model so the
+  # mapping has one home. Examples: "1E" -> "Winner Group E", "W74" -> "Winner Match 74".
   def knockout_source_label(code)
-    case code.to_s
-    when /\A1([A-L])\z/      then "Winner Group #{$1}"
-    when /\A2([A-L])\z/      then "Runner-up Group #{$1}"
-    when /\A3([A-L]{2,})\z/  then "3rd: #{$1.chars.join('/')}"
-    when /\AW(\d+)\z/        then "Winner Match #{$1}"
-    when /\AL(\d+)\z/        then "Loser Match #{$1}"
-    else                          "TBD"
-    end
+    Match.humanize_source_label(code)
   end
 end

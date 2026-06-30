@@ -18,8 +18,9 @@ RSpec.describe "Matches", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "renders TBD knockout placeholders (nil teams) without error" do
-      create(:match,
+    it "shows only already-played matches, excluding scheduled/TBD placeholders" do
+      create(:match, :final_2022) # played
+      create(:match, # scheduled TBD knockout placeholder (nil teams)
              stage: :round_of_16, result_type: :scheduled, match_number: 89,
              group_letter: nil, date: Date.new(2026, 7, 4),
              home_team: nil, away_team: nil,
@@ -28,7 +29,25 @@ RSpec.describe "Matches", type: :request do
       get matches_path
 
       expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Argentina")          # played match shown
+      expect(response.body).not_to include("Winner Match 74") # placeholder hidden
+    end
+  end
+
+  describe "GET /matches/:slug for a TBD knockout placeholder" do
+    it "renders the fixture without error, showing source labels" do
+      match = create(:match,
+                     stage: :round_of_16, result_type: :scheduled, match_number: 89,
+                     group_letter: nil, date: Date.new(2026, 7, 4),
+                     stadium: create(:stadium),
+                     home_team: nil, away_team: nil,
+                     home_source_label: "W74", away_source_label: "W77")
+
+      get match_path(match)
+
+      expect(response).to have_http_status(:ok)
       expect(response.body).to include("Winner Match 74")
+      expect(response.body).to include("Winner Match 77")
     end
   end
 

@@ -1,6 +1,9 @@
 class MatchesController < ApplicationController
   def index
+    # Only already-played matches — excludes scheduled fixtures and the WC2026
+    # knockout placeholders (which are scheduled and may not have teams yet).
     @matches = Match.kept
+                    .where.not(result_type: :scheduled)
                     .includes(:home_team, :away_team, :tournament, :stadium)
                     .order(date: :desc, id: :desc)
   end

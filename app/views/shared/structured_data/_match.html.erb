@@ -5,8 +5,8 @@
 <%
   m = match
   name = m.scheduled? ?
-           "#{m.home_team.name} vs #{m.away_team.name}" :
-           "#{m.home_team.name} #{m.home_score}-#{m.away_score} #{m.away_team.name}"
+           "#{m.home_label} vs #{m.away_label}" :
+           "#{m.home_label} #{m.home_score}-#{m.away_score} #{m.away_label}"
   tournament_host = m.tournament&.host_countries&.first
   location = if m.stadium
     {
@@ -37,11 +37,11 @@
     "eventStatus": m.scheduled? ? "https://schema.org/EventScheduled" : "https://schema.org/EventCompleted",
     "location": location,
     "competitor": [
-      { "@type": "SportsTeam", "name": m.home_team.name },
-      { "@type": "SportsTeam", "name": m.away_team.name }
+      { "@type": "SportsTeam", "name": m.home_label },
+      { "@type": "SportsTeam", "name": m.away_label }
     ],
-    "homeTeam": { "@type": "SportsTeam", "name": m.home_team.name },
-    "awayTeam": { "@type": "SportsTeam", "name": m.away_team.name }
+    "homeTeam": { "@type": "SportsTeam", "name": m.home_label },
+    "awayTeam": { "@type": "SportsTeam", "name": m.away_label }
   }.compact
   if m.tournament && m.tournament.start_date && tournament_host
     data["superEvent"] = {
