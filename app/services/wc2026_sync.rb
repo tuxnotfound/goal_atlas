@@ -115,12 +115,13 @@ class Wc2026Sync
       away_score:  ft_away
     }
 
-    if et_home && et_away
-      # api-football's `score.extratime` is the ET-only goal count; our
-      # convention (matching every historical tournament) stores the
-      # cumulative post-ET score. Sum regulation + ET here.
-      attrs[:home_score_after_extra_time] = ft_home + et_home
-      attrs[:away_score_after_extra_time] = ft_away + et_away
+    # Any match that reached penalties has necessarily played extra time,
+    # even when api-football leaves `score.extratime` null (which they do
+    # for 0-0 ET shootouts). Store the cumulative post-ET score whenever
+    # ET was played, so brackets and the audit match historical semantics.
+    if %w[after_extra_time after_penalties].include?(new_type)
+      attrs[:home_score_after_extra_time] = ft_home + (et_home || 0)
+      attrs[:away_score_after_extra_time] = ft_away + (et_away || 0)
     end
 
     if pen_home && pen_away
