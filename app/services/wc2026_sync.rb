@@ -116,8 +116,11 @@ class Wc2026Sync
     }
 
     if et_home && et_away
-      attrs[:home_score_after_extra_time] = et_home
-      attrs[:away_score_after_extra_time] = et_away
+      # api-football's `score.extratime` is the ET-only goal count; our
+      # convention (matching every historical tournament) stores the
+      # cumulative post-ET score. Sum regulation + ET here.
+      attrs[:home_score_after_extra_time] = ft_home + et_home
+      attrs[:away_score_after_extra_time] = ft_away + et_away
     end
 
     if pen_home && pen_away
@@ -275,12 +278,15 @@ class Wc2026Sync
 
       # api-football sometimes emits a "Goal" event that was later disallowed
       # (VAR cancellation, offside) without removing it from the events feed.
-      # If the running tally would exceed the recorded final score, this goal
-      # is almost certainly that ghost event — skip it instead of poisoning
-      # the goal count.
-      if match.home_score && match.away_score &&
-         (running_home > match.home_score || running_away > match.away_score)
-        Rails.logger.warn("Wc2026Sync: skipping disallowed/ghost goal in fixture #{fixture_id} (#{minute}' #{player.name}, running #{running_home}-#{running_away} exceeds final #{match.home_score}-#{match.away_score})")
+      # If the running tally would exceed the true final score, this goal is
+      # almost certainly that ghost event — skip it instead of poisoning the
+      # goal count. Use the post-ET score when the match went to extra time
+      # so we don't drop legitimate ET goals.
+      final_home = match.home_score_after_extra_time || match.home_score
+      final_away = match.away_score_after_extra_time || match.away_score
+      if final_home && final_away &&
+         (running_home > final_home || running_away > final_away)
+        Rails.logger.warn("Wc2026Sync: skipping disallowed/ghost goal in fixture #{fixture_id} (#{minute}' #{player.name}, running #{running_home}-#{running_away} exceeds final #{final_home}-#{final_away})")
         # Roll back the tally so a later real goal lands on the right score
         if scoring_team.id == match.home_team_id
           running_home -= 1
