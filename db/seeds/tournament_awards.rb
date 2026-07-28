@@ -1,6 +1,14 @@
 # FIFA's individual awards per tournament.
 #
 # Depends on: tournaments.rb, players.rb
+#
+# Winners are looked up by name. A live edition (2026) is the exception: its
+# players enter the DB through the api-football sync, which only creates rows
+# for scorers and assisters — so an award winner who did neither (a goalkeeper,
+# a holding midfielder) has no row yet. Those entries carry an `api:` key with
+# the api-football player id and are created here, keyed on that id so a later
+# sync links to this row instead of duplicating it. Same convention as
+# db/data/wc2026/shootouts.yml.
 
 def tournament_for(year) = Tournament.find_by!(year: year)
 def player_for(name)     = Player.find_by!(name: name)
@@ -90,15 +98,57 @@ AWARDS = {
     { type: :bronze_boot,        player: "Julián Álvarez",  notes: "4 goals (ahead of Giroud on assists tiebreaker)" },
     { type: :golden_glove,       player: "Emiliano Martínez" },
     { type: :best_young_player,  player: "Enzo Fernández" }
+  ],
+  # Spain's first World Cup since 2010 swept the individual honours. Rodri,
+  # Unai Simón and Pau Cubarsí neither scored nor assisted, so they arrive here
+  # rather than through the sync — hence the api ids and squad metadata.
+  2026 => [
+    { type: :golden_ball,        player: "Rodri",
+      api: 44,     nationality: "ESP", position: :midfielder, birth_date: Date.new(1996, 6, 22) },
+    { type: :silver_ball,        player: "Lionel Messi" },
+    { type: :bronze_ball,        player: "Kylian Mbappé" },
+    { type: :golden_boot,        player: "Kylian Mbappé",  notes: "10 goals" },
+    { type: :silver_boot,        player: "Lionel Messi",   notes: "8 goals" },
+    { type: :bronze_boot,        player: "Jude Bellingham", notes: "7 goals (ahead of Haaland on assists tiebreaker)" },
+    { type: :golden_glove,       player: "Unai Simón",
+      api: 47270,  nationality: "ESP", position: :goalkeeper, birth_date: Date.new(1997, 6, 11) },
+    { type: :best_young_player,  player: "Pau Cubarsí",
+      api: 396623, nationality: "ESP", position: :defender,   birth_date: Date.new(2007, 1, 22) }
   ]
 }.freeze
+
+# Resolves an award winner to a Player row. Entries with an `api:` id are
+# created on demand (keyed on that id, so re-runs never duplicate); everything
+# else must already exist and is reported as missing if it doesn't.
+def award_player(attrs)
+  return Player.find_by(name: attrs[:player]) unless attrs[:api]
+
+  if (player = Player.find_by(api_football_player_id: attrs[:api]))
+    return player
+  end
+
+  # Name hit but no api id yet — the sync got there first under a different
+  # route. Backfill the id so both paths converge on this one row.
+  if (player = Player.find_by(name: attrs[:player]))
+    player.update!(api_football_player_id: attrs[:api])
+    return player
+  end
+
+  Player.create!(
+    name: attrs[:player],
+    nationality_team: Team.find_by!(fifa_code: attrs[:nationality]),
+    position: attrs[:position],
+    birth_date: attrs[:birth_date],
+    api_football_player_id: attrs[:api]
+  )
+end
 
 count = 0
 missing = []
 AWARDS.each do |year, awards|
   t = tournament_for(year)
   awards.each do |attrs|
-    player = Player.find_by(name: attrs[:player])
+    player = award_player(attrs)
     if player.nil?
       missing << [year, attrs[:type], attrs[:player]]
       next
