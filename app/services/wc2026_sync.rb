@@ -38,7 +38,8 @@ class Wc2026Sync
   def initialize(client: ApiFootballClient.new)
     @client = client
     @stats  = { fetched: 0, updated: 0, skipped: 0, goals_synced: 0,
-                players_created: 0, participations_synced: 0, bracket: nil, no_match: [] }
+                players_created: 0, participations_synced: 0, bracket: nil,
+                finalized: nil, no_match: [] }
   end
 
   def call
@@ -56,6 +57,10 @@ class Wc2026Sync
     # and never let a bracket hiccup fail the result sync.
     @stats[:bracket] = populate_bracket if @stats[:updated].positive?
 
+    # Once the last fixture is in, the tournament can fill in its own summary
+    # row (podium + goal/match totals). No-ops on every earlier run.
+    @stats[:finalized] = finalize(tournament) if @stats[:updated].positive?
+
     stats
   end
 
@@ -65,6 +70,13 @@ class Wc2026Sync
     Wc2026BracketPopulator.call
   rescue => e
     Rails.logger.error("[Wc2026Sync] bracket populate failed: #{e.class}: #{e.message}")
+    { error: e.message }
+  end
+
+  def finalize(tournament)
+    TournamentFinalizer.call(tournament).changed
+  rescue => e
+    Rails.logger.error("[Wc2026Sync] finalize failed: #{e.class}: #{e.message}")
     { error: e.message }
   end
 

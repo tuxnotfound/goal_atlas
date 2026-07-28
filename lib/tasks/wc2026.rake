@@ -20,6 +20,9 @@ namespace :wc2026 do
     if (b = stats[:bracket])
       puts "  bracket:         #{b[:error] ? "error: #{b[:error]}" : "changed #{b[:changed]}, filled #{b[:filled]}/#{b[:total]}"}"
     end
+    if (f = stats[:finalized])
+      puts "  finalized:       #{f.is_a?(Hash) ? "error: #{f[:error]}" : (f.any? ? f.join(", ") : "nothing to change")}"
+    end
     if stats[:no_match].any?
       puts "  no-match fixtures (api-football side):"
       stats[:no_match].each { |line| puts "    #{line}" }
@@ -33,5 +36,19 @@ namespace :wc2026 do
     puts "WC2026 populate_bracket:"
     puts "  changed: #{stats[:changed]}"
     puts "  filled:  #{stats[:filled]}/#{stats[:total]}"
+  end
+
+  desc "Derive WC2026 final standings + goal/match totals from its results (no-op until every match is played)"
+  task finalize: :environment do
+    result = TournamentFinalizer.call(Tournament.find_by!(year: 2026))
+
+    puts "WC2026 finalize:"
+    unless result.complete
+      puts "  tournament not complete yet — nothing written"
+      next
+    end
+
+    puts "  changed: #{result.changed.any? ? result.changed.join(', ') : 'nothing (already up to date)'}"
+    result.attributes.each { |key, value| puts "    #{key}: #{value}" }
   end
 end
