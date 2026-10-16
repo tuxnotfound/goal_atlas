@@ -53,7 +53,7 @@ gem "discard"
 gem "friendly_id", "~> 5.5"
 
 # Pagination for index pages with large collections (e.g. /goals)
-gem "pagy", "~> 9.0"
+gem "pagy", "~> 43.5"
 
 # Headless Chrome via CDP for rendering per-page OG share images
 gem "ferrum", "~> 0.17"
