@@ -61,6 +61,9 @@ gem "ferrum", "~> 0.17"
 # Bundled with Ruby until 3.3; explicit since 3.4. Used by db/seeds/import.rb.
 gem "csv"
 
+# Cloudflare R2 through its S3 API, for the nightly backup
+gem "aws-sdk-s3", require: false
+
 group :development, :test do
   # Load environment variables from .env on Rails boot
   gem "dotenv-rails"
@@ -81,6 +84,11 @@ group :development, :test do
   gem "rspec-rails", "~> 8.0"
   gem "factory_bot_rails"
   gem "faker"
+end
+
+group :test do
+  # Stubs outbound HTTP in specs, so nothing leaves the machine
+  gem "webmock"
 end
 
 group :development do
