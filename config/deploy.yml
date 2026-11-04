@@ -19,6 +19,9 @@ servers:
 proxy:
   ssl: true
   host: thegoalatlas.com
+  # Behind Cloudflare: pass its X-Forwarded-For through, or Rails sees the edge
+  # address as the client. config/initializers/trusted_proxies.rb does the rest.
+  forward_headers: true
   # Admin's "stylize portrait" hits OpenAI gpt-image-1 synchronously; that
   # request takes 45-60s. Default kamal-proxy target-timeout (30s) returns
   # 504. Bump to 120s so admin requests have headroom.
