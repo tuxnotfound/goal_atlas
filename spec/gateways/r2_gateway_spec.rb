@@ -15,6 +15,20 @@ RSpec.describe R2Gateway do
     end
   end
 
+  it "walks every page of a listing, because one stops at 1,000 keys" do
+    head = '<?xml version="1.0" encoding="UTF-8"?><ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>backups</Name>'
+    first = "#{head}<IsTruncated>true</IsTruncated><NextContinuationToken>more</NextContinuationToken>" \
+            "<Contents><Key>a.png</Key><Size>1</Size></Contents></ListBucketResult>"
+    second = "#{head}<IsTruncated>false</IsTruncated><Contents><Key>b.png</Key><Size>2</Size></Contents></ListBucketResult>"
+
+    with_env(R2_TEST_SETTINGS) do
+      stub_request(:get, %r{\Ahttps://r2\.test/backups\?}).to_return(body: first)
+      stub_request(:get, %r{\Ahttps://r2\.test/backups\?.*continuation-token=more}).to_return(body: second)
+
+      expect(described_class.sizes("")).to eq("a.png" => 1, "b.png" => 2)
+    end
+  end
+
   it "turns a refusal into Unauthorized" do
     with_env(R2_TEST_SETTINGS) do
       stub_request(:delete, "https://r2.test/backups/goal_atlas/a.dump")

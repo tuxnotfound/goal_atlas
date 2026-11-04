@@ -19,6 +19,11 @@ production:
     queue: default
     schedule: at 3:15am every day
 
+  nightly_storage_backup:
+    class: StorageBackupJob
+    queue: default
+    schedule: at 3:20am every day
+
   # WC2026 result sync. Only meaningful during the tournament window
   # (2026-06-11 → 2026-07-19); the sync no-ops when no matches need updating.
   # Hits api-football once per run + sets ~10 columns on finished matches.

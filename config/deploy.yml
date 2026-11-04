@@ -69,8 +69,8 @@ aliases:
   seed:    app exec --reuse "bin/rails db:seed"
 
 # Persistent volume for stylized portraits (storage/) and any future ad-hoc
-# uploads. The nightly backup (BackupJob) dumps only the database, so this
-# volume has no off-box copy.
+# uploads. StorageBackupJob copies new files to R2 every night; BackupJob
+# dumps only the database.
 volumes:
   - "goal_atlas_storage:/rails/storage"
 

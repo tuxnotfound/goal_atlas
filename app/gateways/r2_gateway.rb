@@ -1,4 +1,4 @@
-# Cloudflare R2 through its S3 API: where the nightly copy of the database goes. The AWS SDK
+# Cloudflare R2 through its S3 API: where the nightly copies of the database and of storage/ go. The AWS SDK
 # makes the calls; this class keeps them in one place, with timeouts, and turns SDK errors into
 # the gateway errors every caller already knows.
 class R2Gateway < ApplicationGateway
@@ -7,12 +7,15 @@ class R2Gateway < ApplicationGateway
   def self.configured? = SETTINGS.all? { ENV[it].present? }
 
   def self.upload(key, io)
-    call_r2 { client.put_object(bucket:, key:, body: io, content_type: "application/gzip") }
+    call_r2 { client.put_object(bucket:, key:, body: io, content_type: "application/octet-stream") }
     key
   end
 
-  def self.keys(prefix)
-    call_r2 { client.list_objects_v2(bucket:, prefix:).contents.map(&:key).sort }
+  def self.keys(prefix) = sizes(prefix).keys.sort
+
+  # Key to size in bytes. Walks every page, because one listing stops at 1,000 keys.
+  def self.sizes(prefix)
+    call_r2 { client.list_objects_v2(bucket:, prefix:).flat_map(&:contents).to_h { [ it.key, it.size ] } }
   end
 
   def self.remove(key)
