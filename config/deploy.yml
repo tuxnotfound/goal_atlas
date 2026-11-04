@@ -1,4 +1,4 @@
-# Kamal deploy config for goal_atlas → Hetzner CPX21 (Ashburn).
+# Kamal deploy config for goal_atlas → tux-box, the shared portfolio box (Hetzner CX33, Nuremberg).
 # Secrets pulled from .kamal/secrets (gitignored); see .kamal/secrets.example.
 
 service: goal_atlas
@@ -11,7 +11,7 @@ deploy_timeout: 180
 
 servers:
   web:
-    - 5.161.109.253
+    - 2.28.203.124
 
 # Kamal-provided SSL proxy: terminates HTTPS with Let's Encrypt and forwards
 # plaintext to the app container on the docker network. The Rails side has
@@ -76,7 +76,7 @@ asset_path: /rails/public/assets
 builder:
   arch: amd64
   # Building on macOS (arm64) for an amd64 target via QEMU is slow but works.
-  # Switch to `remote: ssh://docker@5.161.109.253` once we want faster builds.
+  # Switch to `remote: ssh://root@2.28.203.124` once we want faster builds.
 
 ssh:
   user: root
@@ -88,7 +88,7 @@ ssh:
 accessories:
   db:
     image: postgres:16
-    host: 5.161.109.253
+    host: 2.28.203.124
     port: "127.0.0.1:5432:5432"   # only listen on loopback; app reaches it on docker network
     env:
       clear:

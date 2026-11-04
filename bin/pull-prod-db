@@ -8,11 +8,11 @@
 # all local development data (--clean --if-exists). Schema-only objects Rails
 # manages (ar_internal_metadata etc.) come along in the dump.
 #
-# Requires: SSH access to the Hetzner box and a local `goal_atlas_development`
+# Requires: SSH access to tux-box and a local `goal_atlas_development`
 # database that already exists (bin/rails db:create).
 set -euo pipefail
 
-PROD_HOST="5.161.109.253"
+PROD_HOST="2.28.203.124"
 SSH_KEY="$HOME/.ssh/id_ed25519_tuxnotfound"
 DB_CONTAINER="goal_atlas-db"
 PROD_DB="goal_atlas_production"
